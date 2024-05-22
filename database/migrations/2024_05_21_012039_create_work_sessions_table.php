@@ -14,12 +14,11 @@ return new class extends Migration
         Schema::create('work_sessions', function (Blueprint $table) {
             $table->id();
             $table->string('title')->nullable();
-            $table->string('description')->nullable();
+            $table->text('description')->nullable();
             $table->unsignedInteger('duration')
                 ->default(0)->comment('in seconds');
             $table->timestamp('start');
             $table->timestamp('end');
-            $table->string('description')->nullable();
             $table->decimal('value', 12,2)->default(0.0);
             $table->string('currency', 3)->nullable();
 
