@@ -19,16 +19,15 @@ class ProjectResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
+            ->columns(1)
             ->schema([
+                Forms\Components\Select::make('client')
+                    ->relationship('client', 'name')
+                    ->preload(),
                 Forms\Components\TextInput::make('name')
                     ->required(),
                 Forms\Components\Textarea::make('description')
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('company_id')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('client_id')
-                    ->numeric(),
                 Forms\Components\Toggle::make('active')
                     ->required(),
             ]);
@@ -40,11 +39,8 @@ class ProjectResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('company_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('client_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('client.name')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\IconColumn::make('active')
                     ->boolean(),
