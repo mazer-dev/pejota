@@ -20,10 +20,10 @@ return new class extends Migration
                 ->on('tasks')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('task_status_id');
-            $table->foreign('task_status_id')
+            $table->unsignedInteger('status_id');
+            $table->foreign('status_id')
                 ->references('id')
-                ->on('task_statuses')
+                ->on('statuses')
                 ->restrictOnDelete();
 
             $table->unsignedInteger('user_id');

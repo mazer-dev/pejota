@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('priority')->default('normal');
-            $table->string('status')->default('todo');
 
             $table->unsignedInteger('parent_id')->nullable();
             $table->foreign('parent_id')
@@ -25,10 +24,10 @@ return new class extends Migration
                 ->on('tasks')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('task_status_id');
-            $table->foreign('task_status_id')
+            $table->unsignedInteger('status_id');
+            $table->foreign('status_id')
                 ->references('id')
-                ->on('task_statuses')
+                ->on('statuses')
                 ->restrictOnDelete();
 
             $table->date('planned_start')->nullable();
