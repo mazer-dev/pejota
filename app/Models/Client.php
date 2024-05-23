@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use NunoMazer\Samehouse\BelongsToTenants;
+use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 
 class Client extends Model
 {
     use HasFactory,
-        BelongsToTenants;
+        BelongsToTenants,
+        HasFilamentComments;
 
     protected $guarded = ['id'];
 

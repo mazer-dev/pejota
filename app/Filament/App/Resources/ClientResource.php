@@ -7,11 +7,13 @@ use App\Filament\App\Resources\ClientResource\RelationManagers;
 use App\Models\Client;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 
 class ClientResource extends Resource
 {
@@ -44,9 +46,6 @@ class ClientResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('company_id')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -68,6 +67,7 @@ class ClientResource extends Resource
                 ]),
             ]);
     }
+
 
     public static function getRelations(): array
     {

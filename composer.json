@@ -9,7 +9,8 @@
         "filament/filament": "^3.2",
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.9",
-        "nunomazer/laravel-samehouse": "^1.3"
+        "nunomazer/laravel-samehouse": "^1.3",
+        "parallax/filament-comments": "^1.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
