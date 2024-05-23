@@ -28,6 +28,7 @@ class ClientResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->required(),
+                Forms\Components\TextInput::make('tradename'),
                 Forms\Components\TextInput::make('email')
                     ->email()
                     ->required(),
@@ -41,6 +42,8 @@ class ClientResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('tradename')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
