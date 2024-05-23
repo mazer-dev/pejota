@@ -36,12 +36,6 @@ return new class extends Migration
             $table->date('actual_end')->nullable();
             $table->date('due_date')->nullable();
 
-            $table->unsignedInteger('user_id');
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
-                ->restrictOnDelete();
-
             $table->unsignedInteger('company_id');
             $table->foreign('company_id')
                 ->references('id')

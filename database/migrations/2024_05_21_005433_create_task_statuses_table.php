@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -20,6 +19,12 @@ return new class extends Migration
             $table->integer('sort_order')->default(0);
             $table->boolean('active')->default(true);
             $table->string('phase');
+
+            $table->unsignedInteger('company_id');
+            $table->foreign('company_id')
+                ->references('id')
+                ->on('companies')
+                ->restrictOnDelete();
 
             $table->timestamps();
         });
