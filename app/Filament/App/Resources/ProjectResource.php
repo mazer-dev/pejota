@@ -42,8 +42,7 @@ class ProjectResource extends Resource
                 Tables\Columns\TextColumn::make('client.name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('active')
-                    ->boolean(),
+                Tables\Columns\ToggleColumn::make('active'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -54,7 +53,8 @@ class ProjectResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('client')
+                    ->relationship('client', 'name'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
