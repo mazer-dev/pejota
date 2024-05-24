@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use NunoMazer\Samehouse\BelongsToTenants;
+use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 
 class Task extends Model
 {
     use HasFactory,
-        BelongsToTenants;
+        BelongsToTenants,
+        HasFilamentComments;
 
     protected $guarded = ['id'];
 
