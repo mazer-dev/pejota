@@ -51,9 +51,21 @@ class TaskResource extends Resource
                 Forms\Components\TextInput::make('title')
                     ->columnSpanFull()
                     ->required(),
+
+                Forms\Components\Section::make('Description')
+                    ->collapsible()
+                    ->compact()
+                    ->label('Descritpion')
+                    ->schema([
+                        Forms\Components\RichEditor::make('description')
+                            ->label('')
+                            ->columnSpanFull()
+                            ->extraInputAttributes(
+                                ['style' => 'max-height: 300px; overflow: scroll']),
+
+                    ]),
+
                 Forms\Components\Grid::make(3)->schema([
-                    Forms\Components\Textarea::make('description')
-                        ->columnSpanFull(),
                     Forms\Components\Select::make('priority')
                         ->options(PriorityEnum::class)
                         ->default(PriorityEnum::MEDIUM)
@@ -91,7 +103,7 @@ class TaskResource extends Resource
                     ->sortable(),
                 Tables\Columns\SelectColumn::make('status_id')
                     ->label('Status')
-                    ->options(fn (): array => Status::all()->pluck('name', 'id')->toArray())
+                    ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
                     ->searchable()->sortable(),
                 Tables\Columns\ColorColumn::make('status.color')
                     ->label(''),
@@ -124,11 +136,11 @@ class TaskResource extends Resource
                         return $query
                             ->when(
                                 $data['from'],
-                                fn (Builder $query, $date): Builder => $query->where('due_date', '>=', $data['from'])
+                                fn(Builder $query, $date): Builder => $query->where('due_date', '>=', $data['from'])
                             )
                             ->when(
                                 $data['to'],
-                                fn (Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to'])
+                                fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to'])
                             );
                     })
             ], layout: Tables\Enums\FiltersLayout::Modal)
