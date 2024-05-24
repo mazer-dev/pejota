@@ -53,17 +53,15 @@ class TaskResource extends Resource
                     ->columnSpanFull()
                     ->required(),
 
-                Forms\Components\Section::make('Description')
+                Forms\Components\Section::make('Details')
                     ->collapsible()
                     ->compact()
-                    ->label('Descritpion')
                     ->schema([
                         Forms\Components\RichEditor::make('description')
-                            ->label('')
                             ->columnSpanFull()
                             ->extraInputAttributes(
                                 ['style' => 'max-height: 300px; overflow: scroll']),
-
+                        Forms\Components\SpatieTagsInput::make('tags')
                     ]),
 
                 Forms\Components\Grid::make(3)->schema([
@@ -97,12 +95,15 @@ class TaskResource extends Resource
                 'status.name',
             ])
             ->columns([
+                Tables\Columns\IconColumn::make('priority')
+                    ->label('')
+                    ->sortable(['priority','sort_order'])
+                    ->icon(fn ($state) => PriorityEnum::from($state)->getIcon())
+                    ->color(fn ($state) => PriorityEnum::from($state)->getColor())
+                    ->tooltip(fn ($state) => PriorityEnum::from($state)->getLabel()),
                 Tables\Columns\TextColumn::make('title')
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Medium)
                     ->searchable(),
-                Tables\Columns\SelectColumn::make('priority')
-                    ->options(PriorityEnum::class)
-                    ->sortable(),
                 Tables\Columns\SelectColumn::make('status_id')
                     ->label('Status')
                     ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
