@@ -19,6 +19,7 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HtmlString;
 
 class ProjectResource extends Resource
 {
@@ -36,7 +37,7 @@ class ProjectResource extends Resource
                     ->preload(),
                 Forms\Components\TextInput::make('name')
                     ->required(),
-                Forms\Components\Textarea::make('description')
+                Forms\Components\RichEditor::make('description')
                     ->columnSpanFull(),
                 Forms\Components\Toggle::make('active')
                     ->required()
@@ -94,9 +95,9 @@ class ProjectResource extends Resource
                             ->icon('heroicon-o-building-office'),
 
                         TextEntry::make('description')
+                            ->formatStateUsing(fn (string $state): HtmlString => new HtmlString($state))
                             ->label('')
-                            ->icon('heroicon-o-document-text'),
-
+                            ->icon('heroicon-o-document-text')
 
                     ]),
 
