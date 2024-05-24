@@ -10,4 +10,6 @@ class Status extends Model
 {
     use HasFactory,
         BelongsToTenants;
+
+    protected $guarded = ['id'];
 }

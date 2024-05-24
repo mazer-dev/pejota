@@ -22,6 +22,11 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
         return __('Settings');
     }
 
+    public static function getNavigationGroup(): ?string
+    {
+        return __('Administration');
+    }
+
     public function form(Form $form): Form
     {
         return $form
