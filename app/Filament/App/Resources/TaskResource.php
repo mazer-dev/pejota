@@ -97,19 +97,22 @@ class TaskResource extends Resource
             ->columns([
                 Tables\Columns\IconColumn::make('priority')
                     ->label('')
-                    ->sortable(['priority','sort_order'])
-                    ->icon(fn ($state) => PriorityEnum::from($state)->getIcon())
-                    ->color(fn ($state) => PriorityEnum::from($state)->getColor())
-                    ->tooltip(fn ($state) => PriorityEnum::from($state)->getLabel()),
+                    ->sortable()
+                    ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
+                    ->color(fn($state) => PriorityEnum::from($state)->getColor())
+                    ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel()),
                 Tables\Columns\TextColumn::make('title')
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Medium)
                     ->searchable(),
                 Tables\Columns\SelectColumn::make('status_id')
                     ->label('Status')
                     ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
-                    ->searchable()->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\ColorColumn::make('status.color')
-                    ->label(''),
+                    ->label('')
+                    ->tooltip(fn(Model $record) => $record->status->name)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('planned_start')
                     ->date()
                     ->sortable()
@@ -125,7 +128,9 @@ class TaskResource extends Resource
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('project.name')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\SpatieTagsColumn::make('tags'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
