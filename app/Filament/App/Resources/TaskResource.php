@@ -107,6 +107,14 @@ class TaskResource extends Resource
                     ->searchable()->sortable(),
                 Tables\Columns\ColorColumn::make('status.color')
                     ->label(''),
+                Tables\Columns\TextColumn::make('planned_start')
+                    ->date()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('planned_end')
+                    ->date()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('due_date')
                     ->date()
                     ->sortable(),
