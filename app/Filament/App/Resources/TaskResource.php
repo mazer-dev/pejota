@@ -136,7 +136,9 @@ class TaskResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->relationship('status', 'name'),
+                    ->relationship('status', 'name')
+                    ->multiple(true)
+                    ->preload(),
                 Tables\Filters\Filter::make('due_date')
                     ->form([
                         Forms\Components\DatePicker::make('from'),
