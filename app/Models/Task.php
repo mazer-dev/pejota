@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use NunoMazer\Samehouse\BelongsToTenants;
 use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
+use Spatie\Tags\HasTags;
 
 class Task extends Model
 {
     use HasFactory,
         BelongsToTenants,
-        HasFilamentComments;
+        HasFilamentComments,
+        HasTags;
 
     protected $guarded = ['id'];
 

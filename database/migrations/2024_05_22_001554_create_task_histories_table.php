@@ -32,7 +32,7 @@ return new class extends Migration
                 ->on('users')
                 ->restrictOnDelete();
 
-            $table->text('comment');
+            $table->text('comment')->nullable();
 
             $table->timestamps();
         });
