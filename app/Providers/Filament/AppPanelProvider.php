@@ -11,6 +11,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -32,6 +33,27 @@ class AppPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Green,
             ])
+            ->renderHook(
+                PanelsRenderHook::FOOTER,
+                fn (): string => ' <div class="inline text-gray-400 justify-center max-w-full">
+                        By
+                        <a href="https://mazer.dev" target="_blank"
+                        >
+                           MAZER.DEV
+                        </a>
+                        |
+                        <a href="https://www.linkedin.com/company/mazer-dev" target="_blank"
+                        >
+                           LinkedIn
+                        </a>
+                        |
+                        <a href="https://github.com/mazer-dev/pejota" target="_blank"
+                        >
+                           Github
+                        </a>
+
+                </div>'
+            )
             ->maxContentWidth(MaxWidth::Full)
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
