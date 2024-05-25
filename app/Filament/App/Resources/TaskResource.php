@@ -160,6 +160,8 @@ class TaskResource extends Resource
                     ->relationship('status', 'name')
                     ->multiple(true)
                     ->preload(),
+                Tables\Filters\SelectFilter::make('client')
+                    ->relationship('client', 'name'),
                 Tables\Filters\Filter::make('due_date')
                     ->form([
                         Forms\Components\DatePicker::make('from'),
