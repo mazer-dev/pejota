@@ -31,18 +31,9 @@ class ProjectResource extends Resource
     {
         return $form
             ->columns(1)
-            ->schema([
-                Forms\Components\Select::make('client')
-                    ->relationship('client', 'name')
-                    ->preload(),
-                Forms\Components\TextInput::make('name')
-                    ->required(),
-                Forms\Components\RichEditor::make('description')
-                    ->columnSpanFull(),
-                Forms\Components\Toggle::make('active')
-                    ->required()
-                    ->default(true),
-            ]);
+            ->schema(
+                self::getFormComponents()
+            );
     }
 
     public static function table(Table $table): Table
@@ -95,7 +86,7 @@ class ProjectResource extends Resource
                             ->icon('heroicon-o-building-office'),
 
                         TextEntry::make('description')
-                            ->formatStateUsing(fn (string $state): HtmlString => new HtmlString($state))
+                            ->formatStateUsing(fn(string $state): HtmlString => new HtmlString($state))
                             ->label('')
                             ->icon('heroicon-o-document-text')
 
@@ -109,7 +100,7 @@ class ProjectResource extends Resource
                         Actions::make([
                             Action::make('edit')
                                 ->url(
-                                    fn (Model $record) => "{$record->id}/edit"
+                                    fn(Model $record) => "{$record->id}/edit"
                                 )
                         ])
                     ])->grow(false),
@@ -141,6 +132,22 @@ class ProjectResource extends Resource
             'create' => Pages\CreateProject::route('/create'),
             'view' => Pages\ViewProject::route('/{record}'),
             'edit' => Pages\EditProject::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getFormComponents(): array
+    {
+        return [
+            Forms\Components\Select::make('client')
+                ->relationship('client', 'name')
+                ->preload(),
+            Forms\Components\TextInput::make('name')
+                ->required(),
+            Forms\Components\RichEditor::make('description')
+                ->columnSpanFull(),
+            Forms\Components\Toggle::make('active')
+                ->required()
+                ->default(true),
         ];
     }
 }

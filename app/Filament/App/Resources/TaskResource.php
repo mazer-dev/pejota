@@ -64,7 +64,7 @@ class TaskResource extends Resource
                         Forms\Components\SpatieTagsInput::make('tags')
                     ]),
 
-                Forms\Components\Grid::make(3)->schema([
+                Forms\Components\Grid::make(4)->schema([
                     Forms\Components\Select::make('priority')
                         ->options(PriorityEnum::class)
                         ->default(PriorityEnum::MEDIUM)
@@ -76,12 +76,25 @@ class TaskResource extends Resource
                         )
                         ->default(Status::orderBy('sort_order')->first()->id),
 
-                    Forms\Components\DatePicker::make('due_date'),
+                    Forms\Components\TextInput::make('effort')
+                        ->numeric(),
+                    Forms\Components\Select::make('effort_unit')
+                        ->options([
+                            'h' => 'Hours',
+                            'm' => 'Minutes',
+                        ])
+                        ->default('h'),
+
                 ]),
-                Forms\Components\DatePicker::make('planned_start'),
-                Forms\Components\DatePicker::make('planned_end'),
-                Forms\Components\DatePicker::make('actual_start'),
-                Forms\Components\DatePicker::make('actual_end'),
+
+                Forms\Components\Grid::make(5)->schema([
+                    Forms\Components\DatePicker::make('due_date'),
+
+                    Forms\Components\DatePicker::make('planned_start'),
+                    Forms\Components\DatePicker::make('planned_end'),
+                    Forms\Components\DatePicker::make('actual_start'),
+                    Forms\Components\DatePicker::make('actual_end'),
+                ]),
             ]);
     }
 
@@ -113,6 +126,11 @@ class TaskResource extends Resource
                     ->label('')
                     ->tooltip(fn(Model $record) => $record->status->name)
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('due_date')
+                    ->date()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('effort')
+                    ->formatStateUsing(fn (Model $record): string => $record->effort . ' ' . $record->effort_unit),
                 Tables\Columns\TextColumn::make('planned_start')
                     ->date()
                     ->sortable()
@@ -121,9 +139,6 @@ class TaskResource extends Resource
                     ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('due_date')
-                    ->date()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('client.name')
                     ->sortable()
                     ->toggleable(),
