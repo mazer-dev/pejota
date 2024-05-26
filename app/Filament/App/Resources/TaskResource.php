@@ -5,11 +5,21 @@ namespace App\Filament\App\Resources;
 use App\Enums\PriorityEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\TaskResource\RelationManagers;
+use App\Livewire\Projects\ListTasks;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Actions;
+use Filament\Infolists\Components\Actions\Action;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Livewire;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\SpatieTagsEntry;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
@@ -19,6 +29,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
+use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
+use Parallax\FilamentComments\Tables\Actions\CommentsAction;
 
 class TaskResource extends Resource
 {
@@ -130,7 +143,7 @@ class TaskResource extends Resource
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('effort')
-                    ->formatStateUsing(fn (Model $record): string => $record->effort . ' ' . $record->effort_unit),
+                    ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit),
                 Tables\Columns\TextColumn::make('planned_start')
                     ->date()
                     ->sortable()
@@ -181,12 +194,106 @@ class TaskResource extends Resource
             ], layout: Tables\Enums\FiltersLayout::Modal)
             ->persistFiltersInSession()
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->iconButton(),
+                CommentsAction::make()
+                    ->iconButton(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Split::make([
+                    Grid::make(1)->schema([
+                        Section::make([
+                            TextEntry::make('title')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->weight(FontWeight::Bold)
+                                ->label(''),
+
+                            SpatieTagsEntry::make('tags')
+                                ->label(''),
+
+                            Grid::make(2)->schema([
+                                TextEntry::make('project.name')
+                                    ->label('')
+                                    ->icon('heroicon-o-presentation-chart-bar'),
+
+                                TextEntry::make('client.name')
+                                    ->label('')
+                                    ->icon('heroicon-o-building-office'),
+                            ]),
+
+                            TextEntry::make('description')
+                                ->formatStateUsing(fn(string $state): HtmlString => new HtmlString($state))
+                                ->icon('heroicon-o-document-text'),
+
+                            Grid::make(4)->schema([
+
+                                TextEntry::make('due_date')
+                                    ->date()
+                                    ->icon('heroicon-o-exclamation-triangle'),                                TextEntry::make('status.name'),
+                                TextEntry::make('priority'),
+
+
+                                TextEntry::make('effort')
+                                    ->label('Effort')
+                                    ->icon('heroicon-o-calculator')
+                                    ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit),
+
+                                TextEntry::make('planned_start')
+                                    ->date()
+                                    ->icon('heroicon-o-calendar'),
+                                TextEntry::make('planned_end')
+                                    ->date()
+                                    ->icon('heroicon-o-calendar'),
+
+                                TextEntry::make('actual_start')
+                                    ->date()
+                                    ->icon('heroicon-o-calendar'),
+
+                                TextEntry::make('actual_end')
+                                    ->date()
+                                    ->icon('heroicon-o-calendar'),
+
+
+                            ]),
+
+                        ]),
+
+                        Section::make('Comments')
+                            ->collapsible()
+                            ->schema([
+                                CommentsEntry::make('fialament_comments')
+                                    ->columnSpanFull(),
+                            ]),
+                    ]),
+
+                    Section::make([
+                        TextEntry::make('created_at')
+                            ->dateTime(),
+                        TextEntry::make('updated_at')
+                            ->dateTime(),
+                        Actions::make([
+                            Action::make('edit')
+                                ->url(
+                                    fn(Model $record) => "{$record->id}/edit"
+                                )
+                        ])
+                    ])->grow(false),
+
+
+                ])
+                    ->columnSpanFull(),
+
             ]);
     }
 
@@ -202,6 +309,7 @@ class TaskResource extends Resource
         return [
             'index' => Pages\ListTasks::route('/'),
             'create' => Pages\CreateTask::route('/create'),
+            'view' => Pages\ViewTask::route('/{record}'),
             'edit' => Pages\EditTask::route('/{record}/edit'),
         ];
     }
