@@ -14,6 +14,7 @@ use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Livewire;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\SpatieTagsEntry;
@@ -237,18 +238,6 @@ class TaskResource extends Resource
                                 ->icon('heroicon-o-document-text'),
 
                             Grid::make(4)->schema([
-
-                                TextEntry::make('due_date')
-                                    ->date()
-                                    ->icon('heroicon-o-exclamation-triangle'),                                TextEntry::make('status.name'),
-                                TextEntry::make('priority'),
-
-
-                                TextEntry::make('effort')
-                                    ->label('Effort')
-                                    ->icon('heroicon-o-calculator')
-                                    ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit),
-
                                 TextEntry::make('planned_start')
                                     ->date()
                                     ->icon('heroicon-o-calendar'),
@@ -263,10 +252,7 @@ class TaskResource extends Resource
                                 TextEntry::make('actual_end')
                                     ->date()
                                     ->icon('heroicon-o-calendar'),
-
-
                             ]),
-
                         ]),
 
                         Section::make('Comments')
@@ -278,6 +264,26 @@ class TaskResource extends Resource
                     ]),
 
                     Section::make([
+                        Grid::make(2)->schema([
+                            IconEntry::make('priority')
+                                ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
+                                ->color(fn($state) => PriorityEnum::from($state)->getColor())
+                                ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel()),
+
+                            TextEntry::make('status.name')
+                                ->color(fn(Model $record): array => Color::hex($record->status->color)),
+                        ]),
+
+                        TextEntry::make('due_date')
+                            ->date()
+                            ->icon('heroicon-o-exclamation-triangle'),
+
+                        TextEntry::make('effort')
+                            ->label('Effort')
+                            ->inlineLabel()
+                            ->icon('heroicon-o-calculator')
+                            ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit),
+
                         TextEntry::make('created_at')
                             ->dateTime(),
                         TextEntry::make('updated_at')
