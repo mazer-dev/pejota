@@ -9,12 +9,14 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
+use Filament\Infolists\Components\ColorEntry;
 use Filament\Infolists\Components\Livewire;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -93,6 +95,9 @@ class ProjectResource extends Resource
                     ]),
 
                     Section::make([
+                        TextEntry::make('active')
+                            ->formatStateUsing(fn(string $state): string => $state ? 'Yes' : 'No'),
+
                         TextEntry::make('created_at')
                             ->dateTime(),
                         TextEntry::make('updated_at')
@@ -102,6 +107,14 @@ class ProjectResource extends Resource
                                 ->url(
                                     fn(Model $record) => "{$record->id}/edit"
                                 )
+                                ->icon('heroicon-o-pencil'),
+
+                            Action::make('back')
+                                ->url(
+                                    fn(Model $record) => "./."
+                                )
+                                ->icon('heroicon-o-chevron-left')
+                                ->color(Color::Neutral),
                         ])
                     ])->grow(false),
 

@@ -17,6 +17,7 @@ use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -135,6 +136,14 @@ class ClientResource extends Resource
                                 ->url(
                                     fn(Model $record) => "{$record->id}/edit"
                                 )
+                                ->icon('heroicon-o-pencil'),
+
+                            Action::make('back')
+                                ->url(
+                                    fn(Model $record) => "./."
+                                )
+                                ->icon('heroicon-o-chevron-left')
+                                ->color(Color::Neutral),
                         ])
                     ])->grow(false),
 

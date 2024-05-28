@@ -9,6 +9,7 @@ use App\Livewire\Projects\ListTasks;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
@@ -300,6 +301,7 @@ class TaskResource extends Resource
                                 ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel()),
 
                             TextEntry::make('status.name')
+                                ->badge()
                                 ->color(fn(Model $record): array => Color::hex($record->status->color)),
                         ]),
 
@@ -322,6 +324,14 @@ class TaskResource extends Resource
                                 ->url(
                                     fn(Model $record) => "{$record->id}/edit"
                                 )
+                                ->icon('heroicon-o-pencil'),
+
+                            Action::make('back')
+                                ->url(
+                                    fn(Model $record) => "./."
+                                )
+                                ->icon('heroicon-o-chevron-left')
+                                ->color(Color::Neutral),
                         ])
                     ])->grow(false),
 
