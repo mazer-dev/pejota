@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamp('end');
             $table->integer('rate')
                 ->default(0)->comment('in cents');
-            $table->string('currency', 3)->nullable();
+            $table->string('currency', 3)->default('USD');
 
             $table->unsignedInteger('user_id');
             $table->foreign('user_id')
