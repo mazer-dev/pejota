@@ -19,7 +19,7 @@ return new class extends Migration
                 ->default(0)->comment('in seconds');
             $table->timestamp('start');
             $table->timestamp('end');
-            $table->decimal('value', 12,2)->default(0.0);
+            $table->decimal('rate', 12,2)->default(0.0);
             $table->string('currency', 3)->nullable();
 
             $table->unsignedInteger('user_id');
