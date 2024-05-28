@@ -8,6 +8,7 @@ use App\Filament\App\Resources\TaskResource;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListTasks extends ListRecords
@@ -19,6 +20,15 @@ class ListTasks extends ListRecords
         return [
             Actions\CreateAction::make(),
         ];
+    }
+
+    public function render(): View
+    {
+        $result = parent::render();
+
+        session()->put('tasks_active_tab_' . auth()->user()->id, $this->activeTab);
+
+        return $result;
     }
 
     public function getTabs(): array
@@ -41,5 +51,10 @@ class ListTasks extends ListRecords
                         ]);
                     })),
         ];
+    }
+
+    public function getDefaultActiveTab(): string|int|null
+    {
+        return session( 'tasks_active_tab_' . auth()->user()->id, 'all');
     }
 }
