@@ -13,9 +13,12 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
+use Filament\Infolists\Components\Entry;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Livewire;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\SpatieTagsEntry;
 use Filament\Infolists\Components\Split;
@@ -33,6 +36,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 use Parallax\FilamentComments\Tables\Actions\CommentsAction;
+use Spatie\Activitylog\Models\Activity;
 
 class TaskResource extends Resource
 {
@@ -261,6 +265,31 @@ class TaskResource extends Resource
                                 CommentsEntry::make('fialament_comments')
                                     ->columnSpanFull(),
                             ]),
+
+                        Section::make('History')
+                            ->collapsible()
+                            ->persistCollapsed()
+                            ->schema([
+                                RepeatableEntry::make('activities')
+                                    ->label('')
+                                    ->columnSpanFull()
+                                    ->schema([
+                                        Grid::make(4)->schema([
+                                            TextEntry::make('created_at')
+                                                ->label('')
+                                                ->dateTime(),
+                                            TextEntry::make('description')
+                                                ->label(''),
+                                            TextEntry::make('causer.name')
+                                                ->label(''),
+                                            TextEntry::make('properties.attributes')
+                                                ->label('')
+                                                ->getStateUsing(
+                                                    fn(Model $record): array => [$record->properties->get('attributes')['status.name']]
+                                                )
+                                        ])
+                                    ])
+                            ])
                     ]),
 
                     Section::make([

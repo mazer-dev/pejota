@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use NunoMazer\Samehouse\BelongsToTenants;
 use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Tags\HasTags;
 
 class Task extends Model
@@ -17,7 +19,11 @@ class Task extends Model
     use HasFactory,
         BelongsToTenants,
         HasFilamentComments,
-        HasTags;
+        HasTags,
+        LogsActivity;
+
+    public const LOG_NAME = 'task';
+    public const LOG_EVENT_STATUS_CHANGED = 'status_changed';
 
     protected $guarded = ['id'];
 
@@ -28,6 +34,11 @@ class Task extends Model
         static::saving(function ($model) {
             if ($model->isDirty('status_id')) {
                 self::setStartEndDates($model);
+
+//                activity(self::LOG_NAME)
+//                    ->event(self::LOG_EVENT_STATUS_CHANGED)
+//                    ->performedOn($model)
+//                    ->
             }
         });
     }
@@ -78,5 +89,14 @@ class Task extends Model
             $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
         }
 
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['status.name'])
+            ->useLogName(self::LOG_NAME)
+            ->dontSubmitEmptyLogs()
+            ->logOnlyDirty();
     }
 }
