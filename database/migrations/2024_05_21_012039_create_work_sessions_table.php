@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('title')->nullable();
             $table->text('description')->nullable();
             $table->unsignedInteger('duration')
-                ->default(0)->comment('in seconds');
+                ->default(0)->comment('in minutes');
             $table->timestamp('start');
             $table->timestamp('end');
             $table->integer('rate')
