@@ -68,6 +68,11 @@ class Task extends Model
         return $this->hasMany(Task::class, 'parent_id');
     }
 
+    public function workSessions(): HasMany
+    {
+        return $this->hasMany(WorkSession::class);
+    }
+
     protected static function setStartEndDates(Model $model): void
     {
         $settings = auth()->user()->company
