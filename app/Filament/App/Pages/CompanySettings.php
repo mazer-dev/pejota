@@ -36,7 +36,9 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                     Forms\Components\Checkbox::make(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
                         ->helperText('If checked the tradename will be used as the name of the client. Otherwise, the name will be used.')
                         ->default(false),
-                ]),
+                ])
+                    ->collapsible()->collapsed(),
+
                 Forms\Components\Section::make('Tasks')->schema([
                     Forms\Components\Checkbox::make(CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value)
                         ->helperText('If checked when a task is updated with a status of in progress phase,
@@ -46,7 +48,18 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                         ->helperText('If checked when a task is updated with a status of closed phase,
                             if the actual end date is not set, then it will be filled with the date of update.')
                         ->default(false),
-                ]),
+                ])
+                    ->collapsible()->collapsed(),
+
+                Forms\Components\Section::make('Finance')->schema([
+                    Forms\Components\Select::make(CompanySettingsEnum::FINANCE_DEFAULT_CURRENCY->value)
+                        ->helperText('Set the default currency for the company.')
+                        ->default('USD')
+                        ->options([
+                            'USD' => 'USD',
+                        ]),
+                ])
+                    ->collapsible()->collapsed(),
             ]);
     }
 }
