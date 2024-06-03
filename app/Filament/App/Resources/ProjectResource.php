@@ -12,6 +12,7 @@ use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\ColorEntry;
 use Filament\Infolists\Components\Livewire;
 use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\SpatieTagsEntry;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -44,10 +45,14 @@ class ProjectResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('client.name')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\ToggleColumn::make('active'),
+
+                Tables\Columns\SpatieTagsColumn::make('tags'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -83,6 +88,9 @@ class ProjectResource extends Resource
                             ->weight(FontWeight::Bold)
                             ->label(''),
 
+                        SpatieTagsEntry::make('tags')
+                            ->label(''),
+
                         TextEntry::make('client.name')
                             ->label('')
                             ->icon('heroicon-o-building-office'),
@@ -90,7 +98,7 @@ class ProjectResource extends Resource
                         TextEntry::make('description')
                             ->formatStateUsing(fn(string $state): HtmlString => new HtmlString($state))
                             ->label('')
-                            ->icon('heroicon-o-document-text')
+                            ->icon('heroicon-o-document-text'),
 
                     ]),
 
@@ -158,6 +166,7 @@ class ProjectResource extends Resource
                 ->required(),
             Forms\Components\RichEditor::make('description')
                 ->columnSpanFull(),
+            Forms\Components\SpatieTagsInput::make('tags'),
             Forms\Components\Toggle::make('active')
                 ->required()
                 ->default(true),
