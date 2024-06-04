@@ -44,6 +44,14 @@ return [
             'throw' => false,
         ],
 
+        'tasks' => [
+            'driver' => 'local',
+            'root' => storage_path('app/tasks'),
+            'url' => env('APP_URL').'/attachments/tasks',
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

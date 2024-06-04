@@ -79,7 +79,11 @@ class TaskResource extends Resource
                         Forms\Components\RichEditor::make('description')
                             ->columnSpanFull()
                             ->extraInputAttributes(
-                                ['style' => 'max-height: 300px; overflow: scroll']),
+                                ['style' => 'max-height: 300px; overflow: scroll'])
+                            ->fileAttachmentsDisk('tasks')
+                            ->fileAttachmentsDirectory(auth()->user()->company->id)
+                            ->fileAttachmentsVisibility('private'),
+
                         Forms\Components\SpatieTagsInput::make('tags')
                     ]),
 
