@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\App\Widgets\ProjectsNumberOverview;
 use App\Http\Middleware\TenantMiddleware;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -64,7 +65,7 @@ class AppPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                ProjectsNumberOverview::class,
             ])
             ->middleware([
                 EncryptCookies::class,
