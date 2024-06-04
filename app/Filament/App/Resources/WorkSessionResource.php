@@ -53,7 +53,7 @@ class WorkSessionResource extends Resource
                                 ->live(),
 
                             Forms\Components\DateTimePicker::make('end')
-                                ->required()95
+                                ->required()
                                 ->live()
                                 ->afterStateUpdated(
                                     fn(
