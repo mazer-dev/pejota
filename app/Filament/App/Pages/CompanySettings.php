@@ -31,35 +31,36 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
     public function form(Form $form): Form
     {
         return $form
+            ->columns(1)
             ->schema([
-                Forms\Components\Section::make('Clients')->schema([
-                    Forms\Components\Checkbox::make(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
-                        ->helperText('If checked the tradename will be used as the name of the client. Otherwise, the name will be used.')
-                        ->default(false),
-                ])
-                    ->collapsible()->collapsed(),
+                Forms\Components\Tabs::make('Tabs')->tabs([
+                    Forms\Components\Tabs\Tab::make('Clients')->schema([
+                        Forms\Components\Checkbox::make(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
+                            ->helperText('If checked the tradename will be used as the name of the client. Otherwise, the name will be used.')
+                            ->default(false),
+                    ]),
 
-                Forms\Components\Section::make('Tasks')->schema([
-                    Forms\Components\Checkbox::make(CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value)
-                        ->helperText('If checked when a task is updated with a status of in progress phase,
+                    Forms\Components\Tabs\Tab::make('Tasks')->schema([
+                        Forms\Components\Checkbox::make(CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value)
+                            ->helperText('If checked when a task is updated with a status of in progress phase,
                             if the actual start date is not set, then it will be filled with the date of update.')
-                        ->default(false),
-                    Forms\Components\Checkbox::make(CompanySettingsEnum::TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED->value)
-                        ->helperText('If checked when a task is updated with a status of closed phase,
+                            ->default(false),
+                        Forms\Components\Checkbox::make(CompanySettingsEnum::TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED->value)
+                            ->helperText('If checked when a task is updated with a status of closed phase,
                             if the actual end date is not set, then it will be filled with the date of update.')
-                        ->default(false),
-                ])
-                    ->collapsible()->collapsed(),
+                            ->default(false),
+                    ]),
 
-                Forms\Components\Section::make('Finance')->schema([
-                    Forms\Components\Select::make(CompanySettingsEnum::FINANCE_DEFAULT_CURRENCY->value)
-                        ->helperText('Set the default currency for the company.')
-                        ->default('USD')
-                        ->options([
-                            'USD' => 'USD',
-                        ]),
-                ])
-                    ->collapsible()->collapsed(),
+                    Forms\Components\Tabs\Tab::make('Finance')->schema([
+                        Forms\Components\Select::make(CompanySettingsEnum::FINANCE_DEFAULT_CURRENCY->value)
+                            ->helperText('Set the default currency for the company.')
+                            ->default('USD')
+                            ->options([
+                                'USD' => 'USD',
+                            ]),
+                    ])
+                ]),
+
             ]);
     }
 }
