@@ -28,3 +28,13 @@ Tasks module with tasks control, by client and/or project, with data for planned
 Data that can be associated: tags, description, estimated effort (min or hours)
 
 Table data grouped by clients, due date, projects.
+
+### Settings
+
+#### Statuses
+
+Create your own status to better control your workflow.
+
+#### Company
+
+General settings of system use by your company.
