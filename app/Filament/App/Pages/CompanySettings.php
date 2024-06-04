@@ -34,6 +34,24 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
             ->columns(1)
             ->schema([
                 Forms\Components\Tabs::make('Tabs')->tabs([
+                    Forms\Components\Tabs\Tab::make('Language')->schema([
+                       Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_LANGUAGE->value)
+                            ->label('Language')
+                            ->options(CompanySettingsEnum::getLanguages())
+                            ->default('en_US'),
+
+                       Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_LOCALE->value)
+                            ->label('Locale')
+                            ->options(CompanySettingsEnum::getLocales())
+                            ->default('en'),
+
+                       Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value)
+                            ->label('Timezone')
+                            ->options(CompanySettingsEnum::getTimezones())
+                            ->default('UTC')
+                            ->searchable(),
+                    ]),
+
                     Forms\Components\Tabs\Tab::make('Clients')->schema([
                         Forms\Components\Checkbox::make(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
                             ->helperText('If checked the tradename will be used as the name of the client. Otherwise, the name will be used.')
@@ -52,7 +70,7 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                     ]),
 
                     Forms\Components\Tabs\Tab::make('Finance')->schema([
-                        Forms\Components\Select::make(CompanySettingsEnum::FINANCE_DEFAULT_CURRENCY->value)
+                        Forms\Components\Select::make(CompanySettingsEnum::FINANCE_CURRENCY->value)
                             ->helperText('Set the default currency for the company.')
                             ->default('USD')
                             ->options([
