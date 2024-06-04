@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\App\Widgets\ProjectsNumberOverview;
+use App\Http\Middleware\LocalizationMiddleware;
 use App\Http\Middleware\TenantMiddleware;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -77,6 +78,7 @@ class AppPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                LocalizationMiddleware::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

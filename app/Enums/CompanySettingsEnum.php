@@ -10,16 +10,8 @@ enum CompanySettingsEnum: string
     case TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS = 'tasks.fill_actual_start_date_when_in_progress';
     case TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED = 'tasks.fill_actual_end_date_when_closed';
     case FINANCE_CURRENCY = 'finance.currency';
-    case LOCALIZATION_LANGUAGE = 'localization.language';
     case LOCALIZATION_LOCALE = 'localization.locale';
     case LOCALIZATION_TIMEZONE = 'localization.timezone';
-
-    public static function getLanguages(): array
-    {
-        return [
-            'en_US' => 'English',
-        ];
-    }
 
     public static function getLocales(): array
     {

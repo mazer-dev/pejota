@@ -35,11 +35,6 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
             ->schema([
                 Forms\Components\Tabs::make('Tabs')->tabs([
                     Forms\Components\Tabs\Tab::make('Language')->schema([
-                       Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_LANGUAGE->value)
-                            ->label('Language')
-                            ->options(CompanySettingsEnum::getLanguages())
-                            ->default('en_US'),
-
                        Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_LOCALE->value)
                             ->label('Locale')
                             ->options(CompanySettingsEnum::getLocales())
