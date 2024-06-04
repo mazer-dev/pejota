@@ -7,6 +7,24 @@ that allow a quick high quality monolith to be created.
 
 **ATENTION: this is a WIP project** - _not ready for production_
 
-## ROADMAP
+![image](https://github.com/mazer-dev/pejota/assets/652935/68254653-8ba2-4e6a-9201-551e9925996c)
 
-- Write de roadmap
+## Features
+
+### Clients
+
+Simple clients register to associate with Projects and Tasks.
+
+### Projects
+
+Simple projects register, with description, tags and active status.
+
+Each project can be associated with one or none client.
+
+### Tasks
+
+Tasks module with tasks control, by client and/or project, with data for planned and actual dates, also with dedicated due date information.
+
+Data that can be associated: tags, description, estimated effort (min or hours)
+
+Table data grouped by clients, due date, projects.
