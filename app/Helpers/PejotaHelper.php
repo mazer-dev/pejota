@@ -2,6 +2,8 @@
 
 namespace App\Helpers;
 
+use App\Enums\CompanySettingsEnum;
+
 class PejotaHelper
 {
     /**
@@ -20,5 +22,10 @@ class PejotaHelper
             str_pad(intdiv($duration, 60), 2, '0', STR_PAD_LEFT)
             .':'.
             str_pad($duration % 60, 2, '0', STR_PAD_LEFT);
+    }
+
+    public static function getUserTimeZone()
+    {
+        return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value);
     }
 }
