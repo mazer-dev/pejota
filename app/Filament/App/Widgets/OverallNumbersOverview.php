@@ -8,7 +8,7 @@ use App\Models\Task;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\Project;
-class ProjectsNumberOverview extends BaseWidget
+class OverallNumbersOverview extends BaseWidget
 {
     protected function getStats(): array
     {
