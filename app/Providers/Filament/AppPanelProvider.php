@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\App\Widgets\OverallNumbersOverview;
 use App\Filament\App\Widgets\ProjectsNumberOverview;
 use App\Http\Middleware\LocalizationMiddleware;
 use App\Http\Middleware\TenantMiddleware;
@@ -66,7 +67,7 @@ class AppPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                ProjectsNumberOverview::class,
+                OverallNumbersOverview::class,
             ])
             ->middleware([
                 EncryptCookies::class,
