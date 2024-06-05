@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources;
 use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\StatusResource\Pages;
 use App\Filament\App\Resources\StatusResource\RelationManagers;
+use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -70,10 +71,12 @@ class StatusResource extends Resource
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

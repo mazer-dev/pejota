@@ -51,11 +51,13 @@ class WorkSessionResource extends Resource
 
                         Forms\Components\Grid::make(2)->schema([
                             Forms\Components\DateTimePicker::make('start')
+                                ->timezone(PejotaHelper::getUserTimeZone())
                                 ->required()
                                 ->default(fn(): string => now()->toDateTimeString())
                                 ->live(),
 
                             Forms\Components\DateTimePicker::make('end')
+                                ->timezone(PejotaHelper::getUserTimeZone())
                                 ->required()
                                 ->live()
                                 ->afterStateUpdated(
@@ -119,9 +121,11 @@ class WorkSessionResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('start')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('value')
                     ->numeric()
@@ -145,10 +149,12 @@ class WorkSessionResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources;
 use App\Enums\PriorityEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\TaskResource\RelationManagers;
+use App\Helpers\PejotaHelper;
 use App\Livewire\Projects\ListTasks;
 use App\Models\Project;
 use App\Models\Status;
@@ -171,10 +172,12 @@ class TaskResource extends Resource
                 Tables\Columns\SpatieTagsColumn::make('tags'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -282,7 +285,8 @@ class TaskResource extends Resource
                                         Grid::make(4)->schema([
                                             TextEntry::make('created_at')
                                                 ->label('')
-                                                ->dateTime(),
+                                                ->dateTime()
+                                                ->timezone(PejotaHelper::getUserTimeZone()),
                                             TextEntry::make('description')
                                                 ->label(''),
                                             TextEntry::make('causer.name')
@@ -320,9 +324,11 @@ class TaskResource extends Resource
                             ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit),
 
                         TextEntry::make('created_at')
-                            ->dateTime(),
+                            ->dateTime()
+                            ->timezone(PejotaHelper::getUserTimeZone()),
                         TextEntry::make('updated_at')
-                            ->dateTime(),
+                            ->dateTime()
+                            ->timezone(PejotaHelper::getUserTimeZone()),
                         Actions::make([
                             Action::make('edit')
                                 ->url(

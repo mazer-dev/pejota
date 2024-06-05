@@ -3,6 +3,7 @@
 namespace App\Filament\App\Resources;
 
 use App\Filament\App\Resources\ProjectResource\Pages;
+use App\Helpers\PejotaHelper;
 use App\Livewire\Projects\ListTasks;
 use App\Models\Project;
 use Filament\Forms;
@@ -55,10 +56,12 @@ class ProjectResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -107,9 +110,11 @@ class ProjectResource extends Resource
                             ->formatStateUsing(fn(string $state): string => $state ? 'Yes' : 'No'),
 
                         TextEntry::make('created_at')
-                            ->dateTime(),
+                            ->dateTime()
+                            ->timezone(PejotaHelper::getUserTimeZone()),
                         TextEntry::make('updated_at')
-                            ->dateTime(),
+                            ->dateTime()
+                            ->timezone(PejotaHelper::getUserTimeZone()),
                         Actions::make([
                             Action::make('edit')
                                 ->url(

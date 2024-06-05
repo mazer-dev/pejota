@@ -2,8 +2,10 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\CompanySettingsEnum;
 use App\Filament\App\Resources\ClientResource\Pages;
 use App\Filament\App\Resources\ClientResource\RelationManagers;
+use App\Helpers\PejotaHelper;
 use App\Models\Client;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
@@ -65,10 +67,12 @@ class ClientResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
+                    ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -128,9 +132,11 @@ class ClientResource extends Resource
 
                     Section::make([
                         TextEntry::make('created_at')
-                            ->dateTime(),
+                            ->dateTime()
+                            ->timezone(PejotaHelper::getUserTimeZone()),
                         TextEntry::make('updated_at')
-                            ->dateTime(),
+                            ->dateTime()
+                            ->timezone(PejotaHelper::getUserTimeZone()),
                         Actions::make([
                             Action::make('edit')
                                 ->url(
