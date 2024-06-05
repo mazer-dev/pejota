@@ -115,6 +115,7 @@ class WorkSessionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('start', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('start')
                     ->dateTime()
@@ -132,8 +133,7 @@ class WorkSessionResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('value')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('currency'),
                 Tables\Columns\TextColumn::make('task.title')
                     ->sortable(),
