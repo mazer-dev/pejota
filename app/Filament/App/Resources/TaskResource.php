@@ -10,6 +10,7 @@ use App\Livewire\Projects\ListTasks;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
+use Faker\Provider\Text;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -271,36 +272,63 @@ class TaskResource extends Resource
 
                         Tabs::make('Tabs')->schema([
                             Tabs\Tab::make('Comments')
-                                ->badge(fn (Model $record): int => $record->filamentComments->count())
+                                ->badge(fn(Model $record): int => $record->filamentComments->count())
                                 ->schema([
-                                CommentsEntry::make('fialament_comments')
-                                    ->columnSpanFull(),
-                            ]),
+                                    CommentsEntry::make('filament_comments')
+                                        ->columnSpanFull(),
+                                ]),
+
+                            Tabs\Tab::make('Sessions')
+                                ->badge(fn(Model $record): int => $record->workSessions->count())
+                                ->schema([
+                                    RepeatableEntry::make('workSessions')
+                                        ->label('')
+                                        ->columnSpanFull()
+                                        ->schema([
+                                            Grid::make(6)->schema([
+                                                TextEntry::make('start')
+                                                    ->label('')
+                                                    ->dateTime()
+                                                    ->timezone(PejotaHelper::getUserTimeZone()),
+                                                TextEntry::make('duration')
+                                                    ->label('')
+                                                    ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state)),
+                                                TextEntry::make('title')
+                                                    ->label('')
+                                                    ->columnSpan(fn(Model $record): int => $record->description ? 2 : 4),
+                                                TextEntry::make('description')
+                                                    ->label('')
+                                                    ->html()
+                                                    ->columnSpan(2)
+                                                    ->visible(fn ($state) => $state ? true : false),
+                                            ])
+                                        ]),
+                                ]),
 
                             Tabs\Tab::make('Status History')
                                 ->badge(fn(Model $record): int => $record->activities->count())
                                 ->schema([
-                                RepeatableEntry::make('activities')
-                                    ->label('')
-                                    ->columnSpanFull()
-                                    ->schema([
-                                        Grid::make(4)->schema([
-                                            TextEntry::make('created_at')
-                                                ->label('')
-                                                ->dateTime()
-                                                ->timezone(PejotaHelper::getUserTimeZone()),
-                                            TextEntry::make('description')
-                                                ->label(''),
-                                            TextEntry::make('causer.name')
-                                                ->label(''),
-                                            TextEntry::make('properties.attributes')
-                                                ->label('')
-                                                ->getStateUsing(
-                                                    fn(Model $record): array => [$record->properties->get('attributes')['status.name']]
-                                                )
+                                    RepeatableEntry::make('activities')
+                                        ->label('')
+                                        ->columnSpanFull()
+                                        ->schema([
+                                            Grid::make(4)->schema([
+                                                TextEntry::make('created_at')
+                                                    ->label('')
+                                                    ->dateTime()
+                                                    ->timezone(PejotaHelper::getUserTimeZone()),
+                                                TextEntry::make('description')
+                                                    ->label(''),
+                                                TextEntry::make('causer.name')
+                                                    ->label(''),
+                                                TextEntry::make('properties.attributes')
+                                                    ->label('')
+                                                    ->getStateUsing(
+                                                        fn(Model $record): array => [$record->properties->get('attributes')['status.name']]
+                                                    )
+                                            ])
                                         ])
-                                    ])
-                            ]),
+                                ]),
                         ]),
                     ]),
 
