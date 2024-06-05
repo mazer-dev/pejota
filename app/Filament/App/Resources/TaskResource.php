@@ -300,21 +300,33 @@ class TaskResource extends Resource
                                                     ->label('')
                                                     ->html()
                                                     ->columnSpan(2)
-                                                    ->visible(fn ($state) => $state ? true : false),
+                                                    ->visible(fn($state) => $state ? true : false),
                                             ])
                                         ]),
                                 ]),
 
-                            Tabs\Tab::make('Status History')
+                            Tabs\Tab::make('History')
                                 ->badge(fn(Model $record): int => $record->activities->count())
                                 ->schema([
+                                    Grid::make(2)->schema([
+                                        TextEntry::make('created_at')
+                                            ->inlineLabel()
+                                            ->dateTime()
+                                            ->timezone(PejotaHelper::getUserTimeZone()),
+                                        TextEntry::make('updated_at')
+                                            ->inlineLabel()
+                                            ->dateTime()
+                                            ->timezone(PejotaHelper::getUserTimeZone()),
+
+                                    ]),
+
                                     RepeatableEntry::make('activities')
-                                        ->label('')
                                         ->columnSpanFull()
                                         ->schema([
                                             Grid::make(4)->schema([
                                                 TextEntry::make('created_at')
                                                     ->label('')
+                                                    ->icon('heroicon-o-chevron-double-right')
                                                     ->dateTime()
                                                     ->timezone(PejotaHelper::getUserTimeZone()),
                                                 TextEntry::make('description')
@@ -332,6 +344,9 @@ class TaskResource extends Resource
                         ]),
                     ]),
 
+                    /***************************
+                     * Sidebar infolist with priority and status
+                     ******************************/
                     Section::make([
                         Grid::make(2)->schema([
                             IconEntry::make('priority')
@@ -354,12 +369,6 @@ class TaskResource extends Resource
                             ->icon('heroicon-o-calculator')
                             ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit),
 
-                        TextEntry::make('created_at')
-                            ->dateTime()
-                            ->timezone(PejotaHelper::getUserTimeZone()),
-                        TextEntry::make('updated_at')
-                            ->dateTime()
-                            ->timezone(PejotaHelper::getUserTimeZone()),
                         Actions::make([
                             Action::make('edit')
                                 ->url(
