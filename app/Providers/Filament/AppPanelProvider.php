@@ -3,7 +3,6 @@
 namespace App\Providers\Filament;
 
 use App\Filament\App\Widgets\OverallNumbersOverview;
-use App\Filament\App\Widgets\ProjectsNumberOverview;
 use App\Http\Middleware\LocalizationMiddleware;
 use App\Http\Middleware\TenantMiddleware;
 use Filament\Http\Middleware\Authenticate;
