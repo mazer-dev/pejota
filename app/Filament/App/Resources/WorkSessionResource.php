@@ -32,7 +32,10 @@ class WorkSessionResource extends Resource
                     Forms\Components\Section::make()->schema([
 
                         Forms\Components\RichEditor::make('description')
-                            ->label(''),
+                            ->label('')
+                            ->fileAttachmentsDisk('work_sessions')
+                            ->fileAttachmentsDirectory(auth()->user()->company->id)
+                            ->fileAttachmentsVisibility('private'),
 
                         Forms\Components\Grid::make(2)->schema([
                             Forms\Components\Select::make('client')

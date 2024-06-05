@@ -39,7 +39,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
@@ -47,7 +47,7 @@ return [
         'tasks' => [
             'driver' => 'local',
             'root' => storage_path('app/tasks'),
-            'url' => env('APP_URL').'/attachments/tasks',
+            'url' => env('APP_URL') . '/attachments/tasks',
             'visibility' => 'private',
             'throw' => true,
         ],
@@ -55,7 +55,15 @@ return [
         'projects' => [
             'driver' => 'local',
             'root' => storage_path('app/projects'),
-            'url' => env('APP_URL').'/attachments/projects',
+            'url' => env('APP_URL') . '/attachments/projects',
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
+        'work_sessions' => [
+            'driver' => 'local',
+            'root' => storage_path('app/work_sessions'),
+            'url' => env('APP_URL') . '/attachments/work_sessions',
             'visibility' => 'private',
             'throw' => true,
         ],
