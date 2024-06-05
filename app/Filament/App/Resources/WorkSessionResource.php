@@ -116,9 +116,6 @@ class WorkSessionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('duration')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('start')
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
@@ -126,26 +123,23 @@ class WorkSessionResource extends Resource
                 Tables\Columns\TextColumn::make('end')
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+                Tables\Columns\TextColumn::make('duration')
+                    ->label('Time')
+                    ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state)),
+                Tables\Columns\TextColumn::make('title')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('value')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('currency')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('currency'),
+                Tables\Columns\TextColumn::make('task.title')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('company_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('project.name')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('client_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('project_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('task_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('client.name')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
