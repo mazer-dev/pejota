@@ -165,7 +165,10 @@ class ProjectResource extends Resource
             Forms\Components\TextInput::make('name')
                 ->required(),
             Forms\Components\RichEditor::make('description')
-                ->columnSpanFull(),
+                ->columnSpanFull()
+                ->fileAttachmentsDisk('projects')
+                ->fileAttachmentsDirectory(auth()->user()->company->id)
+                ->fileAttachmentsVisibility('private'),
             Forms\Components\SpatieTagsInput::make('tags'),
             Forms\Components\Toggle::make('active')
                 ->required()

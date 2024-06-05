@@ -52,6 +52,14 @@ return [
             'throw' => true,
         ],
 
+        'projects' => [
+            'driver' => 'local',
+            'root' => storage_path('app/projects'),
+            'url' => env('APP_URL').'/attachments/projects',
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
