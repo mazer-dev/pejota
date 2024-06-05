@@ -24,6 +24,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\SpatieTagsEntry;
 use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\Tabs;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -267,17 +268,13 @@ class TaskResource extends Resource
                             ]),
                         ]),
 
-                        Section::make('Comments')
-                            ->collapsible()
-                            ->schema([
+                        Tabs::make('Tabs')->schema([
+                            Tabs\Tab::make('Comments')->schema([
                                 CommentsEntry::make('fialament_comments')
                                     ->columnSpanFull(),
                             ]),
 
-                        Section::make('History')
-                            ->collapsible()
-                            ->persistCollapsed()
-                            ->schema([
+                            Tabs\Tab::make('History')->schema([
                                 RepeatableEntry::make('activities')
                                     ->label('')
                                     ->columnSpanFull()
@@ -298,7 +295,8 @@ class TaskResource extends Resource
                                                 )
                                         ])
                                     ])
-                            ])
+                            ]),
+                        ]),
                     ]),
 
                     Section::make([
