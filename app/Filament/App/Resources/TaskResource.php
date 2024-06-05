@@ -30,6 +30,7 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\IconPosition;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -269,12 +270,16 @@ class TaskResource extends Resource
                         ]),
 
                         Tabs::make('Tabs')->schema([
-                            Tabs\Tab::make('Comments')->schema([
+                            Tabs\Tab::make('Comments')
+                                ->badge(fn (Model $record): int => $record->filamentComments->count())
+                                ->schema([
                                 CommentsEntry::make('fialament_comments')
                                     ->columnSpanFull(),
                             ]),
 
-                            Tabs\Tab::make('History')->schema([
+                            Tabs\Tab::make('Status History')
+                                ->badge(fn(Model $record): int => $record->activities->count())
+                                ->schema([
                                 RepeatableEntry::make('activities')
                                     ->label('')
                                     ->columnSpanFull()
