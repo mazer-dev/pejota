@@ -236,7 +236,8 @@ class TaskResource extends Resource
                                 ->label(''),
 
                             SpatieTagsEntry::make('tags')
-                                ->label(''),
+                                ->label('')
+                                ->icon('heroicon-o-tag'),
 
                             Grid::make(2)->schema([
                                 TextEntry::make('project.name')
@@ -364,10 +365,15 @@ class TaskResource extends Resource
                             ->icon('heroicon-o-exclamation-triangle'),
 
                         TextEntry::make('effort')
-                            ->label('Effort')
+                            ->label('Estimated')
                             ->inlineLabel()
-                            ->icon('heroicon-o-calculator')
+                            ->icon('heroicon-o-variable')
                             ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit),
+
+                        TextEntry::make('workSessions')
+                            ->inlineLabel()
+                            ->icon('heroicon-o-clock')
+                            ->formatStateUsing(fn(Model $record): string => PejotaHelper::formatDuration($record->workSessions->sum('duration'))),
 
                         Actions::make([
                             Action::make('edit')
