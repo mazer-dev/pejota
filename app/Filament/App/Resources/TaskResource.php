@@ -335,20 +335,28 @@ class TaskResource extends Resource
                                     RepeatableEntry::make('workSessions')
                                         ->label('')
                                         ->columnSpanFull()
+                                        ->getStateUsing(function (Model $record) {
+                                            $items = $record->workSessions;
+                                            foreach ($items as $key => $value) {
+                                                $value->sort = $key;
+                                            }
+                                            return $items;
+                                        })
                                         ->schema([
                                             Grid::make(6)->schema([
                                                 TextEntry::make('start')
-                                                    ->label('')
+                                                    ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->dateTime()
                                                     ->timezone(PejotaHelper::getUserTimeZone()),
                                                 TextEntry::make('duration')
-                                                    ->label('')
+                                                    ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->icon('heroicon-o-clock')
                                                     ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state)),
                                                 TextEntry::make('title')
-                                                    ->label('')
+                                                    ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->columnSpan(fn(Model $record): int => $record->description ? 2 : 4),
                                                 TextEntry::make('description')
-                                                    ->label('')
+                                                    ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->html()
                                                     ->columnSpan(2)
                                                     ->visible(fn($state) => $state ? true : false),
