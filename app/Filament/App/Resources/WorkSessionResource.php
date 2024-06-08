@@ -25,91 +25,9 @@ class WorkSessionResource extends Resource
     {
         return $form
             ->columns(1)
-            ->schema([
-                Forms\Components\TextInput::make('title'),
-
-                Forms\Components\Split::make([
-                    Forms\Components\Section::make()->schema([
-
-                        Forms\Components\RichEditor::make('description')
-                            ->label('')
-                            ->fileAttachmentsDisk('work_sessions')
-                            ->fileAttachmentsDirectory(auth()->user()->company->id)
-                            ->fileAttachmentsVisibility('private'),
-
-                        Forms\Components\Grid::make(2)->schema([
-                            Forms\Components\Select::make('client')
-                                ->relationship('client', 'name')
-                                ->preload(),
-                            Forms\Components\Select::make('project')
-                                ->relationship('project', 'name')
-                                ->preload(),
-                        ]),
-                    ]),
-
-                    Forms\Components\Section::make('')->schema([
-
-                        Forms\Components\Grid::make(2)->schema([
-                            Forms\Components\DateTimePicker::make('start')
-                                ->timezone(PejotaHelper::getUserTimeZone())
-                                ->required()
-                                ->default(fn(): string => now()->toDateTimeString())
-                                ->live(),
-
-                            Forms\Components\DateTimePicker::make('end')
-                                ->timezone(PejotaHelper::getUserTimeZone())
-                                ->required()
-                                ->live()
-                                ->afterStateUpdated(
-                                    fn(
-                                        Forms\Get $get,
-                                        Forms\Set $set): mixed => self::setTimers(
-                                        fromDuration: false,
-                                        get: $get,
-                                        set: $set
-                                    )
-                                ),
-                        ]),
-
-                        Forms\Components\Grid::make(3)->schema([
-                            Forms\Components\TextInput::make('duration')
-                                ->required()
-                                ->numeric()
-                                ->integer()
-                                ->default(0)
-                                ->helperText('Duration in minutes. If you enter manually end time, it will be calculated.')
-                                ->live()
-                                ->afterStateUpdated(
-                                    fn(
-                                        Forms\Get $get,
-                                        Forms\Set $set): mixed => self::setTimers(
-                                        fromDuration: true,
-                                        get: $get,
-                                        set: $set
-                                    )
-                                ),
-
-
-                            Forms\Components\TextInput::make('rate')
-                                ->required()
-                                ->numeric()
-                                ->default(0),
-
-                            Forms\Components\TextInput::make('time')
-                                ->label('Session time')
-                                ->disabled(),
-                        ]),
-
-                        Forms\Components\Select::make('task')
-                            ->relationship('task', 'title')
-                            ->searchable(),
-
-                    ]),
-
-                ]),
-
-
-            ]);
+            ->schema(
+                self::getFormSchema()
+            );
     }
 
     public static function table(Table $table): Table
@@ -207,5 +125,92 @@ class WorkSessionResource extends Resource
         $set('duration', $duration);
 
         $set('time', PejotaHelper::formatDuration((int)$get('duration')));
+    }
+
+    public static function getFormSchema(): array
+    {
+        return [
+            Forms\Components\TextInput::make('title'),
+
+            Forms\Components\Split::make([
+                Forms\Components\Section::make()->schema([
+
+                    Forms\Components\RichEditor::make('description')
+                        ->label('')
+                        ->fileAttachmentsDisk('work_sessions')
+                        ->fileAttachmentsDirectory(auth()->user()->company->id)
+                        ->fileAttachmentsVisibility('private'),
+
+                    Forms\Components\Grid::make(2)->schema([
+                        Forms\Components\Select::make('client')
+                            ->relationship('client', 'name')
+                            ->preload(),
+                        Forms\Components\Select::make('project')
+                            ->relationship('project', 'name')
+                            ->preload(),
+                    ]),
+                ]),
+
+                Forms\Components\Section::make('')->schema([
+
+                    Forms\Components\Grid::make(2)->schema([
+                        Forms\Components\DateTimePicker::make('start')
+                            ->timezone(PejotaHelper::getUserTimeZone())
+                            ->required()
+                            ->default(fn(): string => now()->toDateTimeString())
+                            ->live(),
+
+                        Forms\Components\DateTimePicker::make('end')
+                            ->timezone(PejotaHelper::getUserTimeZone())
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(
+                                fn(
+                                    Forms\Get $get,
+                                    Forms\Set $set): mixed => self::setTimers(
+                                    fromDuration: false,
+                                    get: $get,
+                                    set: $set
+                                )
+                            ),
+                    ]),
+
+                    Forms\Components\Grid::make(3)->schema([
+                        Forms\Components\TextInput::make('duration')
+                            ->required()
+                            ->numeric()
+                            ->integer()
+                            ->default(0)
+                            ->helperText('Duration in minutes. If you enter manually end time, it will be calculated.')
+                            ->live()
+                            ->afterStateUpdated(
+                                fn(
+                                    Forms\Get $get,
+                                    Forms\Set $set): mixed => self::setTimers(
+                                    fromDuration: true,
+                                    get: $get,
+                                    set: $set
+                                )
+                            ),
+
+
+                        Forms\Components\TextInput::make('rate')
+                            ->required()
+                            ->numeric()
+                            ->default(0),
+
+                        Forms\Components\TextInput::make('time')
+                            ->label('Session time')
+                            ->disabled(),
+                    ]),
+
+                    Forms\Components\Select::make('task')
+                        ->relationship('task', 'title')
+                        ->searchable(),
+
+                ]),
+
+            ])
+        ];
     }
 }
