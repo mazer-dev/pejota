@@ -227,14 +227,15 @@ class TaskResource extends Resource
     {
         return $infolist
             ->schema([
+                TextEntry::make('title')
+                    ->size(TextEntry\TextEntrySize::Large)
+                    ->weight(FontWeight::Bold)
+                    ->label('')
+                    ->icon('heroicon-o-document-text'),
+
                 Split::make([
                     Grid::make(1)->schema([
                         Section::make([
-                            TextEntry::make('title')
-                                ->size(TextEntry\TextEntrySize::Large)
-                                ->weight(FontWeight::Bold)
-                                ->label(''),
-
                             SpatieTagsEntry::make('tags')
                                 ->label('')
                                 ->icon('heroicon-o-tag'),
@@ -270,6 +271,35 @@ class TaskResource extends Resource
                                     ->icon('heroicon-o-calendar'),
                             ]),
                         ]),
+
+                        Section::make('Sub tasks')
+                            ->collapsible()
+                            ->schema([
+                                RepeatableEntry::make('children')
+                                    ->label('')
+                                    ->contained(false)
+                                    ->schema([
+                                        Grid::make(9)->schema([
+                                            IconEntry::make('priority')->label('')
+                                                ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
+                                                ->color(fn($state) => PriorityEnum::from($state)->getColor())
+                                                ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel()),
+
+                                            TextEntry::make('status.name')->label('')
+                                                ->badge()
+                                                ->color(fn(Model $record): array => Color::hex($record->status->color)),
+                                            TextEntry::make('title')
+                                                ->label('')
+                                                ->columnSpan(5),
+                                            TextEntry::make('planned_start')->label('')
+                                                ->date()
+                                                ->icon('heroicon-o-calendar'),
+                                            TextEntry::make('due_date')->label('')
+                                                ->date()
+                                                ->icon('heroicon-o-calendar'),
+                                        ])
+                                    ])
+                            ]),
 
                         Tabs::make('Tabs')->schema([
                             Tabs\Tab::make('Comments')
@@ -323,6 +353,7 @@ class TaskResource extends Resource
 
                                     RepeatableEntry::make('activities')
                                         ->columnSpanFull()
+                                        ->contained(false)
                                         ->schema([
                                             Grid::make(4)->schema([
                                                 TextEntry::make('created_at')
