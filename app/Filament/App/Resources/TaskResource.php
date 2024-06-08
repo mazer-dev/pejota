@@ -11,7 +11,9 @@ use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
 use Faker\Provider\Text;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
@@ -32,6 +34,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\IconPosition;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -276,27 +279,44 @@ class TaskResource extends Resource
                             ->collapsible()
                             ->schema([
                                 RepeatableEntry::make('children')
-                                    ->label('')
+                                    ->hiddenLabel()
                                     ->contained(false)
+                                    ->getStateUsing(function (Model $record) {
+                                        $items = $record->children;
+                                        foreach ($items as $key => $value) {
+                                            $value->sort = $key;
+                                        }
+                                        return $items;
+                                    })
                                     ->schema([
-                                        Grid::make(9)->schema([
-                                            IconEntry::make('priority')->label('')
+                                        Grid::make(12)->schema([
+                                            IconEntry::make('priority')
+                                                ->hiddenLabel(fn($record) => $record->sort != 0)
                                                 ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
                                                 ->color(fn($state) => PriorityEnum::from($state)->getColor())
                                                 ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel()),
 
-                                            TextEntry::make('status.name')->label('')
+                                            TextEntry::make('status.name')
+                                                ->hiddenLabel(fn($record) => $record->sort != 0)
                                                 ->badge()
                                                 ->color(fn(Model $record): array => Color::hex($record->status->color)),
                                             TextEntry::make('title')
-                                                ->label('')
-                                                ->columnSpan(5),
-                                            TextEntry::make('planned_start')->label('')
+                                                ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                ->columnSpan(8)
+                                                ->action(
+                                                    Action::make('view')
+                                                        ->infolist(fn(Model $record) => self::infolist(
+                                                            (new Infolist())->record($record)
+                                                        ))
+                                                        ->modalWidth(MaxWidth::FitContent)
+                                                        ->modalCancelAction(false)
+                                                        ->modalSubmitActionLabel('Close')
+                                                ),
+                                            TextEntry::make('due_date')
+                                                ->hiddenLabel(fn($record) => $record->sort != 0)
                                                 ->date()
-                                                ->icon('heroicon-o-calendar'),
-                                            TextEntry::make('due_date')->label('')
-                                                ->date()
-                                                ->icon('heroicon-o-calendar'),
+                                                ->icon('heroicon-o-calendar')
+                                                ->columnSpan(2),
                                         ])
                                     ])
                             ]),
@@ -413,7 +433,7 @@ class TaskResource extends Resource
                                 )
                                 ->icon('heroicon-o-pencil'),
 
-                            Action::make('back')
+                            Action::make('list')
                                 ->url(
                                     fn(Model $record) => "./."
                                 )
