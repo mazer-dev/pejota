@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources;
 use App\Enums\PriorityEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\TaskResource\RelationManagers;
+use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Helpers\PejotaHelper;
 use App\Livewire\Projects\ListTasks;
 use App\Models\Project;
@@ -447,6 +448,14 @@ class TaskResource extends Resource
                                 )
                                 ->icon('heroicon-o-chevron-left')
                                 ->color(Color::Neutral),
+
+                            Action::make('session')
+                                ->icon('heroicon-o-plus')
+                                ->color(Color::Amber)
+                                ->modal(true)
+                                ->url(fn($record) => CreateWorkSession::getUrl([
+                                    'task' => $record->id,
+                                ]))
                         ])
                     ])->grow(false),
 
