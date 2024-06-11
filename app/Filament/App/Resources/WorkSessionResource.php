@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Collection;
 use NunoMaduro\Collision\Adapters\Phpunit\State;
 
 class WorkSessionResource extends Resource
@@ -88,6 +89,13 @@ class WorkSessionResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('Clone selected')
+                        ->tooltip('Clone this sessions with same time and details, updating to current date')
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color(Color::Orange)
+                        ->action(fn(Collection $records) => self::cloneCollection($records))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ]);
     }
@@ -220,6 +228,11 @@ class WorkSessionResource extends Resource
 
             ])
         ];
+    }
+
+    public static function cloneCollection(Collection $records)
+    {
+        $records->each(fn ($record) => self::clone($record));
     }
 
     public static function clone(WorkSession $record)
