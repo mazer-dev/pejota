@@ -11,6 +11,7 @@ use Carbon\CarbonImmutable;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 use NunoMaduro\Collision\Adapters\Phpunit\State;
@@ -76,6 +77,13 @@ class WorkSessionResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('Clone')
+                        ->tooltip('Clone this session with same time and details, updating to current date')
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color(Color::Orange)
+                        ->action(fn(WorkSession $record) => self::clone($record))
+                ])
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -212,5 +220,27 @@ class WorkSessionResource extends Resource
 
             ])
         ];
+    }
+
+    public static function clone(WorkSession $record)
+    {
+        $newModel = $record->replicate();
+        $newModel->start = Carbon::now()
+            ->timezone(PejotaHelper::getUserTimeZone())
+            ->setTime(
+                $record->start->hour,
+                $record->start->minute,
+                $record->start->second
+            );
+        $newModel->end = Carbon::now()
+            ->timezone(PejotaHelper::getUserTimeZone())
+            ->setTime(
+                $record->end->hour,
+                $record->end->minute,
+                $record->end->second
+            );
+        $newModel->save();
+
+        return redirect(Pages\ViewWorkSession::getUrl([$newModel->id]));
     }
 }
