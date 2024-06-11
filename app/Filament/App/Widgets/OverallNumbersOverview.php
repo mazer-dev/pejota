@@ -7,10 +7,10 @@ use App\Filament\App\Resources\ClientResource;
 use App\Filament\App\Resources\ProjectResource;
 use App\Filament\App\Resources\TaskResource;
 use App\Models\Client;
+use App\Models\Project;
 use App\Models\Task;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Models\Project;
 
 class OverallNumbersOverview extends BaseWidget
 {
@@ -27,7 +27,7 @@ class OverallNumbersOverview extends BaseWidget
                 Task::whereHas('status', function ($query) {
                     return $query->whereIn('phase', [
                         StatusPhaseEnum::TODO,
-                        StatusPhaseEnum::IN_PROGRESS
+                        StatusPhaseEnum::IN_PROGRESS,
                     ]);
                 })->count()
             )

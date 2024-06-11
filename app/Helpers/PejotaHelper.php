@@ -8,19 +8,16 @@ class PejotaHelper
 {
     /**
      * Format the minutes duration as HH:mm
-     *
-     * @param int $duration
-     * @return string
      */
     public static function formatDuration(?int $duration, bool $formatWithDots = false): string
     {
-        if (!$duration) {
+        if (! $duration) {
             return $formatWithDots ? '00:00' : '00h00';
         }
 
         return
             str_pad(intdiv($duration, 60), 2, '0', STR_PAD_LEFT)
-            . ( $formatWithDots ? ':' : 'h') .
+            .($formatWithDots ? ':' : 'h').
             str_pad($duration % 60, 2, '0', STR_PAD_LEFT);
     }
 

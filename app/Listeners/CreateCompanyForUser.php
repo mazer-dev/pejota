@@ -4,8 +4,6 @@ namespace App\Listeners;
 
 use App\Events\UserCreated;
 use App\Services\CompanyService;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
 class CreateCompanyForUser
 {

@@ -13,7 +13,7 @@ class UpdateCompaniesTableAddSettings extends Migration
      */
     public function up()
     {
-        if (!Schema::hasColumn('companies', 'settings')) {
+        if (! Schema::hasColumn('companies', 'settings')) {
             Schema::table('companies', function (Blueprint $table) {
                 $table->json('settings')->nullable();
             });

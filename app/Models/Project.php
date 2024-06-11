@@ -10,8 +10,8 @@ use Spatie\Tags\HasTags;
 
 class Project extends Model
 {
-    use HasFactory,
-        BelongsToTenants,
+    use BelongsToTenants,
+        HasFactory,
         HasTags;
 
     protected $guarded = ['id'];

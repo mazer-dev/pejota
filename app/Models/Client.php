@@ -9,10 +9,9 @@ use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 
 class Client extends Model
 {
-    use HasFactory,
-        BelongsToTenants,
+    use BelongsToTenants,
+        HasFactory,
         HasFilamentComments;
 
     protected $guarded = ['id'];
-
 }

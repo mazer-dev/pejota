@@ -8,8 +8,8 @@ use NunoMazer\Samehouse\BelongsToTenants;
 
 class Status extends Model
 {
-    use HasFactory,
-        BelongsToTenants;
+    use BelongsToTenants,
+        HasFactory;
 
     protected $guarded = ['id'];
 }

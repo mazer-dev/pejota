@@ -2,18 +2,14 @@
 
 namespace App\Filament\App\Resources;
 
-use App\Enums\CompanySettingsEnum;
 use App\Filament\App\Resources\ClientResource\Pages;
-use App\Filament\App\Resources\ClientResource\RelationManagers;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
-use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Livewire;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
@@ -23,12 +19,8 @@ use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
-use Parallax\FilamentComments\Models\FilamentComment;
 use Parallax\FilamentComments\Tables\Actions\CommentsAction;
 
 class ClientResource extends Resource
@@ -117,7 +109,7 @@ class ClientResource extends Resource
 
                                 TextEntry::make('phone')
                                     ->label('')
-                                    ->icon('heroicon-o-phone')
+                                    ->icon('heroicon-o-phone'),
 
                             ]),
 
@@ -129,7 +121,6 @@ class ClientResource extends Resource
                                 ]),
                         ]),
 
-
                     Section::make([
                         TextEntry::make('created_at')
                             ->dateTime()
@@ -140,17 +131,17 @@ class ClientResource extends Resource
                         Actions::make([
                             Action::make('edit')
                                 ->url(
-                                    fn(Model $record) => "{$record->id}/edit"
+                                    fn (Model $record) => "{$record->id}/edit"
                                 )
                                 ->icon('heroicon-o-pencil'),
 
                             Action::make('back')
                                 ->url(
-                                    fn(Model $record) => "./."
+                                    fn (Model $record) => './.'
                                 )
                                 ->icon('heroicon-o-chevron-left')
                                 ->color(Color::Neutral),
-                        ])
+                        ]),
                     ])->grow(false),
 
                 ])

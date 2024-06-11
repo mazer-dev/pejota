@@ -2,15 +2,11 @@
 
 namespace App\Filament\App\Widgets;
 
-use App\Enums\StatusPhaseEnum;
 use App\Helpers\PejotaHelper;
-use App\Models\Client;
-use App\Models\Task;
 use App\Models\WorkSession;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Models\Project;
 
 class WorkSessionsOverview extends BaseWidget
 {
@@ -22,7 +18,7 @@ class WorkSessionsOverview extends BaseWidget
                     WorkSession::whereBetween('start',
                         [
                             Carbon::today()->tz(PejotaHelper::getUserTimeZone())->startOfDay(),
-                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->endOfDay()
+                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->endOfDay(),
                         ])
                         ->sum('duration')
                 )
@@ -33,7 +29,7 @@ class WorkSessionsOverview extends BaseWidget
                     WorkSession::whereBetween('start',
                         [
                             Carbon::today()->tz(PejotaHelper::getUserTimeZone())->startOfWeek(),
-                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->endOfWeek()
+                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->endOfWeek(),
                         ])
                         ->sum('duration')
                 )
@@ -44,7 +40,7 @@ class WorkSessionsOverview extends BaseWidget
                     WorkSession::whereBetween('start',
                         [
                             Carbon::today()->tz(PejotaHelper::getUserTimeZone())->startOfMonth(),
-                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->endOfMonth()
+                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->endOfMonth(),
                         ])
                         ->sum('duration')
                 )

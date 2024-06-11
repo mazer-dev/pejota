@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Enums\CompanySettingsEnum;
 use Closure;
 use Illuminate\Http\Request;
-use NunoMazer\Samehouse\Facades\Landlord;
 use Symfony\Component\HttpFoundation\Response;
 
 class LocalizationMiddleware

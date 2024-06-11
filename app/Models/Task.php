@@ -16,13 +16,14 @@ use Spatie\Tags\HasTags;
 
 class Task extends Model
 {
-    use HasFactory,
-        BelongsToTenants,
+    use BelongsToTenants,
+        HasFactory,
         HasFilamentComments,
         HasTags,
         LogsActivity;
 
     public const LOG_NAME = 'task';
+
     public const LOG_EVENT_STATUS_CHANGED = 'status_changed';
 
     protected $guarded = ['id'];
@@ -35,10 +36,10 @@ class Task extends Model
             if ($model->isDirty('status_id')) {
                 self::setStartEndDates($model);
 
-//                activity(self::LOG_NAME)
-//                    ->event(self::LOG_EVENT_STATUS_CHANGED)
-//                    ->performedOn($model)
-//                    ->
+                //                activity(self::LOG_NAME)
+                //                    ->event(self::LOG_EVENT_STATUS_CHANGED)
+                //                    ->performedOn($model)
+                //                    ->
             }
         });
     }
@@ -76,7 +77,7 @@ class Task extends Model
     protected static function setStartEndDates(Model $model): void
     {
         $settings = auth()->user()->company
-                ->settings();
+            ->settings();
 
         $status = Status::find($model->status_id);
 

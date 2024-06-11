@@ -2,8 +2,6 @@
 
 namespace App\Enums;
 
-use Carbon\Carbon;
-
 enum CompanySettingsEnum: string
 {
     case CLIENT_PREFER_TRADENAME = 'clients.prefer_tradename';
@@ -22,7 +20,7 @@ enum CompanySettingsEnum: string
 
     public static function getTimezones(): array
     {
-        $regions = array(
+        $regions = [
             'Africa' => \DateTimeZone::AFRICA,
             'America' => \DateTimeZone::AMERICA,
             'Antarctica' => \DateTimeZone::ANTARCTICA,
@@ -30,28 +28,28 @@ enum CompanySettingsEnum: string
             'Atlantic' => \DateTimeZone::ATLANTIC,
             'Europe' => \DateTimeZone::EUROPE,
             'Indian' => \DateTimeZone::INDIAN,
-            'Pacific' => \DateTimeZone::PACIFIC
-        );
+            'Pacific' => \DateTimeZone::PACIFIC,
+        ];
 
-        $timezones = array();
+        $timezones = [];
         foreach ($regions as $name => $mask) {
             $zones = \DateTimeZone::listIdentifiers($mask);
             foreach ($zones as $timezone) {
                 // Lets sample the time there right now
-                $time = new \DateTime(NULL, new \DateTimeZone($timezone));
-                $utcTime = new \DateTime(NULL, new \DateTimeZone('UTC'));
+                $time = new \DateTime(null, new \DateTimeZone($timezone));
+                $utcTime = new \DateTime(null, new \DateTimeZone('UTC'));
 
                 // Us Americans can't handle millitary time
-                $ampm = $time->format('H') > 12 ? ' (' . $time->format('g:i a') . ')' : '';
+                $ampm = $time->format('H') > 12 ? ' ('.$time->format('g:i a').')' : '';
 
                 $time_offset = $time->getOffset() / 3600;
                 $utc_offset = $utcTime->getOffset() / 3600;
 
                 // Remove region name and add a sample time
                 $timezones[$name][$timezone] =
-                    substr($timezone, strlen($name) + 1) . ' - ' .
-                    $time->format('H:i') . $ampm .
-                    ' (' . $time_offset - $utc_offset . 'h) ';
+                    substr($timezone, strlen($name) + 1).' - '.
+                    $time->format('H:i').$ampm.
+                    ' ('.$time_offset - $utc_offset.'h) ';
             }
         }
 

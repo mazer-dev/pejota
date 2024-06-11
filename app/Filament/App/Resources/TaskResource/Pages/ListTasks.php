@@ -2,7 +2,6 @@
 
 namespace App\Filament\App\Resources\TaskResource\Pages;
 
-use App\Enums\PhaseEnum;
 use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\TaskResource;
 use Filament\Actions;
@@ -26,7 +25,7 @@ class ListTasks extends ListRecords
     {
         $result = parent::render();
 
-        session()->put('tasks_active_tab_' . auth()->user()->id, $this->activeTab);
+        session()->put('tasks_active_tab_'.auth()->user()->id, $this->activeTab);
 
         return $result;
     }
@@ -36,25 +35,23 @@ class ListTasks extends ListRecords
         return [
             'all' => Tab::make(),
             'opened' => Tab::make()
-                ->modifyQueryUsing(fn (Builder $query): Builder
-                    => $query->whereHas('status', function (Builder $query) {
-                        $query->whereIn('phase', [
-                            StatusPhaseEnum::TODO,
-                            StatusPhaseEnum::IN_PROGRESS,
-                        ]);
-                    })),
+                ->modifyQueryUsing(fn (Builder $query): Builder => $query->whereHas('status', function (Builder $query) {
+                    $query->whereIn('phase', [
+                        StatusPhaseEnum::TODO,
+                        StatusPhaseEnum::IN_PROGRESS,
+                    ]);
+                })),
             'closed' => Tab::make()
-                ->modifyQueryUsing(fn (Builder $query): Builder
-                    => $query->whereHas('status', function (Builder $query) {
-                        $query->whereIn('phase', [
-                            StatusPhaseEnum::CLOSED,
-                        ]);
-                    })),
+                ->modifyQueryUsing(fn (Builder $query): Builder => $query->whereHas('status', function (Builder $query) {
+                    $query->whereIn('phase', [
+                        StatusPhaseEnum::CLOSED,
+                    ]);
+                })),
         ];
     }
 
     public function getDefaultActiveTab(): string|int|null
     {
-        return session( 'tasks_active_tab_' . auth()->user()->id, 'all');
+        return session('tasks_active_tab_'.auth()->user()->id, 'all');
     }
 }

@@ -10,7 +10,6 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
-use Filament\Infolists\Components\ColorEntry;
 use Filament\Infolists\Components\Livewire;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\SpatieTagsEntry;
@@ -99,7 +98,7 @@ class ProjectResource extends Resource
                             ->icon('heroicon-o-building-office'),
 
                         TextEntry::make('description')
-                            ->formatStateUsing(fn(string $state): HtmlString => new HtmlString($state))
+                            ->formatStateUsing(fn (string $state): HtmlString => new HtmlString($state))
                             ->label('')
                             ->icon('heroicon-o-document-text'),
 
@@ -107,7 +106,7 @@ class ProjectResource extends Resource
 
                     Section::make([
                         TextEntry::make('active')
-                            ->formatStateUsing(fn(string $state): string => $state ? 'Yes' : 'No'),
+                            ->formatStateUsing(fn (string $state): string => $state ? 'Yes' : 'No'),
 
                         TextEntry::make('created_at')
                             ->dateTime()
@@ -118,17 +117,17 @@ class ProjectResource extends Resource
                         Actions::make([
                             Action::make('edit')
                                 ->url(
-                                    fn(Model $record) => "{$record->id}/edit"
+                                    fn (Model $record) => "{$record->id}/edit"
                                 )
                                 ->icon('heroicon-o-pencil'),
 
                             Action::make('back')
                                 ->url(
-                                    fn(Model $record) => "./."
+                                    fn (Model $record) => './.'
                                 )
                                 ->icon('heroicon-o-chevron-left')
                                 ->color(Color::Neutral),
-                        ])
+                        ]),
                     ])->grow(false),
 
                 ])
@@ -138,9 +137,9 @@ class ProjectResource extends Resource
                     ->schema([
                         Livewire::make(
                             ListTasks::class,
-                            fn(Model $record) => ['project' => $record]
-                        )
-                    ])
+                            fn (Model $record) => ['project' => $record]
+                        ),
+                    ]),
             ]);
     }
 

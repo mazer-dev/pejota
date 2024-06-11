@@ -21,7 +21,7 @@ class EditClient extends EditRecord
         ];
     }
 
-        public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
             ->schema([

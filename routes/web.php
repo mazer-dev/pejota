@@ -7,5 +7,4 @@ Route::get(
     [App\Http\Controllers\AttachmentsController::class, 'getAttachment']
 )
     ->name('attachments.get')
-    ->middleware(\Illuminate\Auth\Middleware\Authenticate::class)
-;
+    ->middleware(\Illuminate\Auth\Middleware\Authenticate::class);

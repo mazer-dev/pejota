@@ -54,7 +54,6 @@ return [
      */
     'authenticatable' => \App\Models\User::class,
 
-
     /*
      * The name of the table where the comments are stored.
      */

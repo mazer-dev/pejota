@@ -7,7 +7,7 @@ use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasIcon;
 use Filament\Support\Contracts\HasLabel;
 
-enum PriorityEnum: string implements HasLabel, HasColor, HasIcon
+enum PriorityEnum: string implements HasColor, HasIcon, HasLabel
 {
     case LOW = 'low';
     case MEDIUM = 'medium';
@@ -47,6 +47,7 @@ enum PriorityEnum: string implements HasLabel, HasColor, HasIcon
             self::LOW => 'heroicon-o-chevron-down',
         };
     }
+
     public function getColor(): ?array
     {
         return match ($this) {

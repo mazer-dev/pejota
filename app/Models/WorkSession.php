@@ -9,8 +9,8 @@ use NunoMazer\Samehouse\BelongsToTenants;
 
 class WorkSession extends Model
 {
-    use HasFactory,
-        BelongsToTenants;
+    use BelongsToTenants,
+        HasFactory;
 
     protected $guarded = ['id'];
 
@@ -18,6 +18,7 @@ class WorkSession extends Model
         'start' => 'datetime',
         'end' => 'datetime',
     ];
+
     protected static function boot()
     {
         parent::boot();

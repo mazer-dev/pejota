@@ -5,12 +5,13 @@ namespace App\Filament\App\Pages;
 use App\Enums\CompanySettingsEnum;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Quadrubo\FilamentModelSettings\Pages\ModelSettingsPage;
 use Quadrubo\FilamentModelSettings\Pages\Contracts\HasModelSettings;
+use Quadrubo\FilamentModelSettings\Pages\ModelSettingsPage;
 
 class CompanySettings extends ModelSettingsPage implements HasModelSettings
 {
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+
     protected static ?int $navigationSort = 99;
 
     public static function getSettingRecord()
@@ -35,12 +36,12 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
             ->schema([
                 Forms\Components\Tabs::make('Tabs')->tabs([
                     Forms\Components\Tabs\Tab::make('Language')->schema([
-                       Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_LOCALE->value)
+                        Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_LOCALE->value)
                             ->label('Locale')
                             ->options(CompanySettingsEnum::getLocales())
                             ->default('en'),
 
-                       Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value)
+                        Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value)
                             ->label('Timezone')
                             ->options(CompanySettingsEnum::getTimezones())
                             ->default('UTC')
@@ -71,7 +72,7 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                             ->options([
                                 'USD' => 'USD',
                             ]),
-                    ])
+                    ]),
                 ]),
 
             ]);

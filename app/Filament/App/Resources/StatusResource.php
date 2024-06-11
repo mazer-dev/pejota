@@ -4,7 +4,6 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\StatusResource\Pages;
-use App\Filament\App\Resources\StatusResource\RelationManagers;
 use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use Filament\Forms;
@@ -12,8 +11,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StatusResource extends Resource
 {
@@ -25,7 +22,6 @@ class StatusResource extends Resource
     {
         return __('Administration');
     }
-
 
     public static function form(Form $form): Form
     {

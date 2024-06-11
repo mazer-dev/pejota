@@ -2,19 +2,16 @@
 
 namespace App\Livewire\Projects;
 
-use App\Filament\App\Resources\ProjectResource;
 use App\Filament\App\Resources\TaskResource;
 use App\Models\Project;
 use App\Models\Task;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Livewire\Component;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Builder;
+use Livewire\Component;
 
 class ListTasks extends Component implements HasForms, HasTable
 {
