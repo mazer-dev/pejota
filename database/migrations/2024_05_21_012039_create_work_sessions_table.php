@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -23,34 +22,27 @@ return new class extends Migration
                 ->default(0)->comment('in cents');
             $table->string('currency', 3)->default('USD');
 
-            $table->unsignedInteger('user_id');
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
+            $table->foreignId('user_id')
+                ->constrained('users')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('company_id');
-            $table->foreign('company_id')
-                ->references('id')
-                ->on('companies')
+            $table->foreignId('company_id')
+                ->constrained('companies')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('client_id')->nullable();
-            $table->foreign('client_id')
-                ->references('id')
-                ->on('clients')
+            $table->foreignId('client_id')
+                ->nullable()
+                ->constrained('clients')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('project_id')->nullable();
-            $table->foreign('project_id')
-                ->references('id')
-                ->on('projects')
+            $table->foreignId('project_id')
+                ->nullable()
+                ->constrained('projects')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('task_id')->nullable();
-            $table->foreign('task_id')
-                ->references('id')
-                ->on('tasks')
+            $table->foreignId('task_id')
+                ->nullable()
+                ->constrained('tasks')
                 ->restrictOnDelete();
 
             $table->timestamps();

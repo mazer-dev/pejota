@@ -17,11 +17,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
-
-            $table->unsignedInteger('company_id');
-            $table->foreign('company_id')
-                ->references('id')
-                ->on('companies')
+            $table->foreignId('company_id')
+                ->constrained('companies')
                 ->restrictOnDelete();
 
             $table->timestamps();
