@@ -5,9 +5,8 @@ Solo entrepreneus and Freelancer ERP and CRM.
 Build on top of PHP, Laravel, FilamentPHP, Sqlite / Mysql, and other cool and technologies
 that allow a quick high quality monolith to be created.
 
-**ATENTION: this is a WIP project** - _not ready for production_
+![image](https://github.com/mazer-dev/pejota/assets/652935/bd92bd63-1c69-455e-b1ad-5d41dead8786)
 
-![image](https://github.com/mazer-dev/pejota/assets/652935/68254653-8ba2-4e6a-9201-551e9925996c)
 
 ## Features
 
