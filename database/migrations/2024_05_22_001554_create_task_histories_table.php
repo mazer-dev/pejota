@@ -14,22 +14,16 @@ return new class extends Migration
         Schema::create('task_histories', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedInteger('task_id');
-            $table->foreign('task_id')
-                ->references('id')
-                ->on('tasks')
+            $table->foreignId('task_id')
+                ->constrained('tasks')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('status_id');
-            $table->foreign('status_id')
-                ->references('id')
-                ->on('statuses')
+            $table->foreignId('status_id')
+                ->constrained('statuses')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('user_id');
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
+            $table->foreignId('user_id')
+                ->constrained('users')
                 ->restrictOnDelete();
 
             $table->text('comment')->nullable();

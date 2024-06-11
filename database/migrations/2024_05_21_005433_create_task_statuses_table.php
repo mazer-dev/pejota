@@ -20,10 +20,8 @@ return new class extends Migration {
             $table->boolean('active')->default(true);
             $table->string('phase');
 
-            $table->unsignedInteger('company_id');
-            $table->foreign('company_id')
-                ->references('id')
-                ->on('companies')
+            $table->foreignId('company_id')
+                ->constrained('companies')
                 ->restrictOnDelete();
 
             $table->timestamps();

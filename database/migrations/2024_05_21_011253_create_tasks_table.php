@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class extends Migration 
 {
     /**
      * Run the migrations.
@@ -18,16 +18,13 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('priority')->default('normal');
 
-            $table->unsignedInteger('parent_id')->nullable();
-            $table->foreign('parent_id')
-                ->references('id')
-                ->on('tasks')
+            $table->foreignId('parent_id')
+                ->nullable()
+                ->constrained('tasks')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('status_id');
-            $table->foreign('status_id')
-                ->references('id')
-                ->on('statuses')
+            $table->foreignId('status_id')
+                ->constrained('statuses')
                 ->restrictOnDelete();
 
             $table->date('planned_start')->nullable();
@@ -36,22 +33,18 @@ return new class extends Migration
             $table->date('actual_end')->nullable();
             $table->date('due_date')->nullable();
 
-            $table->unsignedInteger('company_id');
-            $table->foreign('company_id')
-                ->references('id')
-                ->on('companies')
+            $table->foreignId('company_id')
+                ->constrained('companies')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('client_id')->nullable();
-            $table->foreign('client_id')
-                ->references('id')
-                ->on('clients')
+            $table->foreignId('client_id')
+                ->nullable()
+                ->constrained('clients')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('project_id')->nullable();
-            $table->foreign('project_id')
-                ->references('id')
-                ->on('projects')
+            $table->foreignId('project_id')
+                ->nullable()
+                ->constrained('projects')
                 ->restrictOnDelete();
 
             $table->timestamps();

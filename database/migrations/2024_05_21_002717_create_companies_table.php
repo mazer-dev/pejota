@@ -18,11 +18,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('phone')->nullable();
             $table->string('website')->nullable();
-
-            $table->unsignedInteger('user_id')->unique();
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users');
+            $table->foreignId('user_id')->constrained('users');
 
             $table->timestamps();
         });

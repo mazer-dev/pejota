@@ -15,17 +15,13 @@ return new class extends Migration {
 
             $table->string('name');
             $table->text('description')->nullable();
-
-            $table->unsignedInteger('company_id');
-            $table->foreign('company_id')
-                ->references('id')
-                ->on('companies')
+            $table->foreignId('company_id')
+                ->constrained('companies')
                 ->restrictOnDelete();
 
-            $table->unsignedInteger('client_id')->nullable();
-            $table->foreign('client_id')
-                ->references('id')
-                ->on('clients')
+            $table->foreignId('client_id')
+                ->nullable()
+                ->constrained('clients')
                 ->restrictOnDelete();
 
             $table->boolean('active')->default(true);
