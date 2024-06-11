@@ -45,22 +45,27 @@ class WorkSessionResource extends Resource
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
-                    ->toggleable()
-                    ->toggledHiddenByDefault(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Time')
-                    ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state)),
+                    ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('value')
-                    ->numeric(),
-                Tables\Columns\TextColumn::make('currency'),
+                    ->numeric()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('currency')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('task.title')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('project.name')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('client.name')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
