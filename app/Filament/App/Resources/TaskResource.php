@@ -132,7 +132,8 @@ class TaskResource extends Resource
                     ->sortable()
                     ->icon(fn ($state) => PriorityEnum::from($state)->getIcon())
                     ->color(fn ($state) => PriorityEnum::from($state)->getColor())
-                    ->tooltip(fn ($state) => PriorityEnum::from($state)->getLabel()),
+                    ->tooltip(fn ($state) => PriorityEnum::from($state)->getLabel())
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Medium)
                     ->searchable(),
@@ -199,8 +200,7 @@ class TaskResource extends Resource
                                 fn (Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to'])
                             );
                     }),
-            ], layout: Tables\Enums\FiltersLayout::Modal)
-            ->persistFiltersInSession()
+            ], layout: Tables\Enums\FiltersLayout::Dropdown)
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->iconButton(),
@@ -212,7 +212,8 @@ class TaskResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->persistFiltersInSession();
     }
 
     public static function infolist(Infolist $infolist): Infolist
