@@ -30,23 +30,6 @@ class ListTasks extends Component implements HasForms, HasTable
                 Task::query()
                     ->where('project_id', $this->project->id)
             );
-
-        return $table
-            ->query(Task::query())
-            ->columns([
-                //
-            ])
-            ->filters([
-                //
-            ])
-            ->actions([
-                //
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    //
-                ]),
-            ]);
     }
 
     public function render(): View
