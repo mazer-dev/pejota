@@ -44,7 +44,8 @@ class ProjectResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('client.name')
                     ->searchable()
@@ -67,6 +68,10 @@ class ProjectResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('client')
                     ->relationship('client', 'name'),
+                Tables\Filters\TernaryFilter::make('active'),
+            ])
+            ->groups([
+                Tables\Grouping\Group::make('client.name'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -76,7 +81,9 @@ class ProjectResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('name', 'asc')
+            ->persistFiltersInSession();
     }
 
     public static function infolist(Infolist $infolist): Infolist
