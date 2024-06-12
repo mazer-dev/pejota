@@ -28,6 +28,12 @@ Data that can be associated: tags, description, estimated effort (min or hours)
 
 Table data grouped by clients, due date, projects.
 
+### Work Sessions
+
+Control sessions of work, related to client / project / task.
+
+Each session has a start and end period, used to calculate the duration.
+
 ### Settings
 
 #### Statuses
