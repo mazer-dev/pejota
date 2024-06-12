@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class WorkSessionResource extends Resource
@@ -163,10 +164,15 @@ class WorkSessionResource extends Resource
                     Forms\Components\Grid::make(2)->schema([
                         Forms\Components\Select::make('client')
                             ->relationship('client', 'name')
-                            ->preload(),
+                            ->searchable()->preload(),
                         Forms\Components\Select::make('project')
-                            ->relationship('project', 'name')
-                            ->preload(),
+                            ->label('Project')
+                            ->relationship(
+                                'project',
+                                'name',
+                                fn (Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                            )
+                            ->searchable()->preload(),
                     ]),
                 ]),
 

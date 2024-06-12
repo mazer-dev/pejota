@@ -6,7 +6,6 @@ use App\Enums\PriorityEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Helpers\PejotaHelper;
-use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
 use Filament\Forms;
@@ -30,7 +29,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 use Parallax\FilamentComments\Tables\Actions\CommentsAction;
@@ -48,18 +46,15 @@ class TaskResource extends Resource
                 Forms\Components\Grid::make(3)->schema([
                     Forms\Components\Select::make('client')
                         ->relationship('client', 'name')
-                        ->preload()
-                        ->live(),
+                        ->preload()->searchable(),
                     Forms\Components\Select::make('project_id')
                         ->label('Project')
-                        ->options(function (Forms\Get $get): Collection {
-                            $query = Project::orderBy('name');
-                            if ($get('client') != null) {
-                                $query->where('client_id', $get('client'));
-                            }
-
-                            return $query->pluck('name', 'id');
-                        }),
+                        ->relationship(
+                            'project',
+                            'name',
+                            fn (Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                        )
+                        ->searchable()->preload(),
                     Forms\Components\Select::make('parent_task')
                         ->relationship('parent', 'title')
                         ->searchable(),
