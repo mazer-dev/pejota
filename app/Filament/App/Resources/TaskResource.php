@@ -145,7 +145,8 @@ class TaskResource extends Resource
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('effort')
-                    ->formatStateUsing(fn (Model $record): string => $record->effort.' '.$record->effort_unit),
+                    ->formatStateUsing(fn (Model $record): string => $record->effort.' '.$record->effort_unit)
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('planned_start')
                     ->date()
                     ->sortable()
@@ -160,7 +161,8 @@ class TaskResource extends Resource
                 Tables\Columns\TextColumn::make('project.name')
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\SpatieTagsColumn::make('tags'),
+                Tables\Columns\SpatieTagsColumn::make('tags')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
