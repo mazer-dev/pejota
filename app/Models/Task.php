@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CompanySettingsEnum;
 use App\Enums\StatusPhaseEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -104,5 +105,24 @@ class Task extends Model
             ->useLogName(self::LOG_NAME)
             ->dontSubmitEmptyLogs()
             ->logOnlyDirty();
+    }
+
+    public function scopeOpenned(Builder $query)
+    {
+        $query->whereHas('status', function (Builder $query) {
+            $query->whereIn('phase', [
+                StatusPhaseEnum::TODO,
+                StatusPhaseEnum::IN_PROGRESS,
+            ]);
+        });
+    }
+
+    public function scopeClosed(Builder $query)
+    {
+        $query->whereHas('status', function (Builder $query) {
+            $query->whereIn('phase', [
+                StatusPhaseEnum::CLOSED,
+            ]);
+        });
     }
 }
