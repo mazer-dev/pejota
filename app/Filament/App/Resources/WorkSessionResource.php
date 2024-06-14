@@ -62,7 +62,7 @@ class WorkSessionResource extends Resource
                 Tables\Columns\TextColumn::make('project.name')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('client.name')
+                Tables\Columns\TextColumn::make('client.labelName')
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
