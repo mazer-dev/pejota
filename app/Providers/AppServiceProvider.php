@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::GLOBAL_SEARCH_AFTER,
-            fn(): string => Blade::render("@livewire('start-session-action')"),
+            fn(): string => Blade::render("@livewire('top-navigate-action')"),
         );
     }
 }
