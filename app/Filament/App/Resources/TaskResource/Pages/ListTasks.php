@@ -38,8 +38,8 @@ class ListTasks extends ListRecords
         return [
             'all' => Tab::make(),
             'opened' => Tab::make()
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->openned())
-                ->badge(fn(Task $record): int => $record->openned()->count())
+                ->modifyQueryUsing(fn (Builder $query): Builder => $query->opened())
+                ->badge(fn(Task $record): int => $record->opened()->count())
                 ->badgeColor(Color::Orange),
             'closed' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query): Builder => $query->closed()),

@@ -107,7 +107,7 @@ class Task extends Model
             ->logOnlyDirty();
     }
 
-    public function scopeOpenned(Builder $query)
+    public function scopeOpened(Builder $query)
     {
         $query->whereHas('status', function (Builder $query) {
             $query->whereIn('phase', [

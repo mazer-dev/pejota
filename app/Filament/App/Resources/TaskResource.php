@@ -130,6 +130,7 @@ class TaskResource extends Resource
                     ->tooltip(fn ($state) => PriorityEnum::from($state)->getLabel())
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
+                    ->wrap()
                     ->size(Tables\Columns\TextColumn\TextColumnSize::Medium)
                     ->searchable(),
                 Tables\Columns\SelectColumn::make('status_id')
@@ -156,6 +157,9 @@ class TaskResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('client.name')
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('client.tradename')
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('project.name')
