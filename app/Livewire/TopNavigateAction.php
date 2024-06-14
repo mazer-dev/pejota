@@ -46,7 +46,7 @@ class TopNavigateAction extends Component implements HasActions
             ->tooltip('Create a new Work Session')
             ->label('Create Session')
             ->icon(WorkSessionResource::getNavigationIcon())
-            ->color(Color::Orange)
+            ->color(Color::Amber)
             ->url(
                 CreateWorkSession::getUrl()
             );

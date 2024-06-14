@@ -79,7 +79,7 @@ class TaskResource extends Resource
                     'task' => $record->id,
                 ]))
                 ->icon('heroicon-o-play')
-                ->color(Color::Orange)
+                ->color(Color::Amber)
                 ->size(ActionSize::ExtraSmall)
                 ->tooltip('Start a session for task'),
         ];

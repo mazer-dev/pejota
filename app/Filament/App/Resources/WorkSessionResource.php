@@ -86,7 +86,7 @@ class WorkSessionResource extends Resource
                     Tables\Actions\Action::make('Clone')
                         ->tooltip('Clone this session with same time and details, updating to current date')
                         ->icon('heroicon-o-document-duplicate')
-                        ->color(Color::Orange)
+                        ->color(Color::Amber)
                         ->action(fn (WorkSession $record) => self::clone($record)),
                 ]),
             ])
@@ -96,7 +96,7 @@ class WorkSessionResource extends Resource
                     Tables\Actions\BulkAction::make('Clone selected')
                         ->tooltip('Clone this sessions with same time and details, updating to current date')
                         ->icon('heroicon-o-document-duplicate')
-                        ->color(Color::Orange)
+                        ->color(Color::Amber)
                         ->action(fn (Collection $records) => self::cloneCollection($records))
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
