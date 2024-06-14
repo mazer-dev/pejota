@@ -156,10 +156,7 @@ class TaskResource extends Resource
                     ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('client.name')
-                    ->sortable()
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('client.tradename')
+                Tables\Columns\TextColumn::make('client.labelName')
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('project.name')
