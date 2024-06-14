@@ -269,12 +269,6 @@ class TaskResource extends Resource
     {
         return $infolist
             ->schema([
-                TextEntry::make('title')
-                    ->size(TextEntry\TextEntrySize::Large)
-                    ->weight(FontWeight::Bold)
-                    ->label('')
-                    ->icon('heroicon-o-document-text'),
-
                 Split::make([
                     Grid::make(1)->schema([
                         Section::make([
