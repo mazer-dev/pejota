@@ -484,7 +484,7 @@ class TaskResource extends Resource
                                 ->color(Color::Neutral),
 
                             Action::make('session')
-                                ->icon('heroicon-o-plus')
+                                ->icon(WorkSessionResource::getNavigationIcon())
                                 ->color(Color::Amber)
                                 ->modal(true)
                                 ->url(fn($record) => CreateWorkSession::getUrl([
