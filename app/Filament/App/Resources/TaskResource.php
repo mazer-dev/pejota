@@ -118,6 +118,8 @@ class TaskResource extends Resource
                     ->collapsible()
                     ->compact()
                     ->schema([
+                        Forms\Components\SpatieTagsInput::make('tags'),
+
                         Forms\Components\RichEditor::make('description')
                             ->columnSpanFull()
                             ->extraInputAttributes(
@@ -126,7 +128,26 @@ class TaskResource extends Resource
                             ->fileAttachmentsDirectory(auth()->user()->company->id)
                             ->fileAttachmentsVisibility('private'),
 
-                        Forms\Components\SpatieTagsInput::make('tags'),
+                        Forms\Components\Builder::make('extra_content')
+                            ->hiddenLabel()
+                            ->schema([
+                                Forms\Components\Builder\Block::make('todo')
+                                    ->icon('heroicon-o-list-bullet')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('title')
+                                            ->label('Todo title')
+                                            ->default('Todo'),
+                                        Forms\Components\Repeater::make('items')
+                                            ->schema([
+                                                Forms\Components\Grid::make(2)->schema([
+                                                    Forms\Components\TextInput::make('item')
+                                                        ->hiddenLabel(),
+                                                    Forms\Components\Checkbox::make('complete')
+
+                                                ])
+                                            ])
+                                    ])
+                            ])
                     ]),
 
                 Forms\Components\Grid::make(4)->schema([

@@ -29,6 +29,9 @@ class Task extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'extra_content' => 'array',
+    ];
     protected static function boot()
     {
         parent::boot();
