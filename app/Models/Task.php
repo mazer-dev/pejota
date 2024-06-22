@@ -30,7 +30,7 @@ class Task extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'extra_content' => 'array',
+        'checklist' => 'array',
     ];
     protected static function boot()
     {
