@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tasks', function (Blueprint $table) {
-            $table->jsonb('extra_content')
+            $table->jsonb('checklist')
                 ->nullable()
-                ->comment('extra content like todo list and links');
+                ->comment('controls a checklist in the task');
         });
     }
 
