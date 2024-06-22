@@ -6,6 +6,7 @@ use App\Enums\PriorityEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Helpers\PejotaHelper;
+use App\Infolists\Components\TableRepeatableEntry;
 use App\Models\Status;
 use App\Models\Task;
 use Faker\Provider\Text;
@@ -324,6 +325,31 @@ class TaskResource extends Resource
                             ]),
                         ]),
 
+                        RepeatableEntry::make('checklist')
+                            ->contained(false)
+                            ->schema([
+                                TextEntry::make('item')
+                                    ->hiddenLabel()
+                                    ->formatStateUsing(function ($state, $component): HtmlString {
+                                        if (self::getStateCompleted($component)) {
+                                            $state = '<s>' . $state . '</s>';
+                                        }
+                                        return new HtmlString($state);
+                                    })
+                                    ->prefixAction(fn($component) =>
+                                        Action::make('checkCompleted')
+                                            ->icon(self::getStateCompleted($component) ? 'heroicon-o-check' : 'heroicon-o-stop')
+                                            ->color(self::getStateCompleted($component) ? Color::Green : Color::Gray)
+                                            ->action(function (Model $record,$component) {
+                                                $index = explode('.', $component->getStatePath())[1];
+                                                $checklist = $record->checklist;
+                                                $checklist[$index]['completed'] = !$record->checklist[$index]['completed'];
+                                                $record->checklist = $checklist;
+                                                $record->save();
+                                            })
+                                    )
+                            ]),
+
                         Section::make('Sub tasks')
                             ->collapsible()
                             ->schema([
@@ -530,5 +556,17 @@ class TaskResource extends Resource
             'view' => Pages\ViewTask::route('/{record}'),
             'edit' => Pages\EditTask::route('/{record}/edit'),
         ];
+    }
+
+    public static function getStateCompleted($component)
+    {
+        $index = explode('.', $component->getStatePath())[1];
+
+        $data = $component
+            ->getContainer()
+            ->getParentComponent()
+            ->getState()[$index];
+
+        return $data['completed'];
     }
 }
