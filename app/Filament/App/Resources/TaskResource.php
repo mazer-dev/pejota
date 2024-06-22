@@ -8,6 +8,7 @@ use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use App\Models\Task;
+use Faker\Provider\Text;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
@@ -28,6 +29,7 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -128,26 +130,19 @@ class TaskResource extends Resource
                             ->fileAttachmentsDirectory(auth()->user()->company->id)
                             ->fileAttachmentsVisibility('private'),
 
-                        Forms\Components\Builder::make('extra_content')
-                            ->hiddenLabel()
-                            ->schema([
-                                Forms\Components\Builder\Block::make('todo')
-                                    ->icon('heroicon-o-list-bullet')
-                                    ->schema([
-                                        Forms\Components\TextInput::make('title')
-                                            ->label('Todo title')
-                                            ->default('Todo'),
-                                        Forms\Components\Repeater::make('items')
-                                            ->schema([
-                                                Forms\Components\Grid::make(2)->schema([
-                                                    Forms\Components\TextInput::make('item')
-                                                        ->hiddenLabel(),
-                                                    Forms\Components\Checkbox::make('complete')
+                    ]),
 
-                                                ])
-                                            ])
-                                    ])
-                            ])
+                TableRepeater::make('checklist')
+                    ->addActionLabel('Add item')
+                    ->collapsible()
+                    ->cloneable()
+                    ->schema([
+                        Forms\Components\TextInput::make('item')
+                            ->required(),
+                        Forms\Components\Checkbox::make('completed'),
+                    ])
+                    ->colStyles([
+                        'item' => 'width:90%'
                     ]),
 
                 Forms\Components\Grid::make(4)->schema([
