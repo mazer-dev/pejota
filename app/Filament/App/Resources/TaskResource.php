@@ -325,77 +325,83 @@ class TaskResource extends Resource
                             ]),
                         ]),
 
-                        RepeatableEntry::make('checklist')
-                            ->contained(false)
-                            ->schema([
-                                TextEntry::make('item')
-                                    ->hiddenLabel()
-                                    ->formatStateUsing(function ($state, $component): HtmlString {
-                                        if (self::getStateCompleted($component)) {
-                                            $state = '<s>' . $state . '</s>';
-                                        }
-                                        return new HtmlString($state);
-                                    })
-                                    ->prefixAction(fn($component) =>
-                                        Action::make('checkCompleted')
-                                            ->icon(self::getStateCompleted($component) ? 'heroicon-o-check' : 'heroicon-o-stop')
-                                            ->color(self::getStateCompleted($component) ? Color::Green : Color::Gray)
-                                            ->action(function (Model $record,$component) {
-                                                $index = explode('.', $component->getStatePath())[1];
-                                                $checklist = $record->checklist;
-                                                $checklist[$index]['completed'] = !$record->checklist[$index]['completed'];
-                                                $record->checklist = $checklist;
-                                                $record->save();
-                                            })
-                                    )
-                            ]),
-
-                        Section::make('Sub tasks')
-                            ->collapsible()
-                            ->schema([
-                                RepeatableEntry::make('children')
-                                    ->hiddenLabel()
-                                    ->contained(false)
-                                    ->getStateUsing(function (Model $record) {
-                                        $items = $record->children;
-                                        foreach ($items as $key => $value) {
-                                            $value->sort = $key;
-                                        }
-
-                                        return $items;
-                                    })
-                                    ->schema([
-                                        Grid::make(12)->schema([
-                                            IconEntry::make('priority')
-                                                ->hiddenLabel(fn($record) => $record->sort != 0)
-                                                ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
-                                                ->color(fn($state) => PriorityEnum::from($state)->getColor())
-                                                ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel()),
-
-                                            TextEntry::make('status.name')
-                                                ->hiddenLabel(fn($record) => $record->sort != 0)
-                                                ->badge()
-                                                ->color(fn(Model $record): array => Color::hex($record->status->color)),
-                                            TextEntry::make('title')
-                                                ->hiddenLabel(fn($record) => $record->sort != 0)
-                                                ->columnSpan(8)
-                                                ->action(
-                                                    Action::make('view')
-                                                        ->infolist(fn(Model $record) => self::infolist(
-                                                            (new Infolist())->record($record)
-                                                        ))
-                                                        ->modalWidth(MaxWidth::FitContent)
-                                                        ->modalCancelAction(false)
-                                                        ->modalSubmitActionLabel('Close')
-                                                ),
-                                            TextEntry::make('due_date')
-                                                ->hiddenLabel(fn($record) => $record->sort != 0)
-                                                ->date()
-                                                ->icon('heroicon-o-calendar')
-                                                ->columnSpan(2),
+                        Tabs::make('Tabs')->schema([
+                            Tabs\Tab::make('Checklist')
+                                ->badge(fn(Model $record): int => count($record->checklist))
+                                ->schema([
+                                    RepeatableEntry::make('checklist')
+                                        ->contained(false)
+                                        ->hiddenLabel()
+                                        ->schema([
+                                            TextEntry::make('item')
+                                                ->hiddenLabel()
+                                                ->formatStateUsing(function ($state, $component): HtmlString {
+                                                    if (self::getStateCompleted($component)) {
+                                                        $state = '<s>' . $state . '</s>';
+                                                    }
+                                                    return new HtmlString($state);
+                                                })
+                                                ->prefixAction(fn($component) => Action::make('checkCompleted')
+                                                    ->icon(self::getStateCompleted($component) ? 'heroicon-o-check' : 'heroicon-o-stop')
+                                                    ->color(self::getStateCompleted($component) ? Color::Green : Color::Gray)
+                                                    ->action(function (Model $record, $component) {
+                                                        $index = explode('.', $component->getStatePath())[1];
+                                                        $checklist = $record->checklist;
+                                                        $checklist[$index]['completed'] = !$record->checklist[$index]['completed'];
+                                                        $record->checklist = $checklist;
+                                                        $record->save();
+                                                    })
+                                                )
                                         ]),
-                                    ]),
-                            ]),
+                                ]),
+
+                            Tabs\Tab::make('Sub tasks')
+                                ->badge(fn(Model $record): int => $record->children->count())
+                                ->schema([
+                                    RepeatableEntry::make('children')
+                                        ->hiddenLabel()
+                                        ->contained(false)
+                                        ->getStateUsing(function (Model $record) {
+                                            $items = $record->children;
+                                            foreach ($items as $key => $value) {
+                                                $value->sort = $key;
+                                            }
+
+                                            return $items;
+                                        })
+                                        ->schema([
+                                            Grid::make(12)->schema([
+                                                IconEntry::make('priority')
+                                                    ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
+                                                    ->color(fn($state) => PriorityEnum::from($state)->getColor())
+                                                    ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel()),
+
+                                                TextEntry::make('status.name')
+                                                    ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->badge()
+                                                    ->color(fn(Model $record): array => Color::hex($record->status->color)),
+                                                TextEntry::make('title')
+                                                    ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->columnSpan(8)
+                                                    ->action(
+                                                        Action::make('view')
+                                                            ->infolist(fn(Model $record) => self::infolist(
+                                                                (new Infolist())->record($record)
+                                                            ))
+                                                            ->modalWidth(MaxWidth::FitContent)
+                                                            ->modalCancelAction(false)
+                                                            ->modalSubmitActionLabel('Close')
+                                                    ),
+                                                TextEntry::make('due_date')
+                                                    ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->date()
+                                                    ->icon('heroicon-o-calendar')
+                                                    ->columnSpan(2),
+                                            ]),
+                                        ]),
+                                ]),
+                        ]),
 
                         Tabs::make('Tabs')->schema([
                             Tabs\Tab::make('Comments')
