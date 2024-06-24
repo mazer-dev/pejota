@@ -13,7 +13,17 @@ class Note extends Model
         HasFactory,
         HasTags;
 
+    protected $guarded = ['id'];
     protected $casts = [
         'content' => 'array',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            $model->user_id = auth()->user()->id;
+        });
+    }
 }
