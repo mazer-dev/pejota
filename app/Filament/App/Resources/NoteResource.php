@@ -5,9 +5,11 @@ namespace App\Filament\App\Resources;
 use App\Filament\App\Resources\NoteResource\Pages;
 use App\Filament\App\Resources\NoteResource\RelationManagers;
 use App\Models\Note;
+use App\Tables\Columns\BlockTypesBadge;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -21,6 +23,7 @@ class NoteResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
+            ->columns(1)
             ->schema([
                 Forms\Components\TextInput::make('title')
                     ->required(),
@@ -58,10 +61,14 @@ class NoteResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->searchable(),
+
+                BlockTypesBadge::make('content')
+                    ->color(Color::Cyan),
+
                 Tables\Columns\SpatieTagsColumn::make('tags'),
             ])
             ->filters([
-                //
+
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
