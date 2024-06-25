@@ -4,8 +4,92 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "06cdcd2ad1901381c0aec96c46983f09",
+    "content-hash": "1f796984023509bbef3dd91ea0905cba",
     "packages": [
+        {
+            "name": "abdelhamiderrahmouni/filament-monaco-editor",
+            "version": "v0.2.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/abdelhamiderrahmouni/filament-monaco-editor.git",
+                "reference": "19ee073a593fe02865d8cfcad18db996f21b5fc5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/abdelhamiderrahmouni/filament-monaco-editor/zipball/19ee073a593fe02865d8cfcad18db996f21b5fc5",
+                "reference": "19ee073a593fe02865d8cfcad18db996f21b5fc5",
+                "shasum": ""
+            },
+            "require": {
+                "filament/forms": "^3.0",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^7.9",
+                "nunomaduro/larastan": "^2.0.1",
+                "orchestra/testbench": "^8.0",
+                "pestphp/pest": "^2.1",
+                "pestphp/pest-plugin-arch": "^2.0",
+                "pestphp/pest-plugin-laravel": "^2.0",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^1.0",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "AbdelhamidErrahmouni\\FilamentMonacoEditor\\MonacoEditorServiceProvider"
+                    ],
+                    "aliases": {
+                        "MonacoEditor": "AbdelhamidErrahmouni\\FilamentMonacoEditor\\Facades\\MonacoEditor"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "AbdelhamidErrahmouni\\FilamentMonacoEditor\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Abdelhamid Errahmouni",
+                    "email": "abdelhamid.errahmouni@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A monaco editor form field for filamentphp.",
+            "homepage": "https://github.com/abdelhamiderrahmouni/filament-monaco-editor",
+            "keywords": [
+                "Abdelhamid Errahmouni",
+                "Monaco",
+                "code editor",
+                "filament monaco code editor",
+                "filament monaco editor",
+                "filamentphp",
+                "laravel",
+                "monaco editor",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/abdelhamiderrahmouni/filament-monaco-editor/issues",
+                "source": "https://github.com/abdelhamiderrahmouni/filament-monaco-editor"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/AbdelhamidErrahmouni",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-05-16T10:37:32+00:00"
+        },
         {
             "name": "anourvalar/eloquent-serialize",
             "version": "1.2.22",
@@ -10645,16 +10729,16 @@
         },
         {
             "name": "spatie/error-solutions",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/error-solutions.git",
-                "reference": "202108314a6988ede156fba1b3ea80a784c1734a"
+                "reference": "d60d4d2ef4b7701c86134ded959667cac6215233"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/error-solutions/zipball/202108314a6988ede156fba1b3ea80a784c1734a",
-                "reference": "202108314a6988ede156fba1b3ea80a784c1734a",
+                "url": "https://api.github.com/repos/spatie/error-solutions/zipball/d60d4d2ef4b7701c86134ded959667cac6215233",
+                "reference": "d60d4d2ef4b7701c86134ded959667cac6215233",
                 "shasum": ""
             },
             "require": {
@@ -10707,7 +10791,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/error-solutions/issues",
-                "source": "https://github.com/spatie/error-solutions/tree/1.0.0"
+                "source": "https://github.com/spatie/error-solutions/tree/1.0.1"
             },
             "funding": [
                 {
@@ -10715,7 +10799,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-06-12T14:49:54+00:00"
+            "time": "2024-06-21T10:09:00+00:00"
         },
         {
             "name": "spatie/flare-client-php",
