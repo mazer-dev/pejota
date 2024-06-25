@@ -36,6 +36,10 @@ Control sessions of work, related to client / project / task.
 
 Each session has a start and end period, used to calculate the duration.
 
+### Notes
+
+Save Links, Rich Text, Markdown, Plain text notes and Code Snippets.
+
 ### Settings
 
 #### Statuses
