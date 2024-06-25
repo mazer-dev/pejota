@@ -327,7 +327,7 @@ class TaskResource extends Resource
 
                         Tabs::make('Tabs')->schema([
                             Tabs\Tab::make('Checklist')
-                                ->badge(fn(Model $record): int => count($record->checklist))
+                                ->badge(fn(Model $record): int => $record->checklist ?count($record->checklist) : 0)
                                 ->schema([
                                     RepeatableEntry::make('checklist')
                                         ->contained(false)
