@@ -17,8 +17,8 @@ class WorkSessionsOverview extends BaseWidget
                 PejotaHelper::formatDuration(
                     WorkSession::whereBetween('start',
                         [
-                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->startOfDay(),
-                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->endOfDay(),
+                            Carbon::today()->startOfDay()->tz(PejotaHelper::getUserTimeZone()),
+                            Carbon::today()->endOfDay()->tz(PejotaHelper::getUserTimeZone()),
                         ])
                         ->sum('duration')
                 )
@@ -28,8 +28,8 @@ class WorkSessionsOverview extends BaseWidget
                 PejotaHelper::formatDuration(
                     WorkSession::whereBetween('start',
                         [
-                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->startOfWeek(),
-                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->endOfWeek(),
+                            Carbon::today()->startOfWeek()->tz(PejotaHelper::getUserTimeZone()),
+                            Carbon::today()->endOfWeek()->tz(PejotaHelper::getUserTimeZone()),
                         ])
                         ->sum('duration')
                 )
@@ -39,8 +39,8 @@ class WorkSessionsOverview extends BaseWidget
                 PejotaHelper::formatDuration(
                     WorkSession::whereBetween('start',
                         [
-                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->startOfMonth(),
-                            Carbon::today()->tz(PejotaHelper::getUserTimeZone())->endOfMonth(),
+                            Carbon::today()->startOfMonth()->tz(PejotaHelper::getUserTimeZone()),
+                            Carbon::today()->endOfMonth()->tz(PejotaHelper::getUserTimeZone()),
                         ])
                         ->sum('duration')
                 )

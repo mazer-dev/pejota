@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Filament\App\Resources\TaskResource;
+use App\Filament\App\Resources\TaskResource\Pages\CreateTask;
 use App\Filament\App\Resources\WorkSessionResource;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use Filament\Actions\Action;
@@ -35,9 +36,10 @@ class TopNavigateAction extends Component implements HasActions
             ->label('Create Task')
             ->icon(TaskResource::getNavigationIcon())
             ->url(
-                TaskResource\Pages\CreateTask::getUrl()
+                TaskResource::getUrl(panel: 'create')
             );
     }
+    
     public function createSession(array|string $name = 'Create Session'): ?Action
     {
         return Action::make($name)
@@ -48,17 +50,17 @@ class TopNavigateAction extends Component implements HasActions
             ->icon(WorkSessionResource::getNavigationIcon())
             ->color(Color::Amber)
             ->url(
-                CreateWorkSession::getUrl()
+                CreateWorkSession::getUrl(panel: 'create')
             );
     }
 
     public function getActiveActionsLocale(): ?string
     {
-        // TODO: Implement getActiveActionsLocale() method.
+        return Action::getActiveActionsLocale();
     }
 
     public function makeFilamentTranslatableContentDriver(): ?TranslatableContentDriver
     {
-        // TODO: Implement makeFilamentTranslatableContentDriver() method.
+        return new TranslatableContentDriver(app()->getLocale());
     }
 }
