@@ -249,6 +249,22 @@ class TaskResource extends Resource
                     ->preload(),
                 Tables\Filters\SelectFilter::make('client')
                     ->relationship('client', 'name'),
+                Tables\Filters\Filter::make('due_date_not_empty')
+                    ->form([
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\ToggleButtons::make('due_date')
+                                ->options([
+                                    'not_empty' => 'Has due date',
+                                    'empty' => 'No due date',
+                                ]),
+                        ])
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if($data['due_date'] == 'not_empty') {
+                            return $query->whereNotNull('due_date');
+                        };
+                        return $query->whereNull('due_date');
+                    }),
                 Tables\Filters\Filter::make('due_date')
                     ->form([
                         Forms\Components\DatePicker::make('from'),
@@ -265,7 +281,7 @@ class TaskResource extends Resource
                                 fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to'])
                             );
                     }),
-            ], layout: Tables\Enums\FiltersLayout::Dropdown)
+            ], layout: Tables\Enums\FiltersLayout::Modal)
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->iconButton(),
@@ -326,7 +342,7 @@ class TaskResource extends Resource
 
                         Tabs::make('Tabs')->schema([
                             Tabs\Tab::make('Checklist')
-                                ->badge(fn(Model $record): int => $record->checklist ?count($record->checklist) : 0)
+                                ->badge(fn(Model $record): int => $record->checklist ? count($record->checklist) : 0)
                                 ->schema([
                                     RepeatableEntry::make('checklist')
                                         ->contained(false)
