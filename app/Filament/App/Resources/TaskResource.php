@@ -260,7 +260,7 @@ class TaskResource extends Resource
                         ])
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        if($data['due_date'] == 'not_empty') {
+                        if ($data['due_date'] == 'not_empty') {
                             return $query->whereNotNull('due_date');
                         };
                         return $query->whereNull('due_date');
@@ -283,11 +283,11 @@ class TaskResource extends Resource
                     }),
             ], layout: Tables\Enums\FiltersLayout::Modal)
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->iconButton(),
-                CommentsAction::make()
-                    ->iconButton(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    CommentsAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
