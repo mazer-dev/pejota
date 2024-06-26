@@ -199,7 +199,6 @@ class TaskResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
                     ->wrap()
-                    ->size(Tables\Columns\TextColumn\TextColumnSize::Medium)
                     ->searchable(),
                 Tables\Columns\SelectColumn::make('status_id')
                     ->label('Status')
