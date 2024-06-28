@@ -133,17 +133,25 @@ class TaskResource extends Resource
 
                     ]),
 
-                TableRepeater::make('checklist')
-                    ->addActionLabel('Add item')
+                Forms\Components\Section::make('checklist')
+                    ->label('Checklist')
                     ->collapsible()
-                    ->cloneable()
+                    ->collapsed()
                     ->schema([
-                        Forms\Components\TextInput::make('item')
-                            ->required(),
-                        Forms\Components\Checkbox::make('completed'),
-                    ])
-                    ->colStyles([
-                        'item' => 'width:90%'
+                        TableRepeater::make('checklist')
+                            ->hiddenLabel()
+                            ->addActionLabel('Add item')
+                            ->cloneable()
+                            ->schema([
+                                Forms\Components\TextInput::make('item')
+                                    ->required(),
+                                Forms\Components\Checkbox::make('completed'),
+                            ])
+                            ->defaultItems(0)
+                            ->colStyles([
+                                'item' => 'width:90%'
+                            ]),
+
                     ]),
 
                 Forms\Components\Grid::make(4)->schema([
