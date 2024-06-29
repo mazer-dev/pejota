@@ -133,17 +133,25 @@ class TaskResource extends Resource
 
                     ]),
 
-                TableRepeater::make('checklist')
-                    ->addActionLabel('Add item')
+                Forms\Components\Section::make('checklist')
+                    ->label('Checklist')
                     ->collapsible()
-                    ->cloneable()
+                    ->collapsed()
                     ->schema([
-                        Forms\Components\TextInput::make('item')
-                            ->required(),
-                        Forms\Components\Checkbox::make('completed'),
-                    ])
-                    ->colStyles([
-                        'item' => 'width:90%'
+                        TableRepeater::make('checklist')
+                            ->hiddenLabel()
+                            ->addActionLabel('Add item')
+                            ->cloneable()
+                            ->schema([
+                                Forms\Components\TextInput::make('item')
+                                    ->required(),
+                                Forms\Components\Checkbox::make('completed'),
+                            ])
+                            ->defaultItems(0)
+                            ->colStyles([
+                                'item' => 'width:90%'
+                            ]),
+
                     ]),
 
                 Forms\Components\Grid::make(4)->schema([
@@ -199,7 +207,6 @@ class TaskResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
                     ->wrap()
-                    ->size(Tables\Columns\TextColumn\TextColumnSize::Medium)
                     ->searchable(),
                 Tables\Columns\SelectColumn::make('status_id')
                     ->label('Status')
@@ -250,6 +257,22 @@ class TaskResource extends Resource
                     ->preload(),
                 Tables\Filters\SelectFilter::make('client')
                     ->relationship('client', 'name'),
+                Tables\Filters\Filter::make('due_date_not_empty')
+                    ->form([
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\ToggleButtons::make('due_date')
+                                ->options([
+                                    'not_empty' => 'Has due date',
+                                    'empty' => 'No due date',
+                                ]),
+                        ])
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if ($data['due_date'] == 'not_empty') {
+                            return $query->whereNotNull('due_date');
+                        };
+                        return $query->whereNull('due_date');
+                    }),
                 Tables\Filters\Filter::make('due_date')
                     ->form([
                         Forms\Components\DatePicker::make('from'),
@@ -266,13 +289,13 @@ class TaskResource extends Resource
                                 fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to'])
                             );
                     }),
-            ], layout: Tables\Enums\FiltersLayout::Dropdown)
+            ], layout: Tables\Enums\FiltersLayout::Modal)
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->iconButton(),
-                CommentsAction::make()
-                    ->iconButton(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    CommentsAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -327,7 +350,7 @@ class TaskResource extends Resource
 
                         Tabs::make('Tabs')->schema([
                             Tabs\Tab::make('Checklist')
-                                ->badge(fn(Model $record): int => $record->checklist ?count($record->checklist) : 0)
+                                ->badge(fn(Model $record): int => $record->checklist ? count($record->checklist) : 0)
                                 ->schema([
                                     RepeatableEntry::make('checklist')
                                         ->contained(false)
