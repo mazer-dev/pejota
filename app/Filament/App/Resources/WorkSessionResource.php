@@ -47,7 +47,7 @@ class WorkSessionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Time')
-                    ->formatStateUsing(fn ($state) => PejotaHelper::formatDuration($state))
+                    ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
                     ->searchable(),
@@ -87,7 +87,7 @@ class WorkSessionResource extends Resource
                         ->tooltip('Clone this session with same time and details, updating to current date')
                         ->icon('heroicon-o-document-duplicate')
                         ->color(Color::Amber)
-                        ->action(fn (WorkSession $record) => self::clone($record)),
+                        ->action(fn(WorkSession $record) => self::clone($record)),
                 ]),
             ])
             ->bulkActions([
@@ -97,7 +97,7 @@ class WorkSessionResource extends Resource
                         ->tooltip('Clone this sessions with same time and details, updating to current date')
                         ->icon('heroicon-o-document-duplicate')
                         ->color(Color::Amber)
-                        ->action(fn (Collection $records) => self::cloneCollection($records))
+                        ->action(fn(Collection $records) => self::cloneCollection($records))
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
                 ]),
@@ -125,9 +125,9 @@ class WorkSessionResource extends Resource
     {
         $start = $get('start');
         $end = $get('end');
-        $duration = (int) $get('duration');
+        $duration = (int)$get('duration');
 
-        if (! $end && ! $duration) {
+        if (!$end && !$duration) {
             return;
         }
 
@@ -140,11 +140,11 @@ class WorkSessionResource extends Resource
         $end = Carbon::parse($end);
         $set('end', $end->toDateTimeString());
 
-        $duration = (int) $start->diffInMinutes($end);
+        $duration = (int)$start->diffInMinutes($end);
 
         $set('duration', $duration);
 
-        $set('time', PejotaHelper::formatDuration((int) $get('duration')));
+        $set('time', PejotaHelper::formatDuration((int)$get('duration')));
     }
 
     public static function getFormSchema(): array
@@ -153,36 +153,13 @@ class WorkSessionResource extends Resource
             Forms\Components\TextInput::make('title'),
 
             Forms\Components\Split::make([
-                Forms\Components\Section::make()->schema([
-
-                    Forms\Components\RichEditor::make('description')
-                        ->label('')
-                        ->fileAttachmentsDisk('work_sessions')
-                        ->fileAttachmentsDirectory(auth()->user()->company->id)
-                        ->fileAttachmentsVisibility('private'),
-
-                    Forms\Components\Grid::make(2)->schema([
-                        Forms\Components\Select::make('client')
-                            ->relationship('client', 'name')
-                            ->searchable()->preload(),
-                        Forms\Components\Select::make('project')
-                            ->label('Project')
-                            ->relationship(
-                                'project',
-                                'name',
-                                fn (Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
-                            )
-                            ->searchable()->preload(),
-                    ]),
-                ]),
-
                 Forms\Components\Section::make('')->schema([
 
                     Forms\Components\Grid::make(2)->schema([
                         Forms\Components\DateTimePicker::make('start')
                             ->timezone(PejotaHelper::getUserTimeZone())
                             ->required()
-                            ->default(fn (): string => now()->toDateTimeString())
+                            ->default(fn(): string => now()->toDateTimeString())
                             ->live(),
 
                         Forms\Components\DateTimePicker::make('end')
@@ -190,13 +167,13 @@ class WorkSessionResource extends Resource
                             ->required()
                             ->live()
                             ->afterStateUpdated(
-                                fn (
+                                fn(
                                     Forms\Get $get,
                                     Forms\Set $set): mixed => self::setTimers(
-                                        fromDuration: false,
-                                        get: $get,
-                                        set: $set
-                                    )
+                                    fromDuration: false,
+                                    get: $get,
+                                    set: $set
+                                )
                             ),
                     ]),
 
@@ -209,13 +186,13 @@ class WorkSessionResource extends Resource
                             ->helperText('Duration in minutes. If you enter manually end time, it will be calculated.')
                             ->live()
                             ->afterStateUpdated(
-                                fn (
+                                fn(
                                     Forms\Get $get,
                                     Forms\Set $set): mixed => self::setTimers(
-                                        fromDuration: true,
-                                        get: $get,
-                                        set: $set
-                                    )
+                                    fromDuration: true,
+                                    get: $get,
+                                    set: $set
+                                )
                             ),
 
                         Forms\Components\TextInput::make('rate')
@@ -232,15 +209,37 @@ class WorkSessionResource extends Resource
                         ->relationship('task', 'title')
                         ->searchable(),
 
+                    Forms\Components\Grid::make(2)->schema([
+                        Forms\Components\Select::make('client')
+                            ->relationship('client', 'name')
+                            ->searchable()->preload(),
+                        Forms\Components\Select::make('project')
+                            ->label('Project')
+                            ->relationship(
+                                'project',
+                                'name',
+                                fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                            )
+                            ->searchable()->preload(),
+                    ]),
+
                 ]),
 
+                Forms\Components\Section::make()->schema([
+
+                    Forms\Components\RichEditor::make('description')
+                        ->label('')
+                        ->fileAttachmentsDisk('work_sessions')
+                        ->fileAttachmentsDirectory(auth()->user()->company->id)
+                        ->fileAttachmentsVisibility('private'),
+                ]),
             ]),
         ];
     }
 
     public static function cloneCollection(Collection $records)
     {
-        $records->each(fn ($record) => self::clone($record));
+        $records->each(fn($record) => self::clone($record));
     }
 
     public static function clone(WorkSession $record)
