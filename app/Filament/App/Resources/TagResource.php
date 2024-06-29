@@ -99,6 +99,7 @@ class TagResource extends Resource
         return [
             RelationManagers\TasksRelationManager::class,
             RelationManagers\ProjectsRelationManager::class,
+            RelationManagers\NotesRelationManager::class,
         ];
     }
 
