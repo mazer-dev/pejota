@@ -32,8 +32,8 @@ class TasksRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
-                    ->sortable()
-                    ->url(fn (Task $record) => ViewTask::getUrl([$record])),
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('status.name'),
             ])
             ->filters([
@@ -43,8 +43,8 @@ class TasksRelationManager extends RelationManager
                 //                Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                //                Tables\Actions\EditAction::make(),
-                //                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (Task $record) => ViewTask::getUrl([$record])),
             ])
             ->bulkActions([
                 //                Tables\Actions\BulkActionGroup::make([
