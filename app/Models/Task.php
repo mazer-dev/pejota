@@ -10,10 +10,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use NunoMazer\Samehouse\BelongsToTenants;
+use Parallax\FilamentComments\Models\FilamentComment;
 use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Tags\HasTags;
+
+use function Laravel\Prompts\error;
 
 class Task extends Model
 {
@@ -108,6 +111,11 @@ class Task extends Model
             ->useLogName(self::LOG_NAME)
             ->dontSubmitEmptyLogs()
             ->logOnlyDirty();
+    }
+
+    public function filamentComments(): HasMany
+    {
+        return $this->hasMany(FilamentComment::class, 'subject_id');
     }
 
     public function scopeOpened(Builder $query)

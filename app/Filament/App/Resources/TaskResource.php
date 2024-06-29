@@ -473,7 +473,8 @@ class TaskResource extends Resource
                                                     ->dateTime()
                                                     ->timezone(PejotaHelper::getUserTimeZone()),
                                                 TextEntry::make('description')
-                                                    ->label(''),
+                                                    ->label('Comment')
+                                                    ->getStateUsing(fn(Model $record): array => key_exists('comment', $record->properties->get('attributes')) ? [$record->properties->get('attributes')['comment']] : ["--"]),
                                                 TextEntry::make('causer.name')
                                                     ->label(''),
                                                 TextEntry::make('properties.attributes')
