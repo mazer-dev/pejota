@@ -64,7 +64,7 @@ class TopNavigateAction extends Component implements HasActions
             ->icon(NoteResource::getNavigationIcon())
             ->color(Color::Cyan)
             ->url(
-                CreateWorkSession::getUrl(panel: 'create')
+                NoteResource\Pages\CreateNote::getUrl(panel: 'create')
             );
     }
 
