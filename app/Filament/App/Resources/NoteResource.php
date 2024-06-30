@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class NoteResource extends Resource
 {
@@ -128,6 +129,18 @@ class NoteResource extends Resource
                     Forms\Components\Section::make()->schema([
                         Forms\Components\SpatieTagsInput::make('tags'),
 
+                        Forms\Components\Select::make('client')
+                            ->relationship('client', 'name')
+                            ->preload()->searchable(),
+
+                        Forms\Components\Select::make('project_id')
+                            ->label('Project')
+                            ->relationship(
+                                'project',
+                                'name',
+                                fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                            )
+                            ->searchable()->preload(),
                     ])
                         ->grow(false)
                 ]),
