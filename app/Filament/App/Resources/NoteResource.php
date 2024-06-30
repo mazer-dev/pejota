@@ -97,25 +97,30 @@ class NoteResource extends Resource
 
                                 MonacoEditor::make('content')
                                     ->language(fn($get) => ($get('language') ?? 'html'))
-                                    ->disablePreview(true),
+                                    ->disablePreview(true)
+                                    ->hideFullScreenButton()
+                                    ->hiddenLabel(),
                             ]),
 
                         Forms\Components\Builder\Block::make('markdown')
                             ->icon('heroicon-o-code-bracket-square')
                             ->schema([
-                                Forms\Components\MarkdownEditor::make('content'),
+                                Forms\Components\MarkdownEditor::make('content')
+                                    ->hiddenLabel(),
                             ]),
 
                         Forms\Components\Builder\Block::make('richtext')
                             ->icon('heroicon-o-code-bracket-square')
                             ->schema([
-                                Forms\Components\RichEditor::make('content'),
+                                Forms\Components\RichEditor::make('content')
+                                    ->hiddenLabel(),
                             ]),
 
                         Forms\Components\Builder\Block::make('text')
                             ->icon('heroicon-o-document-text')
                             ->schema([
-                                Forms\Components\Textarea::make('content'),
+                                Forms\Components\Textarea::make('content')
+                                    ->hiddenLabel(),
                             ]),
                     ]),
             ]);
