@@ -34,6 +34,7 @@ class NoteResource extends Resource
                             ->required(),
 
                         Forms\Components\Builder::make('content')
+                            ->hiddenLabel()
                             ->columnSpanFull()
                             ->blocks([
                                 Forms\Components\Builder\Block::make('link')
@@ -158,6 +159,14 @@ class NoteResource extends Resource
                     ->color(Color::Cyan),
 
                 Tables\Columns\SpatieTagsColumn::make('tags'),
+
+                Tables\Columns\TextColumn::make('client.name')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('project.name')
+                    ->searchable()
+                    ->sortable(),
             ])
             ->filters([
 
