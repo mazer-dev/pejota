@@ -36,7 +36,7 @@ class TopNavigateAction extends Component implements HasActions
             ->label('Create Task')
             ->icon(TaskResource::getNavigationIcon())
             ->url(
-                TaskResource::getUrl(panel: 'create')
+                TaskResource\Pages\CreateTask::getUrl(panel: 'create')
             );
     }
 
