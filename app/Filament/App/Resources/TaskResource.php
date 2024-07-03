@@ -272,7 +272,8 @@ class TaskResource extends Resource
                             return $query->whereNotNull('due_date');
                         };
                         return $query->whereNull('due_date');
-                    }),
+                    })
+                    ->indicateUsing(fn(array $data): string => $data['due_date'] == 'not_empty' ? 'Has due date' : 'No due date'),
                 Tables\Filters\Filter::make('due_date')
                     ->form([
                         Forms\Components\DatePicker::make('from'),
@@ -288,7 +289,8 @@ class TaskResource extends Resource
                                 $data['to'],
                                 fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to'])
                             );
-                    }),
+                    })
+                    ->indicateUsing(fn(array $data): string => 'Due date: ' . $data['from'] . ' - ' . $data['to']),
             ], layout: Tables\Enums\FiltersLayout::Modal)
             ->actions([
                 Tables\Actions\ActionGroup::make([
