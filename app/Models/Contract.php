@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Contract extends Model
@@ -20,11 +21,18 @@ class Contract extends Model
         'project_id'
     ];
 
-    public function Client(): HasOne {
-        return $this->hasOne(Client::class);
+    public function client(): BelongsTo {
+        return $this->belongsTo(Client::class);
     }
 
-    public function Project(): HasOne {
-        return $this->hasOne(Client::class);
+    public function project(): BelongsTo {
+        return $this->belongsTo(Project::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'signatures' => 'array',
+        ];
     }
 }
