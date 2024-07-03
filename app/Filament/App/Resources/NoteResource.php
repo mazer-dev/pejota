@@ -9,11 +9,14 @@ use App\Models\Note;
 use App\Tables\Columns\BlockTypesBadge;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\ActionSize;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class NoteResource extends Resource
 {
@@ -22,7 +25,28 @@ class NoteResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
     protected static ?int $navigationSort = 1;
 
+    protected static ?string $recordTitleAttribute = 'title';
 
+    public static function getGlobalSearchResultActions(Model $record): array
+    {
+        return [
+            Action::make('edit')
+                ->hiddenLabel()
+                ->url(Pages\EditNote::getUrl([$record->id]))
+                ->icon('heroicon-o-pencil')
+                ->size(ActionSize::ExtraSmall)
+                ->tooltip('Edit Task'),
+
+            Action::make('view')
+                ->hiddenLabel()
+                ->url(Pages\ViewNote::getUrl([$record->id]))
+                ->modal(true)
+                ->icon(NoteResource::$navigationIcon)
+                ->color(Color::Cyan)
+                ->size(ActionSize::ExtraSmall)
+                ->tooltip('View Note'),
+        ];
+    }
     public static function form(Form $form): Form
     {
         return $form
