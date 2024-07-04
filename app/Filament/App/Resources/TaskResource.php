@@ -313,7 +313,10 @@ class TaskResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->persistFiltersInSession();
+            ->persistFiltersInSession()
+            ->persistSearchInSession()
+            ->persistSortInSession()
+            ->persistColumnSearchesInSession();
     }
 
     public static function infolist(Infolist $infolist): Infolist
