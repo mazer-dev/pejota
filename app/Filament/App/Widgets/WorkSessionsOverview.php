@@ -13,7 +13,7 @@ class WorkSessionsOverview extends BaseWidget
 {
     protected function getStats(): array
     {
-        $today = CarbonImmutable::today()->tz(PejotaHelper::getUserTimeZone())->startOfDay();
+        $today = CarbonImmutable::now(PejotaHelper::getUserTimeZone())->startOfDay();
 
         return [
             Stat::make('Today Sessions',
