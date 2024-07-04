@@ -20,9 +20,8 @@ class Client extends Model
     public function labelName(): Attribute
     {
         return Attribute::make(
-            get: fn(?string $value) =>
-                auth()->user()->company
-                    ->settings()->get(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
+            get: fn (?string $value) => auth()->user()->company
+                ->settings()->get(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
                         ? $this->tradename
                         : $this->name,
         );

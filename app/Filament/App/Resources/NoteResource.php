@@ -4,7 +4,6 @@ namespace App\Filament\App\Resources;
 
 use AbdelhamidErrahmouni\FilamentMonacoEditor\MonacoEditor;
 use App\Filament\App\Resources\NoteResource\Pages;
-use App\Filament\App\Resources\NoteResource\RelationManagers;
 use App\Models\Note;
 use App\Tables\Columns\BlockTypesBadge;
 use Filament\Forms;
@@ -23,6 +22,7 @@ class NoteResource extends Resource
     protected static ?string $model = Note::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
+
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'title';
@@ -47,6 +47,7 @@ class NoteResource extends Resource
                 ->tooltip('View Note'),
         ];
     }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -71,7 +72,7 @@ class NoteResource extends Resource
                                             ->placeholder('url')
                                             ->required()
                                             ->prefixAction(
-                                                fn($state) => Forms\Components\Actions\Action::make('url')
+                                                fn ($state) => Forms\Components\Actions\Action::make('url')
                                                     ->url($state)
                                                     ->openUrlInNewTab()
                                                     ->icon('heroicon-o-link')
@@ -122,7 +123,7 @@ class NoteResource extends Resource
                                             ->live(),
 
                                         MonacoEditor::make('content')
-                                            ->language(fn($get) => ($get('language') ?? 'html'))
+                                            ->language(fn ($get) => ($get('language') ?? 'html'))
                                             ->disablePreview(true)
                                             ->hideFullScreenButton()
                                             ->hiddenLabel(),
@@ -163,11 +164,11 @@ class NoteResource extends Resource
                             ->relationship(
                                 'project',
                                 'name',
-                                fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                                fn (Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
                             )
                             ->searchable()->preload(),
                     ])
-                        ->grow(false)
+                        ->grow(false),
                 ]),
             ]);
     }

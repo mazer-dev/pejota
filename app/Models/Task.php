@@ -32,6 +32,7 @@ class Task extends Model
     protected $casts = [
         'checklist' => 'array',
     ];
+
     protected static function boot()
     {
         parent::boot();

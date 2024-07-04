@@ -15,6 +15,7 @@ class Note extends Model
         HasTags;
 
     protected $guarded = ['id'];
+
     protected $casts = [
         'content' => 'array',
     ];

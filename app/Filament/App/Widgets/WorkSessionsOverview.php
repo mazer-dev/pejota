@@ -4,7 +4,6 @@ namespace App\Filament\App\Widgets;
 
 use App\Helpers\PejotaHelper;
 use App\Models\WorkSession;
-use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;

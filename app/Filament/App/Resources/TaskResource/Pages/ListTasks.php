@@ -2,7 +2,6 @@
 
 namespace App\Filament\App\Resources\TaskResource\Pages;
 
-use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\TaskResource;
 use App\Models\Task;
 use Filament\Actions;
@@ -11,7 +10,6 @@ use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Colors\Color;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 
 class ListTasks extends ListRecords
 {
@@ -39,7 +37,7 @@ class ListTasks extends ListRecords
             'all' => Tab::make(),
             'opened' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query): Builder => $query->opened())
-                ->badge(fn(Task $record): int => $record->opened()->count())
+                ->badge(fn (Task $record): int => $record->opened()->count())
                 ->badgeColor(Color::Orange),
             'closed' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query): Builder => $query->closed()),

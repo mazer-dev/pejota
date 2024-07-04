@@ -8,5 +8,6 @@ use Filament\Tables\Columns\Column;
 class BlockTypesBadge extends Column
 {
     use HasColor;
+
     protected string $view = 'tables.columns.block-types-badge';
 }

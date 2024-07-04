@@ -40,7 +40,7 @@ class ProjectsRelationManager extends RelationManager
             ->headerActions([])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->url(fn (Project $record) => ViewProject::getUrl([$record]))
+                    ->url(fn (Project $record) => ViewProject::getUrl([$record])),
             ])
             ->bulkActions([]);
     }

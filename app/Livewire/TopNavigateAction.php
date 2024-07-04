@@ -17,6 +17,7 @@ use Livewire\Component;
 class TopNavigateAction extends Component implements HasActions
 {
     use InteractsWithActions;
+
     public function render()
     {
         return view('livewire.top-navigate-action');
