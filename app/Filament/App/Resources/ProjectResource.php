@@ -30,6 +30,11 @@ class ProjectResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-bar';
 
+    public static function getModelLabel(): string
+    {
+        return __('Project');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -44,22 +49,27 @@ class ProjectResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->translateLabel()
                     ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('client.name')
+                    ->translateLabel()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\ToggleColumn::make('active'),
+                Tables\Columns\ToggleColumn::make('active')
+                    ->translateLabel(),
 
                 Tables\Columns\SpatieTagsColumn::make('tags'),
 
                 Tables\Columns\TextColumn::make('created_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
@@ -93,6 +103,7 @@ class ProjectResource extends Resource
                 Split::make([
                     Section::make([
                         TextEntry::make('name')
+                            ->translateLabel()
                             ->size(TextEntry\TextEntrySize::Large)
                             ->weight(FontWeight::Bold)
                             ->label(''),
@@ -101,10 +112,12 @@ class ProjectResource extends Resource
                             ->label(''),
 
                         TextEntry::make('client.name')
+                            ->translateLabel()
                             ->label('')
                             ->icon('heroicon-o-building-office'),
 
                         TextEntry::make('description')
+                            ->translateLabel()
                             ->formatStateUsing(fn (string $state): HtmlString => new HtmlString($state))
                             ->label('')
                             ->icon('heroicon-o-document-text'),
@@ -113,22 +126,27 @@ class ProjectResource extends Resource
 
                     Section::make([
                         TextEntry::make('active')
-                            ->formatStateUsing(fn (string $state): string => $state ? 'Yes' : 'No'),
+                            ->translateLabel()
+                            ->formatStateUsing(fn (string $state): string => $state ? __('Yes') : __('No')),
 
                         TextEntry::make('created_at')
+                            ->translateLabel()
                             ->dateTime()
                             ->timezone(PejotaHelper::getUserTimeZone()),
                         TextEntry::make('updated_at')
+                            ->translateLabel()
                             ->dateTime()
                             ->timezone(PejotaHelper::getUserTimeZone()),
                         Actions::make([
                             Action::make('edit')
+                                ->translateLabel()
                                 ->url(
                                     fn (Model $record) => "{$record->id}/edit"
                                 )
                                 ->icon('heroicon-o-pencil'),
 
                             Action::make('back')
+                                ->translateLabel()
                                 ->url(
                                     fn (Model $record) => './.'
                                 )
@@ -141,6 +159,7 @@ class ProjectResource extends Resource
                     ->columnSpanFull(),
 
                 Section::make('Tasks')
+                    ->translateLabel()
                     ->schema([
                         Livewire::make(
                             ListTasks::class,
@@ -171,17 +190,21 @@ class ProjectResource extends Resource
     {
         return [
             Forms\Components\Select::make('client')
+                ->translateLabel()
                 ->relationship('client', 'name')
                 ->preload(),
             Forms\Components\TextInput::make('name')
+                ->translateLabel()
                 ->required(),
             Forms\Components\RichEditor::make('description')
+                ->translateLabel()
                 ->columnSpanFull()
                 ->fileAttachmentsDisk('projects')
                 ->fileAttachmentsDirectory(auth()->user()->company->id)
                 ->fileAttachmentsVisibility('private'),
             Forms\Components\SpatieTagsInput::make('tags'),
             Forms\Components\Toggle::make('active')
+                ->translateLabel()
                 ->required()
                 ->default(true),
         ];

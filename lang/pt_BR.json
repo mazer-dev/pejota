@@ -1,4 +1,5 @@
 {
+    "Active": "Ativo",
     "Back": "Voltar",
     "Client": "Cliente",
     "Clients": "Clientes",
@@ -10,16 +11,21 @@
     "Create Note": "Criar Nota",
     "Create Session": "Criar Sessão",
     "Created at": "Criado em",
+    "Description": "Descrição",
     "Edit": "Editar",
     "Name": "Nome",
+    "No": "Não",
     "Overall Numbers": "Números Gerais",
     "Phone": "Telefone",
+    "Project": "Projeto",
     "Projects": "Projetos",
+    "Tasks": "Tarefas",
     "Tasks Opened": "Tarefas Abertas",
     "Tasks Closed": "Tarefas Fechadas",
     "This Month": "Este Mês",
     "This Week": "Esta Semana",
     "Today Sessions": "Sessões de Hoje",
     "Tradename": "Nome Fantasia",
-    "Updated at": "Atualizado em"
+    "Updated at": "Atualizado em",
+    "Yes": "Sim"
 }
