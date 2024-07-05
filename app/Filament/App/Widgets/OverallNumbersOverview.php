@@ -17,13 +17,13 @@ class OverallNumbersOverview extends BaseWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Clients', Client::count())
+            Stat::make(__('Clients'), Client::count())
                 ->icon(ClientResource::getNavigationIcon()),
 
-            Stat::make('Projects', Project::count())
+            Stat::make(__('Projects'), Project::count())
                 ->icon(ProjectResource::getNavigationIcon()),
 
-            Stat::make('Tasks Opened',
+            Stat::make(__('Tasks Opened'),
                 Task::whereHas('status', function ($query) {
                     return $query->whereIn('phase', [
                         StatusPhaseEnum::TODO,

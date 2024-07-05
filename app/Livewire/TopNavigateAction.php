@@ -33,8 +33,8 @@ class TopNavigateAction extends Component implements HasActions
         return Action::make($name)
             ->hiddenLabel()
             ->size(ActionSize::Small)
-            ->tooltip('Create a new Task')
-            ->label('Create Task')
+            ->tooltip(__('Create a new Task'))
+            ->label(__('Create Task'))
             ->icon(TaskResource::getNavigationIcon())
             ->url(
                 TaskResource\Pages\CreateTask::getUrl(panel: 'create')
@@ -46,8 +46,8 @@ class TopNavigateAction extends Component implements HasActions
         return Action::make($name)
             ->hiddenLabel()
             ->size(ActionSize::Small)
-            ->tooltip('Create a new Work Session')
-            ->label('Create Session')
+            ->tooltip(__('Create a new Work Session'))
+            ->label(__('Create Session'))
             ->icon(WorkSessionResource::getNavigationIcon())
             ->color(Color::Amber)
             ->url(
@@ -60,8 +60,8 @@ class TopNavigateAction extends Component implements HasActions
         return Action::make($name)
             ->hiddenLabel()
             ->size(ActionSize::Small)
-            ->tooltip('Create a new Note')
-            ->label('Create Note')
+            ->tooltip(__('Create a new Note'))
+            ->label(__('Create Note'))
             ->icon(NoteResource::getNavigationIcon())
             ->color(Color::Cyan)
             ->url(

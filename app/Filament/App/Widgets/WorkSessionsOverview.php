@@ -15,7 +15,7 @@ class WorkSessionsOverview extends BaseWidget
         $today = CarbonImmutable::now(PejotaHelper::getUserTimeZone())->startOfDay();
 
         return [
-            Stat::make('Today Sessions',
+            Stat::make(__('Today Sessions'),
                 PejotaHelper::formatDuration(
                     WorkSession::whereBetween('start',
                         [
@@ -26,7 +26,7 @@ class WorkSessionsOverview extends BaseWidget
                 )
             ),
 
-            Stat::make('This Week',
+            Stat::make(__('This Week'),
                 PejotaHelper::formatDuration(
                     WorkSession::whereBetween('start',
                         [
@@ -37,7 +37,7 @@ class WorkSessionsOverview extends BaseWidget
                 )
             ),
 
-            Stat::make('This Month',
+            Stat::make(__('This Month'),
                 PejotaHelper::formatDuration(
                     WorkSession::whereBetween('start',
                         [
