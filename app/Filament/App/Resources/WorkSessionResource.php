@@ -9,12 +9,20 @@ use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\SpatieTagsEntry;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
 
 class WorkSessionResource extends Resource
 {
@@ -235,6 +243,51 @@ class WorkSessionResource extends Resource
                 ]),
             ]),
         ];
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                TextEntry::make('title')
+                    ->hiddenLabel(),
+                Section::make([
+                    Grid::make(3)->schema([
+                        TextEntry::make('task.title')
+                            ->hiddenLabel()
+                            ->icon(TaskResource::getNavigationIcon()),
+
+                        TextEntry::make('project.name')
+                            ->hiddenLabel()
+                            ->icon(ProjectResource::getNavigationIcon()),
+
+                        TextEntry::make('client.name')
+                            ->hiddenLabel()
+                            ->icon(ClientResource::getNavigationIcon()),
+                    ]),
+
+                    Grid::make(5)->schema([
+                        TextEntry::make('start')
+                            ->formatStateUsing(
+                                fn(string $state): string => Carbon::parse($state)->tz(PejotaHelper::getUserTimeZone())->toDateTimeString()
+                            ),
+                        TextEntry::make('end')->formatStateUsing(
+                            fn(string $state): string => Carbon::parse($state)->tz(PejotaHelper::getUserTimeZone())->toDateTimeString()
+                        ),
+                        TextEntry::make('duration'),
+                        TextEntry::make('rate'),
+                        TextEntry::make('time')->getStateUsing(
+                            fn(Model $record): string => PejotaHelper::formatDuration($record->duration)
+                        ),
+                    ]),
+
+                    TextEntry::make('description')
+                        ->formatStateUsing(fn(string $state): HtmlString => new HtmlString($state))
+                        ->icon('heroicon-o-document-text'),
+
+                ]),
+
+            ]);
     }
 
     public static function cloneCollection(Collection $records)
