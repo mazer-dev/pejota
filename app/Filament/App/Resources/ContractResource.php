@@ -107,8 +107,10 @@ class ContractResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         if ($data['end_at'] == 'not_empty') {
                             return $query->whereNotNull('end_at');
-                        };
-                        return $query->whereNull('end_at');
+                        } else if ($data['end_at'] == 'empty') {
+                            return $query->whereNull('end_at');
+                        }                     
+                        return $query;
                     }),
                 Tables\Filters\Filter::make('end_at')
                     ->form([
