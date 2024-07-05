@@ -15,6 +15,7 @@ enum CompanySettingsEnum: string
     {
         return [
             'en' => 'English',
+            'pt_BR' => 'Português (Brasil)',
         ];
     }
 
