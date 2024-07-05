@@ -1,4 +1,5 @@
 {
+    "Client": "Cliente",
     "Clients": "Clientes",
     "Create a new Task": "Criar uma nova Tarefa",
     "Create a new Note": "Criar uma nova Nota",
@@ -6,11 +7,16 @@
     "Create Task": "Criar Tarefa",
     "Create Note": "Criar Nota",
     "Create Session": "Criar Sessão",
+    "Created at": "Criado em",
+    "Name": "Nome",
+    "Overall Numbers": "Números Gerais",
+    "Phone": "Telefone",
     "Projects": "Projetos",
     "Tasks Opened": "Tarefas Abertas",
     "Tasks Closed": "Tarefas Fechadas",
     "This Month": "Este Mês",
     "This Week": "Esta Semana",
     "Today Sessions": "Sessões de Hoje",
-    "Overall Numbers": "Números Gerais"
+    "Tradename": "Nome Fantasia",
+    "Updated at": "Atualizado em"
 }
