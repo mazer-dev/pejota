@@ -1,6 +1,8 @@
 {
+    "Back": "Voltar",
     "Client": "Cliente",
     "Clients": "Clientes",
+    "Comments": "Comentários",
     "Create a new Task": "Criar uma nova Tarefa",
     "Create a new Note": "Criar uma nova Nota",
     "Create a new Work Session": "Criar uma nova Sessão",
@@ -8,6 +10,7 @@
     "Create Note": "Criar Nota",
     "Create Session": "Criar Sessão",
     "Created at": "Criado em",
+    "Edit": "Editar",
     "Name": "Nome",
     "Overall Numbers": "Números Gerais",
     "Phone": "Telefone",

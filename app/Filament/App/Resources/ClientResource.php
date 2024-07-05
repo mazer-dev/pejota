@@ -40,11 +40,15 @@ class ClientResource extends Resource
             ->columns(1)
             ->schema([
                 Forms\Components\TextInput::make('name')
+                    ->label(__('Name'))
                     ->required(),
-                Forms\Components\TextInput::make('tradename'),
+                Forms\Components\TextInput::make('tradename')
+                    ->label(__('Tradename')),
                 Forms\Components\TextInput::make('email')
+                    ->label(__('Email'))
                     ->email(),
                 Forms\Components\TextInput::make('phone')
+                    ->label(__('Phone'))
                     ->tel(),
             ]);
     }
@@ -106,24 +110,25 @@ class ClientResource extends Resource
                                 TextEntry::make('name')
                                     ->size(TextEntry\TextEntrySize::Large)
                                     ->weight(FontWeight::Bold)
-                                    ->label(''),
+                                    ->hiddenLabel(),
 
-                                TextEntry::make('trademark')
+                                TextEntry::make('tradename')
                                     ->size(TextEntry\TextEntrySize::Large)
-                                    ->label('')
-                                    ->icon('heroicon-o-at-bookmark-square'),
+                                    ->hiddenLabel()
+                                    ->icon('heroicon-o-bookmark-square'),
 
                                 TextEntry::make('email')
-                                    ->label('')
+                                    ->hiddenLabel()
                                     ->icon('heroicon-o-at-symbol'),
 
                                 TextEntry::make('phone')
-                                    ->label('')
+                                    ->hiddenLabel()
                                     ->icon('heroicon-o-phone'),
 
                             ]),
 
                             Section::make('Comments')
+                                ->translateLabel()
                                 ->collapsible()
                                 ->schema([
                                     CommentsEntry::make('fialament_comments')
@@ -133,19 +138,23 @@ class ClientResource extends Resource
 
                     Section::make([
                         TextEntry::make('created_at')
+                            ->translateLabel()
                             ->dateTime()
                             ->timezone(PejotaHelper::getUserTimeZone()),
                         TextEntry::make('updated_at')
+                            ->translateLabel()
                             ->dateTime()
                             ->timezone(PejotaHelper::getUserTimeZone()),
                         Actions::make([
                             Action::make('edit')
+                                ->translateLabel()
                                 ->url(
                                     fn (Model $record) => "{$record->id}/edit"
                                 )
                                 ->icon('heroicon-o-pencil'),
 
                             Action::make('back')
+                                ->translateLabel()
                                 ->url(
                                     fn (Model $record) => './.'
                                 )
