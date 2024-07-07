@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\ContractResource\Pages;
 use App\Filament\App\Resources\ContractResource\RelationManagers;
 use App\Models\Contract;
@@ -25,7 +26,9 @@ class ContractResource extends Resource
 {
     protected static ?string $model = Contract::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
+    protected static ?int $navigationSort = MenuSortEnum::CONTRACTS->value;
 
     public static function form(Form $form): Form
     {
@@ -109,7 +112,7 @@ class ContractResource extends Resource
                             return $query->whereNotNull('end_at');
                         } else if ($data['end_at'] == 'empty') {
                             return $query->whereNull('end_at');
-                        }                     
+                        }
                         return $query;
                     }),
                 Tables\Filters\Filter::make('end_at')

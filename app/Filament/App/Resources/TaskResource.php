@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
@@ -41,6 +42,8 @@ class TaskResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-document-check';
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    protected static ?int $navigationSort = MenuSortEnum::TASKS->value;
 
     public static function getModelLabel(): string
     {

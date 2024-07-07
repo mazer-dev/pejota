@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\WorkSessionResource\Pages;
 use App\Helpers\PejotaHelper;
 use App\Models\WorkSession;
@@ -29,6 +30,8 @@ class WorkSessionResource extends Resource
     protected static ?string $model = WorkSession::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clock';
+
+    protected static ?int $navigationSort = MenuSortEnum::WORK_SESSIONS->value;
 
     public static function form(Form $form): Form
     {

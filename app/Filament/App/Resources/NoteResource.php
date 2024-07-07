@@ -3,6 +3,7 @@
 namespace App\Filament\App\Resources;
 
 use AbdelhamidErrahmouni\FilamentMonacoEditor\MonacoEditor;
+use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\NoteResource\Pages;
 use App\Models\Note;
 use App\Tables\Columns\BlockTypesBadge;
@@ -23,7 +24,7 @@ class NoteResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = MenuSortEnum::NOTES->value;
 
     protected static ?string $recordTitleAttribute = 'title';
 

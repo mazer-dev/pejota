@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\ClientResource\Pages;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
@@ -28,6 +29,8 @@ class ClientResource extends Resource
     protected static ?string $model = Client::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+
+    protected static ?int $navigationSort = MenuSortEnum::CLIENTS->value;
 
     public static function getModelLabel(): string
     {

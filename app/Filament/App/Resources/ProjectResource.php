@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\ProjectResource\Pages;
 use App\Helpers\PejotaHelper;
 use App\Livewire\Projects\ListTasks;
@@ -29,6 +30,8 @@ class ProjectResource extends Resource
     protected static ?string $model = Project::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-bar';
+
+    protected static ?int $navigationSort = MenuSortEnum::PROJECTS->value;
 
     public static function getModelLabel(): string
     {
