@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
@@ -48,6 +49,11 @@ class TaskResource extends Resource
     public static function getModelLabel(): string
     {
         return __('Task');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __(MenuGroupsEnum::DAILY_WORK->value);
     }
 
     public static function getGlobalSearchEloquentQuery(): Builder

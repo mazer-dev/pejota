@@ -66,12 +66,11 @@ class AppPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([])
             ->navigationGroups([
-                NavigationGroup::make()
-                    ->label(__(MenuGroupsEnum::ADMINISTRATION->value)),
-                NavigationGroup::make()
-                    ->label(__(MenuGroupsEnum::DAILY_WORK->value)),
-                NavigationGroup::make()
-                    ->label(__(MenuGroupsEnum::SETTINGS->value))
+                NavigationGroup::make(fn() => __(MenuGroupsEnum::ADMINISTRATION->value))
+                    ->icon('heroicon-o-briefcase'),
+                NavigationGroup::make(fn() => __(MenuGroupsEnum::DAILY_WORK->value))
+                    ->icon('heroicon-o-inbox-stack'),
+                NavigationGroup::make(fn() => __(MenuGroupsEnum::SETTINGS->value))
                     ->icon('heroicon-o-cog-6-tooth')
                     ->collapsed(),
             ])

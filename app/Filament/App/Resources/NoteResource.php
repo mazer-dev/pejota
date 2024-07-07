@@ -3,6 +3,7 @@
 namespace App\Filament\App\Resources;
 
 use AbdelhamidErrahmouni\FilamentMonacoEditor\MonacoEditor;
+use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\NoteResource\Pages;
 use App\Models\Note;
@@ -27,6 +28,11 @@ class NoteResource extends Resource
     protected static ?int $navigationSort = MenuSortEnum::NOTES->value;
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __(MenuGroupsEnum::DAILY_WORK->value);
+    }
 
     public static function getGlobalSearchResultActions(Model $record): array
     {
@@ -73,7 +79,7 @@ class NoteResource extends Resource
                                             ->placeholder('url')
                                             ->required()
                                             ->prefixAction(
-                                                fn ($state) => Forms\Components\Actions\Action::make('url')
+                                                fn($state) => Forms\Components\Actions\Action::make('url')
                                                     ->url($state)
                                                     ->openUrlInNewTab()
                                                     ->icon('heroicon-o-link')
@@ -124,7 +130,7 @@ class NoteResource extends Resource
                                             ->live(),
 
                                         MonacoEditor::make('content')
-                                            ->language(fn ($get) => ($get('language') ?? 'html'))
+                                            ->language(fn($get) => ($get('language') ?? 'html'))
                                             ->disablePreview(true)
                                             ->hideFullScreenButton()
                                             ->hiddenLabel(),
@@ -165,7 +171,7 @@ class NoteResource extends Resource
                             ->relationship(
                                 'project',
                                 'name',
-                                fn (Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                                fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
                             )
                             ->searchable()->preload(),
                     ])

@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\ClientResource\Pages;
 use App\Helpers\PejotaHelper;
@@ -35,6 +36,11 @@ class ClientResource extends Resource
     public static function getModelLabel(): string
     {
         return __('Client');
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __(MenuGroupsEnum::ADMINISTRATION->value);
     }
 
     public static function form(Form $form): Form

@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\ContractResource\Pages;
 use App\Filament\App\Resources\ContractResource\RelationManagers;
@@ -30,6 +31,12 @@ class ContractResource extends Resource
 
     protected static ?int $navigationSort = MenuSortEnum::CONTRACTS->value;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return __(MenuGroupsEnum::ADMINISTRATION->value);
+    }
+
+
     public static function form(Form $form): Form
     {
         return $form
@@ -37,62 +44,62 @@ class ContractResource extends Resource
             ->schema([
                 Grid::make(2)->schema([
                     Select::make('client_id')
-                    ->relationship('client', 'name')
-                    ->preload()->searchable()->required(),
+                        ->relationship('client', 'name')
+                        ->preload()->searchable()->required(),
                     Select::make('project_id')
-                    ->label('Project')
-                    ->relationship(
-                        'project',
-                        'name',
-                        fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
-                    )
-                    ->searchable()->preload()->required(),
+                        ->label('Project')
+                        ->relationship(
+                            'project',
+                            'name',
+                            fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                        )
+                        ->searchable()->preload()->required(),
 
                 ]),
                 TextInput::make('title')
-                ->required(),
+                    ->required(),
                 Grid::make(2)->schema([
                     DatePicker::make('start_at')->required(),
                     DatePicker::make('end_at'),
                 ]),
                 RichEditor::make('content')->required(),
                 Grid::make(3)
-                ->schema([
-                    TableRepeater::make('signatures')
                     ->schema([
-                        TextInput::make('name')->required(),
-                        Select::make('role')
-                        ->options([
-                            'client',
-                            'vendor',
-                            'witness'
-                        ])->required(),
-                        DatePicker::make('date')->required()
+                        TableRepeater::make('signatures')
+                            ->schema([
+                                TextInput::make('name')->required(),
+                                Select::make('role')
+                                    ->options([
+                                        'client',
+                                        'vendor',
+                                        'witness'
+                                    ])->required(),
+                                DatePicker::make('date')->required()
+                            ])
+                            ->addActionLabel('add item')
+                            ->defaultItems(0)
+                            ->colStyles([
+                                'item' => 'width:70%'
+                            ]),
                     ])
-                    ->addActionLabel('add item')
-                    ->defaultItems(0)
-                    ->colStyles([
-                        'item' => 'width:70%'
-                    ]),
-                ])
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-        ->groups([
-            'client.name',
-            'project.name',
-            'start_at',
-        ])
+            ->groups([
+                'client.name',
+                'project.name',
+                'start_at',
+            ])
             ->columns([
                 TextColumn::make('title')
-                ->searchable(),
+                    ->searchable(),
                 TextColumn::make('client.name'),
                 TextColumn::make('project.name'),
                 TextColumn::make('start_at')
-                ->formatStateUsing(fn(Model $record) => Carbon::parse($record->start_at)->format('d/m/Y'))
+                    ->formatStateUsing(fn(Model $record) => Carbon::parse($record->start_at)->format('d/m/Y'))
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('client')
