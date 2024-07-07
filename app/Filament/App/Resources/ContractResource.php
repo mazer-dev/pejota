@@ -36,6 +36,10 @@ class ContractResource extends Resource
         return __(MenuGroupsEnum::ADMINISTRATION->value);
     }
 
+    public static function getModelLabel(): string
+    {
+        return __('Contract');
+    }
 
     public static function form(Form $form): Form
     {
@@ -44,39 +48,58 @@ class ContractResource extends Resource
             ->schema([
                 Grid::make(2)->schema([
                     Select::make('client_id')
+                        ->translateLabel()
                         ->relationship('client', 'name')
-                        ->preload()->searchable()->required(),
+                        ->preload()
+                        ->searchable()
+                        ->required(),
                     Select::make('project_id')
                         ->label('Project')
+                        ->translateLabel()
                         ->relationship(
                             'project',
                             'name',
                             fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
                         )
-                        ->searchable()->preload()->required(),
+                        ->searchable()
+                        ->preload()
+                        ->required(),
 
                 ]),
                 TextInput::make('title')
+                    ->translateLabel()
                     ->required(),
                 Grid::make(2)->schema([
-                    DatePicker::make('start_at')->required(),
-                    DatePicker::make('end_at'),
+                    DatePicker::make('start_at')
+                        ->translateLabel()
+                        ->required(),
+                    DatePicker::make('end_at')
+                        ->translateLabel(),
                 ]),
-                RichEditor::make('content')->required(),
+                RichEditor::make('content')
+                    ->translateLabel()
+                    ->required(),
                 Grid::make(3)
                     ->schema([
                         TableRepeater::make('signatures')
+                            ->label(__('Signatures'))
                             ->schema([
-                                TextInput::make('name')->required(),
+                                TextInput::make('name')
+                                    ->translateLabel()
+                                    ->required(),
                                 Select::make('role')
+                                    ->translateLabel()
                                     ->options([
-                                        'client',
-                                        'vendor',
-                                        'witness'
-                                    ])->required(),
-                                DatePicker::make('date')->required()
+                                        'client' => __('Client'),
+                                        'vendor' => __('Vendor'),
+                                        'witness' => __('Witness'),
+                                    ])
+                                    ->required(),
+                                DatePicker::make('date')
+                                    ->translateLabel()
+                                    ->required()
                             ])
-                            ->addActionLabel('add item')
+                            ->addActionLabel(__('Add item'))
                             ->defaultItems(0)
                             ->colStyles([
                                 'item' => 'width:70%'
@@ -95,22 +118,30 @@ class ContractResource extends Resource
             ])
             ->columns([
                 TextColumn::make('title')
+                    ->translateLabel()
                     ->searchable(),
-                TextColumn::make('client.name'),
-                TextColumn::make('project.name'),
+                TextColumn::make('client.name')
+                    ->translateLabel(),
+                TextColumn::make('project.name')
+                    ->translateLabel(),
                 TextColumn::make('start_at')
-                    ->formatStateUsing(fn(Model $record) => Carbon::parse($record->start_at)->format('d/m/Y'))
+                    ->translateLabel(),
+                TextColumn::make('end_at')
+                    ->translateLabel(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('client')
+                    ->translateLabel()
                     ->relationship('client', 'name'),
                 Tables\Filters\Filter::make('end_at_not_empty')
+                    ->translateLabel()
                     ->form([
                         Forms\Components\Grid::make(2)->schema([
                             Forms\Components\ToggleButtons::make('end_at')
+                                ->translateLabel()
                                 ->options([
-                                    'not_empty' => 'Has end date',
-                                    'empty' => 'No end date',
+                                    'not_empty' => __('Has end date'),
+                                    'empty' => __('No end date'),
                                 ]),
                         ])
                     ])
@@ -124,8 +155,10 @@ class ContractResource extends Resource
                     }),
                 Tables\Filters\Filter::make('end_at')
                     ->form([
-                        Forms\Components\DatePicker::make('from'),
-                        Forms\Components\DatePicker::make('to'),
+                        Forms\Components\DatePicker::make('from')
+                            ->translateLabel(),
+                        Forms\Components\DatePicker::make('to')
+                            ->translateLabel(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
