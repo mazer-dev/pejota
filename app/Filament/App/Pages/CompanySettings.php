@@ -3,6 +3,7 @@
 namespace App\Filament\App\Pages;
 
 use App\Enums\CompanySettingsEnum;
+use App\Enums\MenuGroupsEnum;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Quadrubo\FilamentModelSettings\Pages\Contracts\HasModelSettings;
@@ -21,12 +22,12 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
 
     public static function getNavigationLabel(): string
     {
-        return __('Settings');
+        return __('Company settings');
     }
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Administration');
+        return __(MenuGroupsEnum::SETTINGS->value);
     }
 
     public function form(Form $form): Form

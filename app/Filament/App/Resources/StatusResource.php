@@ -20,7 +20,7 @@ class StatusResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Administration');
+        return __('Settings');
     }
 
     public static function form(Form $form): Form

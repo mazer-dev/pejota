@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuGroupsEnum;
 use App\Filament\App\Resources\TagResource\Pages;
 use App\Filament\App\Resources\TagResource\RelationManagers;
 use App\Models\Tag;
@@ -22,7 +23,7 @@ class TagResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Administration');
+        return __(MenuGroupsEnum::SETTINGS->value);
     }
 
     public static function form(Form $form): Form
