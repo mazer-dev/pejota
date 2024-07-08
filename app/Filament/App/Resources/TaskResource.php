@@ -131,8 +131,7 @@ class TaskResource extends Resource
                     ->columnSpanFull()
                     ->required(),
 
-                Forms\Components\Section::make('Details')
-                    ->translateLabel()
+                Forms\Components\Section::make(__('Details'))
                     ->collapsible()
                     ->compact()
                     ->schema([
@@ -234,6 +233,7 @@ class TaskResource extends Resource
                     ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel())
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
+                    ->translateLabel()
                     ->wrap()
                     ->searchable(),
                 Tables\Columns\SelectColumn::make('status_id')
@@ -246,33 +246,41 @@ class TaskResource extends Resource
                     ->tooltip(fn(Model $record) => $record->status->name)
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('due_date')
+                    ->translateLabel()
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('effort')
+                    ->translateLabel()
                     ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit)
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('planned_start')
+                    ->translateLabel()
                     ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('planned_end')
+                    ->translateLabel()
                     ->date()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('client.labelName')
+                    ->translateLabel()
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('project.name')
+                    ->translateLabel()
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\SpatieTagsColumn::make('tags')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
@@ -284,14 +292,16 @@ class TaskResource extends Resource
                     ->multiple(true)
                     ->preload(),
                 Tables\Filters\SelectFilter::make('client')
+                    ->translateLabel()
                     ->relationship('client', 'name'),
                 Tables\Filters\Filter::make('due_date_not_empty')
                     ->form([
                         Forms\Components\Grid::make(2)->schema([
                             Forms\Components\ToggleButtons::make('due_date')
+                                ->translateLabel()
                                 ->options([
-                                    'not_empty' => 'Has due date',
-                                    'empty' => 'No due date',
+                                    'not_empty' => __('Has due date'),
+                                    'empty' => __('No due date'),
                                 ]),
                         ]),
                     ])
@@ -304,15 +314,17 @@ class TaskResource extends Resource
                     })
                     ->indicateUsing(function (array $data): ?string {
                         if ($data['due_date']) {
-                            return $data['due_date'] == 'not_empty' ? 'Has due date' : 'No due date';
+                            return $data['due_date'] == 'not_empty' ? __('Has due date') : __('No due date');
                         }
 
                         return null;
                     }),
                 Tables\Filters\Filter::make('due_date')
                     ->form([
-                        Forms\Components\DatePicker::make('from'),
-                        Forms\Components\DatePicker::make('to'),
+                        Forms\Components\DatePicker::make('from')
+                            ->translateLabel(),
+                        Forms\Components\DatePicker::make('to')
+                            ->translateLabel(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -327,7 +339,7 @@ class TaskResource extends Resource
                     })
                     ->indicateUsing(function (array $data): ?string {
                         if ($data['from'] || $data['to']) {
-                            return 'Due date: ' . $data['from'] . ' - ' . $data['to'];
+                            return __('Due date').': ' . $data['from'] . ' - ' . $data['to'];
                         }
 
                         return null;
@@ -373,22 +385,27 @@ class TaskResource extends Resource
                             ]),
 
                             TextEntry::make('description')
+                                ->translateLabel()
                                 ->formatStateUsing(fn(string $state): HtmlString => new HtmlString($state))
                                 ->icon('heroicon-o-document-text'),
 
                             Grid::make(4)->schema([
                                 TextEntry::make('planned_start')
+                                    ->translateLabel()
                                     ->date()
                                     ->icon('heroicon-o-calendar'),
                                 TextEntry::make('planned_end')
+                                    ->translateLabel()
                                     ->date()
                                     ->icon('heroicon-o-calendar'),
 
                                 TextEntry::make('actual_start')
+                                    ->translateLabel()
                                     ->date()
                                     ->icon('heroicon-o-calendar'),
 
                                 TextEntry::make('actual_end')
+                                    ->translateLabel()
                                     ->date()
                                     ->icon('heroicon-o-calendar'),
                             ]),
@@ -425,7 +442,8 @@ class TaskResource extends Resource
                                         ]),
                                 ]),
 
-                            Tabs\Tab::make('Sub tasks')
+                            Tabs\Tab::make('Subtasks')
+                                ->translateLabel()
                                 ->badge(fn(Model $record): int => $record->children->count())
                                 ->schema([
                                     RepeatableEntry::make('children')
@@ -443,6 +461,7 @@ class TaskResource extends Resource
                                             Grid::make(12)->schema([
                                                 IconEntry::make('priority')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->translateLabel()
                                                     ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
                                                     ->color(fn($state) => PriorityEnum::from($state)->getColor())
                                                     ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel()),
@@ -453,6 +472,7 @@ class TaskResource extends Resource
                                                     ->color(fn(Model $record): array => Color::hex($record->status->color)),
                                                 TextEntry::make('title')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->translateLabel()
                                                     ->columnSpan(8)
                                                     ->action(
                                                         Action::make('view')
@@ -465,6 +485,7 @@ class TaskResource extends Resource
                                                     ),
                                                 TextEntry::make('due_date')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->translateLabel()
                                                     ->date()
                                                     ->icon('heroicon-o-calendar')
                                                     ->columnSpan(2),
@@ -475,6 +496,7 @@ class TaskResource extends Resource
 
                         Tabs::make('Tabs')->schema([
                             Tabs\Tab::make('Comments')
+                                ->translateLabel()
                                 ->badge(fn(Model $record): int => $record->filamentComments->count())
                                 ->schema([
                                     CommentsEntry::make('filament_comments')
@@ -482,6 +504,7 @@ class TaskResource extends Resource
                                 ]),
 
                             Tabs\Tab::make('Sessions')
+                                ->translateLabel()
                                 ->badge(fn(Model $record): int => $record->workSessions->count())
                                 ->schema([
                                     RepeatableEntry::make('workSessions')
@@ -498,18 +521,23 @@ class TaskResource extends Resource
                                         ->schema([
                                             Grid::make(6)->schema([
                                                 TextEntry::make('start')
+                                                    ->label('Started at')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->translateLabel()
                                                     ->dateTime()
                                                     ->timezone(PejotaHelper::getUserTimeZone()),
                                                 TextEntry::make('duration')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->translateLabel()
                                                     ->icon('heroicon-o-clock')
                                                     ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state)),
                                                 TextEntry::make('title')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->translateLabel()
                                                     ->columnSpan(fn(Model $record): int => $record->description ? 2 : 4),
                                                 TextEntry::make('description')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
+                                                    ->translateLabel()
                                                     ->html()
                                                     ->columnSpan(2)
                                                     ->visible(fn($state) => $state ? true : false),
@@ -518,14 +546,17 @@ class TaskResource extends Resource
                                 ]),
 
                             Tabs\Tab::make('History')
+                                ->translateLabel()
                                 ->badge(fn(Model $record): int => $record->activities->count())
                                 ->schema([
                                     Grid::make(2)->schema([
                                         TextEntry::make('created_at')
+                                            ->translateLabel()
                                             ->inlineLabel()
                                             ->dateTime()
                                             ->timezone(PejotaHelper::getUserTimeZone()),
                                         TextEntry::make('updated_at')
+                                            ->translateLabel()
                                             ->inlineLabel()
                                             ->dateTime()
                                             ->timezone(PejotaHelper::getUserTimeZone()),
@@ -533,21 +564,22 @@ class TaskResource extends Resource
                                     ]),
 
                                     RepeatableEntry::make('activities')
+                                        ->translateLabel()
                                         ->columnSpanFull()
                                         ->contained(false)
                                         ->schema([
                                             Grid::make(4)->schema([
                                                 TextEntry::make('created_at')
-                                                    ->label('')
+                                                    ->hiddenLabel()
                                                     ->icon('heroicon-o-chevron-double-right')
                                                     ->dateTime()
                                                     ->timezone(PejotaHelper::getUserTimeZone()),
                                                 TextEntry::make('description')
-                                                    ->label(''),
+                                                    ->hiddenLabel(),
                                                 TextEntry::make('causer.name')
-                                                    ->label(''),
+                                                    ->hiddenLabel(),
                                                 TextEntry::make('properties.attributes')
-                                                    ->label('')
+                                                    ->hiddenLabel()
                                                     ->getStateUsing(
                                                         fn(Model $record): array => [$record->properties->get('attributes')['status.name']]
                                                     ),
@@ -563,6 +595,7 @@ class TaskResource extends Resource
                     Section::make([
                         Grid::make(2)->schema([
                             IconEntry::make('priority')
+                                ->translateLabel()
                                 ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
                                 ->color(fn($state) => PriorityEnum::from($state)->getColor())
                                 ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel()),
@@ -573,28 +606,34 @@ class TaskResource extends Resource
                         ]),
 
                         TextEntry::make('due_date')
+                            ->translateLabel()
                             ->date()
                             ->icon('heroicon-o-exclamation-triangle'),
 
                         TextEntry::make('effort')
+                            ->translateLabel()
                             ->label('Estimated')
                             ->inlineLabel()
                             ->icon('heroicon-o-variable')
                             ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit),
 
                         TextEntry::make('workSessions')
+                            ->label("Sessions")
+                            ->translateLabel()
                             ->inlineLabel()
                             ->icon('heroicon-o-clock')
                             ->formatStateUsing(fn(Model $record): string => PejotaHelper::formatDuration($record->workSessions->sum('duration'))),
 
                         Actions::make([
                             Action::make('edit')
+                                ->translateLabel()
                                 ->url(
                                     fn(Model $record) => "{$record->id}/edit"
                                 )
                                 ->icon('heroicon-o-pencil'),
 
                             Action::make('list')
+                                ->translateLabel()
                                 ->url(
                                     fn(Model $record) => './.'
                                 )
@@ -602,6 +641,7 @@ class TaskResource extends Resource
                                 ->color(Color::Neutral),
 
                             Action::make('session')
+                                ->translateLabel()
                                 ->icon(WorkSessionResource::getNavigationIcon())
                                 ->color(Color::Amber)
                                 ->modal(true)
