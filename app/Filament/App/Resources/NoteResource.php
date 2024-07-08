@@ -29,6 +29,16 @@ class NoteResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
+    public static function getModelLabel(): string
+    {
+        return __('Note');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Notes');
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return __(MenuGroupsEnum::DAILY_WORK->value);
@@ -42,7 +52,7 @@ class NoteResource extends Resource
                 ->url(Pages\EditNote::getUrl([$record->id]))
                 ->icon('heroicon-o-pencil')
                 ->size(ActionSize::ExtraSmall)
-                ->tooltip('Edit Task'),
+                ->tooltip(__('Edit note')),
 
             Action::make('view')
                 ->hiddenLabel()
@@ -51,7 +61,7 @@ class NoteResource extends Resource
                 ->icon(NoteResource::$navigationIcon)
                 ->color(Color::Cyan)
                 ->size(ActionSize::ExtraSmall)
-                ->tooltip('View Note'),
+                ->tooltip(__('View note')),
         ];
     }
 
@@ -63,6 +73,7 @@ class NoteResource extends Resource
                 Forms\Components\Split::make([
                     Forms\Components\Section::make()->schema([
                         Forms\Components\TextInput::make('title')
+                            ->translateLabel()
                             ->required(),
 
                         Forms\Components\Builder::make('content')
@@ -85,14 +96,17 @@ class NoteResource extends Resource
                                                     ->icon('heroicon-o-link')
                                             ),
                                         Forms\Components\TextInput::make('title')
+                                            ->translateLabel()
                                             ->hiddenLabel()
                                             ->placeholder('Title'),
                                     ]),
 
                                 Forms\Components\Builder\Block::make('code')
+                                    ->translateLabel()
                                     ->icon('heroicon-o-code-bracket')
                                     ->schema([
                                         Forms\Components\Select::make('language')
+                                            ->translateLabel()
                                             ->options([
                                                 'bash' => 'Bash',
                                                 'bat' => 'Batch',
@@ -151,23 +165,27 @@ class NoteResource extends Resource
                                     ]),
 
                                 Forms\Components\Builder\Block::make('text')
+                                    ->translateLabel()
                                     ->icon('heroicon-o-document-text')
                                     ->schema([
                                         Forms\Components\Textarea::make('content')
                                             ->hiddenLabel(),
                                     ]),
-                            ]),
+                            ])
+                            ->addActionLabel(__('Add content type')),
                     ]),
 
                     Forms\Components\Section::make()->schema([
                         Forms\Components\SpatieTagsInput::make('tags'),
 
                         Forms\Components\Select::make('client')
+                            ->translateLabel()
                             ->relationship('client', 'name')
                             ->preload()->searchable(),
 
                         Forms\Components\Select::make('project_id')
                             ->label('Project')
+                            ->translateLabel()
                             ->relationship(
                                 'project',
                                 'name',
@@ -185,18 +203,22 @@ class NoteResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('title')
+                    ->translateLabel()
                     ->searchable(),
 
                 BlockTypesBadge::make('content')
+                    ->translateLabel()
                     ->color(Color::Cyan),
 
                 Tables\Columns\SpatieTagsColumn::make('tags'),
 
                 Tables\Columns\TextColumn::make('client.name')
+                    ->translateLabel()
                     ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('project.name')
+                    ->translateLabel()
                     ->searchable()
                     ->sortable(),
             ])

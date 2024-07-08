@@ -7,7 +7,7 @@
             <x-filament::badge
                 :color="$color"
             >
-                {{ $type }} ({{ $count }})
+                {{ __($type) }} ({{ $count }})
             </x-filament::badge>
         @endforeach
     </div>
