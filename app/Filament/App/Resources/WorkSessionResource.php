@@ -31,6 +31,18 @@ class WorkSessionResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clock';
 
     protected static ?int $navigationSort = MenuSortEnum::WORK_SESSIONS->value;
+    public static function getModelLabel(): string
+    {
+        return __('Work session');
+    }
+
+    /**
+     * @return string|null
+     */
+    public static function getPluralModelLabel(): string
+    {
+        return __('Work sessions');
+    }
 
     public static function getNavigationGroup(): ?string
     {
