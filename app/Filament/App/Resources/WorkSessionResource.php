@@ -13,8 +13,6 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\SpatieTagsEntry;
-use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -54,40 +52,53 @@ class WorkSessionResource extends Resource
             ->defaultSort('start', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('start')
+                    ->label('Started at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end')
+                    ->label('End at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Time')
+                    ->translateLabel()
                     ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
+                    ->translateLabel()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('value')
+                    ->translateLabel()
                     ->numeric()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('currency')
+                    ->translateLabel()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('task.title')
+                    ->translateLabel()
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('project.name')
+                    ->translateLabel()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('client.labelName')
+                    ->translateLabel()
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
@@ -100,8 +111,8 @@ class WorkSessionResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\Action::make('Clone')
-                        ->tooltip('Clone this session with same time and details, updating to current date')
+                    Tables\Actions\Action::make(__('Clone'))
+                        ->tooltip(__('Clone this session with same time and details, updating to current date'))
                         ->icon('heroicon-o-document-duplicate')
                         ->color(Color::Amber)
                         ->action(fn(WorkSession $record) => self::clone($record)),
@@ -110,8 +121,8 @@ class WorkSessionResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\BulkAction::make('Clone selected')
-                        ->tooltip('Clone this sessions with same time and details, updating to current date')
+                    Tables\Actions\BulkAction::make(__('Clone selected'))
+                        ->tooltip(__('Clone this session with same time and details, updating to current date'))
                         ->icon('heroicon-o-document-duplicate')
                         ->color(Color::Amber)
                         ->action(fn(Collection $records) => self::cloneCollection($records))
@@ -167,19 +178,24 @@ class WorkSessionResource extends Resource
     public static function getFormSchema(): array
     {
         return [
-            Forms\Components\TextInput::make('title'),
+            Forms\Components\TextInput::make('title')
+                ->translateLabel(),
 
             Forms\Components\Split::make([
                 Forms\Components\Section::make('')->schema([
 
                     Forms\Components\Grid::make(2)->schema([
                         Forms\Components\DateTimePicker::make('start')
+                            ->label('Start at')
+                            ->translateLabel()
                             ->timezone(PejotaHelper::getUserTimeZone())
                             ->required()
                             ->default(fn(): string => now()->toDateTimeString())
                             ->live(),
 
                         Forms\Components\DateTimePicker::make('end')
+                            ->label('End at')
+                            ->translateLabel()
                             ->timezone(PejotaHelper::getUserTimeZone())
                             ->required()
                             ->live()
@@ -196,11 +212,12 @@ class WorkSessionResource extends Resource
 
                     Forms\Components\Grid::make(3)->schema([
                         Forms\Components\TextInput::make('duration')
+                            ->translateLabel()
                             ->required()
                             ->numeric()
                             ->integer()
                             ->default(0)
-                            ->helperText('Duration in minutes. If you enter manually end time, it will be calculated.')
+                            ->helperText(__('Duration in minutes. If you enter manually end time, it will be calculated.'))
                             ->live()
                             ->afterStateUpdated(
                                 fn(
@@ -213,25 +230,30 @@ class WorkSessionResource extends Resource
                             ),
 
                         Forms\Components\TextInput::make('rate')
+                            ->translateLabel()
                             ->required()
                             ->numeric()
                             ->default(0),
 
                         Forms\Components\TextInput::make('time')
+                            ->translateLabel()
                             ->label('Session time')
                             ->disabled(),
                     ]),
 
                     Forms\Components\Select::make('task')
+                        ->translateLabel()
                         ->relationship('task', 'title')
                         ->searchable(),
 
                     Forms\Components\Grid::make(2)->schema([
                         Forms\Components\Select::make('client')
+                            ->translateLabel()
                             ->relationship('client', 'name')
                             ->searchable()->preload(),
                         Forms\Components\Select::make('project')
                             ->label('Project')
+                            ->translateLabel()
                             ->relationship(
                                 'project',
                                 'name',
@@ -245,7 +267,7 @@ class WorkSessionResource extends Resource
                 Forms\Components\Section::make()->schema([
 
                     Forms\Components\RichEditor::make('description')
-                        ->label('')
+                        ->hiddenLabel()
                         ->fileAttachmentsDisk('work_sessions')
                         ->fileAttachmentsDirectory(auth()->user()->company->id)
                         ->fileAttachmentsVisibility('private'),
