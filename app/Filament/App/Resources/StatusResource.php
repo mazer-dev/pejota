@@ -28,22 +28,28 @@ class StatusResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
+                    ->translateLabel()
                     ->required()
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('description')
+                    ->translateLabel()
                     ->columnSpanFull(),
                 Forms\Components\Grid::make(4)->schema([
                     Forms\Components\ColorPicker::make('color')
+                        ->translateLabel()
                         ->default('#6abeed')
                         ->required(),
                     Forms\Components\TextInput::make('sort_order')
+                        ->translateLabel()
                         ->required()
                         ->numeric()
                         ->default(0),
                     Forms\Components\Select::make('phase')
+                        ->translateLabel()
                         ->options(StatusPhaseEnum::class)
                         ->required(),
                     Forms\Components\Toggle::make('active')
+                        ->translateLabel()
                         ->required()
                         ->default(true),
                 ]),
@@ -56,21 +62,28 @@ class StatusResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('Order')
+                    ->translateLabel()
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
+                    ->translateLabel()
                     ->searchable(),
-                Tables\Columns\ColorColumn::make('color'),
+                Tables\Columns\ColorColumn::make('color')
+                    ->translateLabel(),
                 Tables\Columns\TextColumn::make('phase')
+                    ->translateLabel()
                     ->searchable(),
                 Tables\Columns\IconColumn::make('active')
+                    ->translateLabel()
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
