@@ -31,6 +31,7 @@ class TasksRelationManager extends RelationManager
             ->recordTitleAttribute('title')
             ->columns([
                 Tables\Columns\TextColumn::make('title')
+                    ->translateLabel()
                     ->searchable()
                     ->sortable(),
 

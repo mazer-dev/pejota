@@ -32,13 +32,16 @@ class TagResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Textarea::make('name')
+                    ->translateLabel()
                     ->required()
                     ->columnSpanFull(),
                 Forms\Components\Textarea::make('slug')
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('type'),
+                Forms\Components\TextInput::make('type')
+                    ->translateLabel(),
                 Forms\Components\TextInput::make('order_column')
+                    ->translateLabel()
                     ->numeric(),
             ]);
     }
@@ -48,20 +51,26 @@ class TagResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('order_column')
+                    ->label('Order')
+                    ->translateLabel()
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
+                    ->translateLabel()
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('slug')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('type')
+                    ->translateLabel()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -89,10 +98,13 @@ class TagResource extends Resource
                 Section::make('')
                     ->columns(4)
                     ->schema([
-                        TextEntry::make('name'),
+                        TextEntry::make('name')
+                            ->translateLabel(),
                         TextEntry::make('slug'),
-                        TextEntry::make('order_column'),
-                        TextEntry::make('type'),
+                        TextEntry::make('order_column')
+                            ->label('Order'),
+                        TextEntry::make('type')
+                            ->translateLabel(),
 
                     ]),
             ]);
