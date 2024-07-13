@@ -47,13 +47,37 @@ class ContractResource extends Resource
         return $form
             ->columns(1)
             ->schema([
-                Grid::make(2)->schema([
+                Grid::make(3)->schema([
+                    Select::make('with')
+                        ->translateLabel()
+                        ->options([
+                            'client' => __('Client'),
+                            'vendor' => __('Vendor'),
+                        ])
+                        ->default('client')
+                        ->live()
+                        ->afterStateUpdated(function ($state, $get, $set) {
+                            if ($state === 'client') {
+                                return $set('vendor_id', null);
+                            }
+
+                            return $set('client_id', null);
+                        })
+                        ->required(),
                     Select::make('client_id')
                         ->translateLabel()
                         ->relationship('client', 'name')
                         ->preload()
                         ->searchable()
-                        ->required(),
+                        ->visible(fn($get) => $get('with') === 'client')
+                        ->required(fn($get) => $get('with') === 'client'),
+                    Select::make('vendor_id')
+                        ->translateLabel()
+                        ->relationship('vendor', 'name')
+                        ->preload()
+                        ->searchable()
+                        ->visible(fn($get) => $get('with') === 'vendor')
+                        ->required(fn($get) => $get('with') === 'vendor'),
                     Select::make('project_id')
                         ->label('Project')
                         ->translateLabel()
