@@ -5,20 +5,28 @@ Solo entrepreneus and Freelancer ERP and CRM.
 Build on top of PHP, Laravel, FilamentPHP, Sqlite / Mysql, and other cool and technologies
 that allow a quick high quality monolith to be created.
 
-![image](https://github.com/mazer-dev/pejota/assets/652935/bd830e15-fc44-497a-afef-3f79a177d4b0)
+![image](https://github.com/user-attachments/assets/b859236d-6511-4e2f-96ad-b6278b57ab5d)
 
 
 ## Features
 
 ### Clients
 
-Simple clients register to associate with Projects and Tasks.
+Simple clients register to associate with Projects, Contracts, Tasks and Work Sessions.
+
+### Vendors
+
+Simple vendors register to associate with Projects, Contracts, Tasks and Work Sessions.
 
 ### Projects
 
 Simple projects register, with description, tags and active status.
 
 Each project can be associated with one or none client.
+
+### Contracts
+
+Simple contract management, that can be associated with a vendor or project. You can write the whole content in it and set the signatures.
 
 ### Tasks
 
