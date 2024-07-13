@@ -75,6 +75,15 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->default(false),
                         ]),
 
+                    Forms\Components\Tabs\Tab::make('Vendors')
+                        ->translateLabel()
+                        ->schema([
+                            Forms\Components\Checkbox::make(CompanySettingsEnum::VENDOR_PREFER_TRADENAME->value)
+                                ->translateLabel()
+                                ->helperText(__('If checked the tradename will be used as the name of the vendor. Otherwise, the name will be used.'))
+                                ->default(false),
+                        ]),
+
                     Forms\Components\Tabs\Tab::make('Tasks')
                         ->translateLabel()
                         ->schema([

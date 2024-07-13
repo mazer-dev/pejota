@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,11 +19,21 @@ class Contract extends Model
         'end_at',
         'signatures',
         'client_id',
-        'project_id'
+        'vendor_id',
+        'project_id',
+        'total',
+    ];
+
+    protected $casts = [
+        'total' => MoneyCast::class,
     ];
 
     public function client(): BelongsTo {
         return $this->belongsTo(Client::class);
+    }
+
+    public function vendor(): BelongsTo {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function project(): BelongsTo {
