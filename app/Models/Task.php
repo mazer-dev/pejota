@@ -40,11 +40,6 @@ class Task extends Model
         static::saving(function ($model) {
             if ($model->isDirty('status_id')) {
                 self::setStartEndDates($model);
-
-                //                activity(self::LOG_NAME)
-                //                    ->event(self::LOG_EVENT_STATUS_CHANGED)
-                //                    ->performedOn($model)
-                //                    ->
             }
         });
     }
