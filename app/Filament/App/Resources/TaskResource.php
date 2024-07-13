@@ -306,11 +306,15 @@ class TaskResource extends Resource
                         ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        if ($data['due_date'] == 'not_empty') {
-                            return $query->whereNotNull('due_date');
-                        }
-
-                        return $query->whereNull('due_date');
+                        return $query
+                            ->when(
+                                $data['due_date'] == 'not_empty',
+                                fn(Builder $query): Builder => $query->whereNotNull('due_date')
+                            )
+                            ->when(
+                                $data['due_date'] == 'not_empty',
+                                fn(Builder $query): Builder => $query->whereNull('due_date')
+                            );
                     })
                     ->indicateUsing(function (array $data): ?string {
                         if ($data['due_date']) {
@@ -617,7 +621,7 @@ class TaskResource extends Resource
                                             Forms\Components\Select::make('status_id')
                                                 ->label('Status')
                                                 ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
-                                    ]),
+                                        ]),
                                 ]),
                         ]),
 
