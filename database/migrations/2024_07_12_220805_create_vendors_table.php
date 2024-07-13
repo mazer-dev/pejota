@@ -32,7 +32,7 @@ return new class extends Migration {
                 ->nullable()
                 ->change();
 
-            $table->decimal('total', 12, 2)->default(0);
+            $table->bigInteger('total')->default(0);
         });
     }
 
