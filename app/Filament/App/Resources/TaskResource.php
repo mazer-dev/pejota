@@ -339,7 +339,7 @@ class TaskResource extends Resource
                     })
                     ->indicateUsing(function (array $data): ?string {
                         if ($data['from'] || $data['to']) {
-                            return __('Due date').': ' . $data['from'] . ' - ' . $data['to'];
+                            return __('Due date') . ': ' . $data['from'] . ' - ' . $data['to'];
                         }
 
                         return null;
@@ -602,7 +602,23 @@ class TaskResource extends Resource
 
                             TextEntry::make('status.name')
                                 ->badge()
-                                ->color(fn(Model $record): array => Color::hex($record->status->color)),
+                                ->color(fn(Model $record): array => Color::hex($record->status->color))
+                                ->hintActions([
+                                    Action::make('change_status')
+                                        ->hiddenLabel()
+                                        ->icon('heroicon-o-pencil')
+                                        ->color(Color::hex('#ACA'))
+                                        ->button()
+                                        ->tooltip(__('Change status'))
+                                        ->action(function (Model $record, array $data): void {
+                                            $record->update($data);
+                                        })
+                                        ->form([
+                                            Forms\Components\Select::make('status_id')
+                                                ->label('Status')
+                                                ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
+                                    ]),
+                                ]),
                         ]),
 
                         TextEntry::make('due_date')
