@@ -8,6 +8,7 @@ use App\Filament\App\Resources\ContractResource\Pages;
 use App\Filament\App\Resources\ContractResource\RelationManagers;
 use App\Models\Contract;
 use Carbon\Carbon;
+use Faker\Provider\Text;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
@@ -69,12 +70,17 @@ class ContractResource extends Resource
                 TextInput::make('title')
                     ->translateLabel()
                     ->required(),
-                Grid::make(2)->schema([
+                Grid::make(3)->schema([
                     DatePicker::make('start_at')
                         ->translateLabel()
                         ->required(),
                     DatePicker::make('end_at')
                         ->translateLabel(),
+                    TextInput::make('total')
+                        ->translateLabel()
+                        ->prefixIcon('heroicon-o-currency-dollar')
+                        ->required()
+                        ->numeric(),
                 ]),
                 RichEditor::make('content')
                     ->translateLabel()
@@ -120,19 +126,29 @@ class ContractResource extends Resource
                 TextColumn::make('title')
                     ->translateLabel()
                     ->searchable(),
-                TextColumn::make('client.name')
-                    ->translateLabel(),
+                TextColumn::make('with')
+                    ->translateLabel()
+                    ->getStateUsing((fn(Contract $record): string => $record->client_id ? __('Client') : __('Vendor'))),
+                TextColumn::make('who')
+                    ->translateLabel()
+                    ->getStateUsing((fn(Contract $record): string => $record->client_id ? $record->client->name: $record->vendor->name)),
                 TextColumn::make('project.name')
                     ->translateLabel(),
                 TextColumn::make('start_at')
                     ->translateLabel(),
                 TextColumn::make('end_at')
                     ->translateLabel(),
+                TextColumn::make('total')
+                    ->translateLabel()
+                    ->money(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('client')
                     ->translateLabel()
                     ->relationship('client', 'name'),
+                Tables\Filters\SelectFilter::make('vendor')
+                    ->translateLabel()
+                    ->relationship('vendor', 'name'),
                 Tables\Filters\Filter::make('end_at_not_empty')
                     ->translateLabel()
                     ->form([
