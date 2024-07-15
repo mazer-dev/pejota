@@ -8,6 +8,14 @@ that allow a quick high quality monolith to be created.
 ![image](https://github.com/user-attachments/assets/b859236d-6511-4e2f-96ad-b6278b57ab5d)
 
 
+## How to contribute
+
+- See the issues list
+- Choose one labeled as **ready to develop**
+- Comment the issue informing that you started it, than I'll set it to **doing** to avoid two persons take the same issue to work on
+- Follow the good pratices of open source development flows
+- Ask for help if needed
+
 ## Features
 
 ### Clients
