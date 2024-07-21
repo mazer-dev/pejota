@@ -169,7 +169,8 @@ class NoteResource extends Resource
                                     ->icon('heroicon-o-document-text')
                                     ->schema([
                                         Forms\Components\Textarea::make('content')
-                                            ->hiddenLabel(),
+                                            ->hiddenLabel()
+                                            ->rows(10),
                                     ]),
                             ])
                             ->addActionLabel(__('Add content type')),
