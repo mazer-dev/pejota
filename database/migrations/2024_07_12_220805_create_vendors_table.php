@@ -24,16 +24,18 @@ return new class extends Migration {
             $table->timestamps();
         });
 
-        Schema::table('contracts', function (Blueprint $table) {
-            $table->foreignIdFor(\App\Models\Vendor::class, 'vendor_id')
-                ->nullable();
+        if (Schema::hasColumn('contracts', 'vendor_id') == false) {
+            Schema::table('contracts', function (Blueprint $table) {
+                $table->foreignIdFor(\App\Models\Vendor::class, 'vendor_id')
+                    ->nullable();
 
-            $table->foreignIdFor(\App\Models\Client::class, 'client_id')
-                ->nullable()
-                ->change();
+                $table->foreignIdFor(\App\Models\Client::class, 'client_id')
+                    ->nullable()
+                    ->change();
 
-            $table->bigInteger('total')->default(0);
-        });
+                $table->bigInteger('total')->default(0);
+            });
+        }
     }
 
     /**
