@@ -14,6 +14,13 @@ class Product extends Model
 
     protected $guarded = ['id'];
 
+    protected function casts(): array
+    {
+        return [
+            'service' => 'boolean',
+        ];
+    }
+
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);

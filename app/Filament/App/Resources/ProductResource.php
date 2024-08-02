@@ -72,6 +72,9 @@ class ProductResource extends Resource
                     ->translateLabel()
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\IconColumn::make('service')
+                    ->translateLabel()
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('unit.name')
                     ->translateLabel(),
                 Tables\Columns\TextColumn::make('price')
