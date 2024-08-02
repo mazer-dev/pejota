@@ -12,6 +12,9 @@ enum CompanySettingsEnum: string
     case LOCALIZATION_LOCALE = 'localization.locale';
     case LOCALIZATION_TIMEZONE = 'localization.timezone';
 
+    case DOCS_QUOTATION_NUMBER_LAST = 'docs.quotation_number_last';
+    case DOCS_QUOTATION_NUMBER_FORMAT = 'docs.quotation_number_format';
+
     public static function getLocales(): array
     {
         return [
@@ -58,4 +61,5 @@ enum CompanySettingsEnum: string
 
         return $timezones;
     }
+
 }
