@@ -37,6 +37,9 @@ return new class extends Migration {
             $table->bigInteger('cost')->default(0);
             $table->bigInteger('price')->default(0);
 
+            $table->foreignIdFor(\App\Models\Unit::class)
+                ->constrained('units');
+
             $table->timestamps();
 
         });
