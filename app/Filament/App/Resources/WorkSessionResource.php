@@ -31,6 +31,7 @@ class WorkSessionResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clock';
 
     protected static ?int $navigationSort = MenuSortEnum::WORK_SESSIONS->value;
+
     public static function getModelLabel(): string
     {
         return __('Work session');
@@ -117,7 +118,34 @@ class WorkSessionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('client')
+                    ->translateLabel()
+                    ->relationship('client', 'name'),
+                Tables\Filters\Filter::make('start')
+                    ->form([
+                        Forms\Components\DateTimePicker::make('from')
+                            ->translateLabel(),
+                        Forms\Components\DateTimePicker::make('to')
+                            ->translateLabel(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn(Builder $query, $date): Builder => $query->where('start', '>=', $data['from'])
+                            )
+                            ->when(
+                                $data['to'],
+                                fn(Builder $query, $date): Builder => $query->where('start', '<=', $data['to'])
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if ($data['from'] || $data['to']) {
+                            return __('Start') . ': ' . $data['from'] . ' - ' . $data['to'];
+                        }
+
+                        return null;
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
