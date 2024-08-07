@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use NunoMazer\Samehouse\BelongsToTenants;
 use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Tags\HasTags;
 
@@ -28,6 +29,8 @@ class Task extends Model
     public const LOG_EVENT_STATUS_CHANGED = 'status_changed';
 
     protected $guarded = ['id'];
+
+    protected static $recordsEvents = ["updated"];
 
     protected $casts = [
         'checklist' => 'array',
@@ -94,16 +97,54 @@ class Task extends Model
         ) {
             $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
         }
-
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status.name'])
             ->useLogName(self::LOG_NAME)
-            ->dontSubmitEmptyLogs()
-            ->logOnlyDirty();
+            ->logOnly(['title', 'description', 'priority', 'checklist', 'parent.title', 'status.name', 'effort.name', 'effort_unit', 'planned_start', 'planned_end', 'actual_start', 'actual_end', 'due_date', 'client.name']);
+    }
+
+    public function tapActivity(Activity $activity, string $eventName)
+    {
+        $attributes = $activity->properties->get('attributes', []);
+        $old = $activity->properties->get('old', []);
+
+        if (isset($attributes['status.name'])) {
+            $attributes['status_id'] = $attributes['status.name'];
+            unset($attributes['status.name']);
+        }
+
+        if (isset($old['status.name'])) {
+            $old['status_id'] = $old['status.name'];
+            unset($old['status.name']);
+        }
+
+        if (isset($attributes['parent.title'])) {
+            $attributes['parent_id'] = $attributes['parent.title'];
+            unset($attributes['parent.title']);
+        }
+
+        if (isset($old['parent.name'])) {
+            $old['parent_id'] = $old['parent.name'];
+            unset($old['parent.name']);
+        }
+
+        if (isset($attributes['client.name'])) {
+            $attributes['client_id'] = $attributes['client.name'];
+            unset($attributes['client.name']);
+        }
+
+        if (isset($old['client.name'])) {
+            $old['client_id'] = $old['client.name'];
+            unset($old['client.name']);
+        }
+
+        $activity->properties = $activity->properties->merge([
+            'attributes' => $attributes,
+            'old' => $old,
+        ]);
     }
 
     public function scopeOpened(Builder $query)
