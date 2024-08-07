@@ -18,7 +18,8 @@ class LocalizationMiddleware
     {
         if (auth()->check()) {
             $settings = auth()->user()->company->settings();
-            app()->setLocale($settings->get(CompanySettingsEnum::LOCALIZATION_LOCALE->value));
+            if ($settings->get(CompanySettingsEnum::LOCALIZATION_LOCALE->value))
+                app()->setLocale($settings->get(CompanySettingsEnum::LOCALIZATION_LOCALE->value));
         }
 
         return $next($request);
