@@ -25,4 +25,9 @@ class PejotaHelper
     {
         return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value);
     }
+
+    public static function getUserDateFormat()
+    {
+        return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value) ?? 'Y-m-d';
+    }
 }
