@@ -645,13 +645,6 @@ class TaskResource extends Resource
                             ->formatStateUsing(fn(Model $record): string => PejotaHelper::formatDuration($record->workSessions->sum('duration'))),
 
                         Actions::make([
-                            Action::make('edit')
-                                ->translateLabel()
-                                ->url(
-                                    fn(Model $record) => "{$record->id}/edit"
-                                )
-                                ->icon('heroicon-o-pencil'),
-
                             Action::make('list')
                                 ->translateLabel()
                                 ->url(
@@ -659,6 +652,13 @@ class TaskResource extends Resource
                                 )
                                 ->icon('heroicon-o-chevron-left')
                                 ->color(Color::Neutral),
+
+                            Action::make('edit')
+                                ->translateLabel()
+                                ->url(
+                                    fn(Model $record) => "{$record->id}/edit"
+                                )
+                                ->icon('heroicon-o-pencil'),
 
                             Action::make('session')
                                 ->translateLabel()
