@@ -33,6 +33,7 @@
     "Daily work": "Trabajo diario",
     "Details": "Detalles",
     "Date": "Fecha",
+    "Date format": "Formato de fecha",
     "Description": "Descripción",
     "Due date": "Fecha de Vencimiento",
     "Duration": "Duración",
@@ -79,6 +80,7 @@
     "Products": "Productos",
     "Project": "Proyecto",
     "Projects": "Proyectos",
+    "Report": "Informe",
     "Rate": "Tasa",
     "Role": "Rol",
     "Save changes": "Guardar cambios",
@@ -123,5 +125,6 @@
     "Witness": "Testigo",
     "Work session": "Sesión de trabajo",
     "Work sessions": "Sesiones de trabajo",
+    "Work sessions report": "Informes de Sesiones de trabajo",
     "Yes": "Sí"
 }

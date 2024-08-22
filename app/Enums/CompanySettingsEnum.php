@@ -11,6 +11,7 @@ enum CompanySettingsEnum: string
     case FINANCE_CURRENCY = 'finance.currency';
     case LOCALIZATION_LOCALE = 'localization.locale';
     case LOCALIZATION_TIMEZONE = 'localization.timezone';
+    case LOCALIZATION_DATE_FORMAT = 'localization.date_format';
 
     public static function getLocales(): array
     {
@@ -57,5 +58,20 @@ enum CompanySettingsEnum: string
         }
 
         return $timezones;
+    }
+
+    public static function getDateFormats(): array
+    {
+        return [
+            'd/m/Y' => 'd/m/Y',
+            'm/d/Y' => 'm/d/Y',
+            'Y/m/d' => 'Y/m/d',
+            'd-m-Y' => 'd-m-Y',
+            'm-d-Y' => 'm-d-Y',
+            'Y-m-d' => 'Y-m-d',
+            'd.m.Y' => 'd.m.Y',
+            'm.d.Y' => 'm.d.Y',
+            'Y.m.d' => 'Y.m.d',
+        ];
     }
 }

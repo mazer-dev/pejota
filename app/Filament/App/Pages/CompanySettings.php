@@ -64,6 +64,12 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->options(CompanySettingsEnum::getTimezones())
                                 ->default('UTC')
                                 ->searchable(),
+
+                            Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value)
+                                ->translateLabel()
+                                ->label('Date format')
+                                ->options(CompanySettingsEnum::getDateFormats())
+                                ->default('d/m/Y'),
                         ]),
 
                     Forms\Components\Tabs\Tab::make('Clients')
