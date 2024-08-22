@@ -247,7 +247,7 @@ class TaskResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('due_date')
                     ->translateLabel()
-                    ->date()
+                    ->date(PejotaHelper::getUserDateFormat())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('effort')
                     ->translateLabel()
@@ -255,12 +255,12 @@ class TaskResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('planned_start')
                     ->translateLabel()
-                    ->date()
+                    ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('planned_end')
                     ->translateLabel()
-                    ->date()
+                    ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('client.labelName')
