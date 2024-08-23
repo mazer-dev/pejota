@@ -30,6 +30,10 @@ class Task extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
+        'planned_start' => 'date',
+        'planned_end' => 'date',
+        'actual_start' => 'date',
+        'actual_end' => 'date',
         'checklist' => 'array',
     ];
 
