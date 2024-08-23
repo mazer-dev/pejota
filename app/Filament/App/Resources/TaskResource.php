@@ -31,6 +31,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
@@ -358,6 +359,27 @@ class TaskResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkActionGroup::make(
+                        self::getPostponeActions('planned_start'),
+                    )
+                        ->label('Postpone planned start')
+                        ->translateLabel()
+                        ->icon('heroicon-o-calendar'),
+
+                    Tables\Actions\BulkActionGroup::make(
+                        self::getPostponeActions('planned_end'),
+                    )
+                        ->label('Postpone planned end')
+                        ->translateLabel()
+                        ->icon('heroicon-o-calendar'),
+
+                    Tables\Actions\BulkActionGroup::make(
+                        self::getPostponeActions('due_date'),
+                    )
+                        ->label('Postpone due date')
+                        ->translateLabel()
+                        ->icon('heroicon-o-calendar'),
+
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
@@ -704,5 +726,45 @@ class TaskResource extends Resource
             ->getState()[$index];
 
         return $data['completed'];
+    }
+
+    protected static function getPostponeActions($field): array
+    {
+        return [
+            Tables\Actions\BulkAction::make($field.'_postpone_1_day')
+                ->label('1 day')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '1 day')),
+            Tables\Actions\BulkAction::make($field.'_postpone_3_days')
+                ->label('3 days')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '3 days')),
+            Tables\Actions\BulkAction::make($field.'_postpone_5_days')
+                ->label('5 days')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '5 days')),
+            Tables\Actions\BulkAction::make($field.'_postpone_1_week')
+                ->label('1 week')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '1 week')),
+            Tables\Actions\BulkAction::make($field.'_postpone_2_weeks')
+                ->label('2 weeks')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '2 weeks')),
+            Tables\Actions\BulkAction::make($field.'_postpone_1_month')
+                ->label('1 month')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '1 month')),
+            Tables\Actions\BulkAction::make($field.'_postpone_custom')
+                ->label('Custom')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion(),
+        ];
     }
 }
