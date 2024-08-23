@@ -731,40 +731,52 @@ class TaskResource extends Resource
     protected static function getPostponeActions($field): array
     {
         return [
-            Tables\Actions\BulkAction::make($field.'_postpone_1_day')
+            Tables\Actions\BulkAction::make($field . '_postpone_1_day')
                 ->label('1 day')
                 ->translateLabel()
                 ->deselectRecordsAfterCompletion()
                 ->action(fn(Collection $records) => $records->each->postpone($field, '1 day')),
-            Tables\Actions\BulkAction::make($field.'_postpone_3_days')
+            Tables\Actions\BulkAction::make($field . '_postpone_3_days')
                 ->label('3 days')
                 ->translateLabel()
                 ->deselectRecordsAfterCompletion()
                 ->action(fn(Collection $records) => $records->each->postpone($field, '3 days')),
-            Tables\Actions\BulkAction::make($field.'_postpone_5_days')
+            Tables\Actions\BulkAction::make($field . '_postpone_5_days')
                 ->label('5 days')
                 ->translateLabel()
                 ->deselectRecordsAfterCompletion()
                 ->action(fn(Collection $records) => $records->each->postpone($field, '5 days')),
-            Tables\Actions\BulkAction::make($field.'_postpone_1_week')
+            Tables\Actions\BulkAction::make($field . '_postpone_1_week')
                 ->label('1 week')
                 ->translateLabel()
                 ->deselectRecordsAfterCompletion()
                 ->action(fn(Collection $records) => $records->each->postpone($field, '1 week')),
-            Tables\Actions\BulkAction::make($field.'_postpone_2_weeks')
+            Tables\Actions\BulkAction::make($field . '_postpone_2_weeks')
                 ->label('2 weeks')
                 ->translateLabel()
                 ->deselectRecordsAfterCompletion()
                 ->action(fn(Collection $records) => $records->each->postpone($field, '2 weeks')),
-            Tables\Actions\BulkAction::make($field.'_postpone_1_month')
+            Tables\Actions\BulkAction::make($field . '_postpone_1_month')
                 ->label('1 month')
                 ->translateLabel()
                 ->deselectRecordsAfterCompletion()
                 ->action(fn(Collection $records) => $records->each->postpone($field, '1 month')),
-            Tables\Actions\BulkAction::make($field.'_postpone_custom')
+            Tables\Actions\BulkAction::make($field . '_postpone_custom')
                 ->label('Custom')
                 ->translateLabel()
-                ->deselectRecordsAfterCompletion(),
+                ->deselectRecordsAfterCompletion()
+                ->form([
+                    Forms\Components\DatePicker::make($field)
+                        ->translateLabel()
+                        ->required()
+                ])
+                ->action(function ($data, Collection $records) use ($field) {
+                    foreach ($records as $record) {
+                        $record->{$field} = $data[$field];
+                        $record->save();
+                    }
+                }),
+
         ];
     }
 }
