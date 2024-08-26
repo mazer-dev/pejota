@@ -32,6 +32,7 @@ class AppPanelProvider extends PanelProvider
             ->id('app')
             ->path('app')
             ->login()
+            ->passwordReset()
             ->colors([
                 'primary' => Color::Green,
             ])
