@@ -326,30 +326,55 @@ class TaskResource extends Resource
                     }),
                 Tables\Filters\Filter::make('due_date')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
+                        Forms\Components\DatePicker::make('from_due_date')
                             ->translateLabel(),
-                        Forms\Components\DatePicker::make('to')
+                        Forms\Components\DatePicker::make('to_due_date')
                             ->translateLabel(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['from'],
-                                fn(Builder $query, $date): Builder => $query->where('due_date', '>=', $data['from'])
+                                $data['from_due_date'],
+                                fn(Builder $query, $date): Builder => $query->where('due_date', '>=', $data['from_due_date'])
                             )
                             ->when(
-                                $data['to'],
-                                fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to'])
+                                $data['to_due_date'],
+                                fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to_due_date'])
                             );
                     })
                     ->indicateUsing(function (array $data): ?string {
-                        if ($data['from'] || $data['to']) {
-                            return __('Due date') . ': ' . $data['from'] . ' - ' . $data['to'];
+                        if ($data['from_due_date'] || $data['to_due_date']) {
+                            return __('Due date') . ': ' . $data['from_due_date'] . ' - ' . $data['to_due_date'];
                         }
 
                         return null;
                     }),
-            ], layout: Tables\Enums\FiltersLayout::Modal)
+                Tables\Filters\Filter::make('planned_end')
+                    ->form([
+                        Forms\Components\DatePicker::make('from_planned_end')
+                            ->translateLabel(),
+                        Forms\Components\DatePicker::make('to_planned_end')
+                            ->translateLabel(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from_planned_end'],
+                                fn(Builder $query, $date): Builder => $query->where('planned_end', '>=', $data['from_planned_end'])
+                            )
+                            ->when(
+                                $data['to_planned_end'],
+                                fn(Builder $query, $date): Builder => $query->where('planned_end', '<=', $data['to_planned_end'])
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if ($data['from_planned_end'] || $data['to_planned_end']) {
+                            return __('Due date') . ': ' . $data['from_planned_end'] . ' - ' . $data['to_planned_end'];
+                        }
+
+                        return null;
+                    }),
+            ], layout: Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
