@@ -227,7 +227,7 @@ class TaskResource extends Resource
             ])
             ->columns([
                 Tables\Columns\IconColumn::make('priority')
-                    ->label('')
+                    ->translateLabel()
                     ->sortable()
                     ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
                     ->color(fn($state) => PriorityEnum::from($state)->getColor())
