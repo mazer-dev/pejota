@@ -70,6 +70,12 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->label('Date format')
                                 ->options(CompanySettingsEnum::getDateFormats())
                                 ->default('d/m/Y'),
+
+                            Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value)
+                                ->translateLabel()
+                                ->label('Date and time format')
+                                ->options(CompanySettingsEnum::getDateTimeFormats())
+                                ->default('d/m/Y H:i:s'),
                         ]),
 
                     Forms\Components\Tabs\Tab::make('Clients')
