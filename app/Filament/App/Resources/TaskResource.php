@@ -5,11 +5,14 @@ namespace App\Filament\App\Resources;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
+use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use App\Models\Task;
+use App\Models\WorkSession;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
@@ -380,10 +383,18 @@ class TaskResource extends Resource
                     Tables\Actions\ViewAction::make(),
                     CommentsAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\Action::make(__('Clone'))
+                        ->tooltip(__('Clone this record with same details but the dates, then open the form to you fill dates'))
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color(Color::Amber)
+                        ->action(fn(Task $record) => self::clone($record)),
+
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+
                     Tables\Actions\BulkActionGroup::make(
                         self::getPostponeActions('planned_start'),
                     )
@@ -405,8 +416,14 @@ class TaskResource extends Resource
                         ->translateLabel()
                         ->icon('heroicon-o-calendar'),
 
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                    Tables\Actions\BulkAction::make(__('Clone selected'))
+                        ->tooltip(__('Clone this session with same time and details, updating to current date'))
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color(Color::Amber)
+                        ->action(fn(\Illuminate\Support\Collection $records) => self::cloneCollection($records))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
+                ])
             ])
             ->persistFiltersInSession()
             ->persistSearchInSession()
@@ -803,5 +820,24 @@ class TaskResource extends Resource
                 }),
 
         ];
+    }
+
+    public static function cloneCollection(\Illuminate\Support\Collection $records)
+    {
+        $records->each(fn($record) => self::clone($record));
+    }
+
+    public static function clone(Task $record)
+    {
+        $newModel = $record->replicate();
+        $newModel->due_date = null;
+        $newModel->planned_end = null;
+        $newModel->planned_start = null;
+        $newModel->actual_end = null;
+        $newModel->actual_start = null;
+        $newModel->status_id = Status::select('id')->orderBy('order')->first()?->id;
+        $newModel->save();
+
+        return redirect(Pages\EditTask::getUrl([$newModel->id]));
     }
 }

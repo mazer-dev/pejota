@@ -86,18 +86,20 @@ class Task extends Model
 
         $status = Status::find($model->status_id);
 
-        if (
-            $status->phase == StatusPhaseEnum::IN_PROGRESS->value &&
-            $settings->get(CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value)
-        ) {
-            $model->actual_start = $model->actual_start ?? now()->format('Y-m-d');
-        }
+        if ($status) {
+            if (
+                $status->phase == StatusPhaseEnum::IN_PROGRESS->value &&
+                $settings->get(CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value)
+            ) {
+                $model->actual_start = $model->actual_start ?? now()->format('Y-m-d');
+            }
 
-        if (
-            $status->phase == StatusPhaseEnum::CLOSED->value &&
-            $settings->get(CompanySettingsEnum::TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED->value)
-        ) {
-            $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
+            if (
+                $status->phase == StatusPhaseEnum::CLOSED->value &&
+                $settings->get(CompanySettingsEnum::TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED->value)
+            ) {
+                $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
+            }
         }
 
     }
