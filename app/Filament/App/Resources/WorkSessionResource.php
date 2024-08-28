@@ -9,6 +9,7 @@ use App\Helpers\PejotaHelper;
 use App\Models\WorkSession;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
@@ -205,7 +206,7 @@ class WorkSessionResource extends Resource
             $end = $start->addMinutes($duration);
         }
 
-        $end = Carbon::parse($end);
+        $end = Carbon::createFromFormat(PejotaHelper::getUserDateTimeFormat(), $end);
         $set('end', $end->toDateTimeString());
 
         $duration = (int)$start->diffInMinutes($end);
@@ -213,12 +214,17 @@ class WorkSessionResource extends Resource
         $set('duration', $duration);
 
         $set('time', PejotaHelper::formatDuration((int)$get('duration')));
+
+        $set('is_running', $duration == 0);
     }
 
     public static function getFormSchema(): array
     {
         return [
             Forms\Components\TextInput::make('title')
+                ->placeholder(__('Title'))
+                ->hiddenLabel()
+                ->required()
                 ->translateLabel(),
 
             Forms\Components\Grid::make(6)->schema([
@@ -236,7 +242,7 @@ class WorkSessionResource extends Resource
                     ->translateLabel()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->seconds(false)
-                    ->required()
+                    ->required(fn (Forms\Get $get): bool => !$get('is_running'))
                     ->live()
                     ->afterStateUpdated(
                         fn(
@@ -247,16 +253,15 @@ class WorkSessionResource extends Resource
                             set: $set
                         )
                     ),
-            ]),
 
-            Forms\Components\Grid::make(3)->schema([
                 Forms\Components\TextInput::make('duration')
                     ->translateLabel()
-                    ->required()
+                    ->required(fn (Forms\Get $get): bool => !$get('is_running'))
                     ->numeric()
                     ->integer()
                     ->default(0)
-                    ->helperText(__('Duration in minutes. If you enter manually end time, it will be calculated.'))
+//                    ->helperText(__('Duration in minutes. If you enter manually end time, it will be calculated.'))
+                    ->prefixIcon('heroicon-o-play')
                     ->live()
                     ->afterStateUpdated(
                         fn(
@@ -274,18 +279,37 @@ class WorkSessionResource extends Resource
                     ->numeric()
                     ->default(0),
 
+                Forms\Components\Toggle::make('is_running')
+                    ->label(fn(bool $state) => $state ? 'Running': 'Finished')
+                    ->onIcon('heroicon-o-stop')
+                    ->offIcon('heroicon-o-play')
+                    ->offColor('danger')
+                    ->translateLabel()
+                    ->inline(false)
+                    ->default(true)
+                    ->live()
+                    ->afterStateUpdated(function (bool $state, Forms\Get $get, Forms\Set $set) {
+                        if ($state) {
+                            $set('end', null);
+                            $set('duration', 0);
+                        } else {
+                            $set('end', now()->timezone(PejotaHelper::getUserTimeZone())->format(PejotaHelper::getUserDateTimeFormat()));
+                            self::setTimers(false, $get, $set);
+                        }
+                    }),
+
                 Forms\Components\TextInput::make('time')
                     ->translateLabel()
                     ->label('Session time')
                     ->disabled(),
             ]),
 
-            Forms\Components\Select::make('task')
-                ->translateLabel()
-                ->relationship('task', 'title')
-                ->searchable(),
+            Forms\Components\Grid::make(3)->schema([
+                Forms\Components\Select::make('task')
+                    ->translateLabel()
+                    ->relationship('task', 'title')
+                    ->searchable(),
 
-            Forms\Components\Grid::make(2)->schema([
                 Forms\Components\Select::make('client')
                     ->translateLabel()
                     ->relationship('client', 'name')
@@ -302,14 +326,14 @@ class WorkSessionResource extends Resource
             ]),
 
 
-            Forms\Components\Section::make()->schema([
+            Forms\Components\Section::make(__('Description'))->schema([
 
                 Forms\Components\RichEditor::make('description')
                     ->hiddenLabel()
                     ->fileAttachmentsDisk('work_sessions')
                     ->fileAttachmentsDirectory(auth()->user()->company->id)
                     ->fileAttachmentsVisibility('private'),
-            ]),
+            ])->collapsible()->collapsed()->translateLabel(),
         ];
     }
 
