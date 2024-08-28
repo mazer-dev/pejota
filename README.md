@@ -16,6 +16,30 @@ that allow a quick high quality monolith to be created.
 - Follow the good pratices of open source development flows
 - Ask for help if needed
 
+## Releases
+
+- **0.2.0 (Current)**: This release introduces a breaking change related to the migration of the `work_sessions` table. Please refer to the "Upgrades" section for detailed instructions.
+- **0.1.0**: The initial release, which includes a breaking change in compatibility with subsequent commits to the main branch.
+
+## Upgrades
+
+### Upgrading from 0.1.0 to 0.2.0
+
+The 0.2.0 release introduces a breaking change in the migration of the `work_sessions` table. Due to limitations in SQLite when altering fields, it is necessary to refresh the database to recreate all structures. Even if you are using MySQL or PostgreSQL, these steps are required because the migration files have changed.
+
+#### Upgrade Steps:
+
+1. Create a backup of your database.
+2. Export (dump) only the data.
+3. Run `php artisan migrate:refresh`.
+4. Import the exported data.
+5. Update the `work_sessions` records to set the `is_running` field to 0 by running:
+   ```sql
+   UPDATE work_sessions SET is_running = 0;
+   ```
+   
+This step is required because the is_running field is new, and previous records did not have this value explicitly set.
+
 ## Features
 
 ### Clients
