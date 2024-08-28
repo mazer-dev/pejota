@@ -11,5 +11,6 @@ enum MenuSortEnum: int
     case TASKS = 30;
     case WORK_SESSIONS = 40;
     case NOTES = 50;
-    case SETTINGS = 60;
+    case SUBSCRIPTIONS = 60;
+    case SETTINGS = 70;
 }
