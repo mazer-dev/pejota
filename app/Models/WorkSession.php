@@ -19,6 +19,7 @@ class WorkSession extends Model
         'start' => 'datetime',
         'end' => 'datetime',
         'rate' => MoneyCast::class,
+        'is_running' => 'boolean',
     ];
 
     protected static function boot()
