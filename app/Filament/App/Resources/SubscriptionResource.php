@@ -7,6 +7,7 @@ use App\Enums\SubscriptionBillingPeriodEnum;
 use App\Enums\SubscriptionStatusEnum;
 use App\Filament\App\Resources\SubscriptionResource\Pages;
 use App\Filament\App\Resources\SubscriptionResource\RelationManagers;
+use App\Helpers\PejotaHelper;
 use App\Models\Subscription;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -65,10 +66,10 @@ class SubscriptionResource extends Resource
                     ->required(),
                 Forms\Components\DatePicker::make('trial_ends_at')
                     ->translateLabel()
-                    ->required(fn (Forms\Get $get) => $get('status') == SubscriptionStatusEnum::TRIAL->value),
+                    ->required(fn(Forms\Get $get) => $get('status') == SubscriptionStatusEnum::TRIAL->value),
                 Forms\Components\DatePicker::make('canceled_at')
                     ->translateLabel()
-                    ->required(fn (Forms\Get $get) => $get('status') == SubscriptionStatusEnum::CANCELED->value),
+                    ->required(fn(Forms\Get $get) => $get('status') == SubscriptionStatusEnum::CANCELED->value),
                 Forms\Components\Textarea::make('obs')
                     ->translateLabel()
                     ->columnSpanFull()
@@ -80,30 +81,53 @@ class SubscriptionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('company_id')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('service')
+                    ->translateLabel()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->translateLabel()
+                    ->searchable()
+                    ->icon(fn($state) => SubscriptionStatusEnum::from($state)->getIcon())
+                    ->color(fn($state) => SubscriptionStatusEnum::from($state)->getColor())
+                    ->tooltip(fn($state) => SubscriptionStatusEnum::from($state)->getLabel()),
                 Tables\Columns\TextColumn::make('price')
+                    ->translateLabel()
                     ->money()
-                    ->sortable(),
+                    ->sortable()
+                    ->summarize([
+                        Tables\Columns\Summarizers\Summarizer::make()
+                            ->using(fn(\Illuminate\Database\Query\Builder $query) => $query->sum('price') / 100)
+                            ->money(),
+                    ]),
                 Tables\Columns\TextColumn::make('currency')
+                    ->translateLabel()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('payment_method')
+                    ->translateLabel()
+                    ->wrapHeader()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('payment_info')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('canceled_at')
-                    ->date()
-                    ->sortable(),
+                    ->label('Payment extra-info')
+                    ->translateLabel()
+                    ->wrapHeader()
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('billing_period')
+                    ->translateLabel()
+                    ->wrapHeader()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('trial_ends_at')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->searchable(),
+                    ->translateLabel()
+                    ->wrapHeader()
+                    ->date(PejotaHelper::getUserDateFormat())
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('canceled_at')
+                    ->translateLabel()
+                    ->wrapHeader()
+                    ->date(PejotaHelper::getUserDateFormat())
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -116,6 +140,11 @@ class SubscriptionResource extends Resource
             ->filters([
                 //
             ])
+            ->defaultGroup(
+                Tables\Grouping\Group::make('billing_period')
+                    ->label(__('Billing period'))
+                    ->getTitleFromRecordUsing(fn(Model $record) => SubscriptionBillingPeriodEnum::from($record->billing_period)->getLabel())
+            )
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
