@@ -8,6 +8,8 @@ that allow a quick high quality monolith to be created.
 ![image](https://github.com/user-attachments/assets/b859236d-6511-4e2f-96ad-b6278b57ab5d)
 
 
+** PLEASE READ THE UPGRADE SECTION IF YOU ALREADY HAS PEJOTA INSTALLED **
+
 ## How to contribute
 
 - See the issues list
