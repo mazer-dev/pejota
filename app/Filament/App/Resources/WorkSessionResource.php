@@ -65,6 +65,9 @@ class WorkSessionResource extends Resource
         return $table
             ->defaultSort('start', 'desc')
             ->columns([
+                Tables\Columns\IconColumn::make('is_running')
+                    ->translateLabel()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('start')
                     ->label('Started at')
                     ->translateLabel()
@@ -77,11 +80,13 @@ class WorkSessionResource extends Resource
                     ->dateTime(PejotaHelper::getUserDateTimeFormat())
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
+                    ->hidden(fn ($livewire) => $livewire->activeTab === 'running')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Time')
                     ->translateLabel()
                     ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
+                    ->hidden(fn ($livewire) => $livewire->activeTab === 'running')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
                     ->translateLabel()
@@ -89,9 +94,11 @@ class WorkSessionResource extends Resource
                 Tables\Columns\TextColumn::make('value')
                     ->translateLabel()
                     ->numeric()
+                    ->hidden(fn ($livewire) => $livewire->activeTab === 'running')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('currency')
                     ->translateLabel()
+                    ->hidden(fn ($livewire) => $livewire->activeTab === 'running')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('task.title')
                     ->translateLabel()
