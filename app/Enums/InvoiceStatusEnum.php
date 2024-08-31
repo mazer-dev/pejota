@@ -2,10 +2,10 @@
 
 namespace App\Enums;
 
-enum PaymentStatusEnum: string
+enum InvoiceStatusEnum: string
 {
-    case PENDING = 'pending';
+    case DRAFT = 'draft';
+    case SENT = 'sent';
     case PAID = 'paid';
-    case FAILED = 'failed';
     case CANCELLED = 'cancelled';
 }
