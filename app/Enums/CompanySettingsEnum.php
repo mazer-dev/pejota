@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+
 enum CompanySettingsEnum: string
 {
     case CLIENT_PREFER_TRADENAME = 'clients.prefer_tradename';
@@ -106,7 +109,7 @@ enum CompanySettingsEnum: string
         ];
     }
 
-    public function getNextNumber(): int
+    public function getNextDocNumber(): int
     {
         $allowed = [
             self::DOCS_INVOICE_NUMBER_LAST,
@@ -132,5 +135,48 @@ enum CompanySettingsEnum: string
 
 
         return $number;
+    }
+
+    private function formatDocNumer(string $number): string
+    {
+        $result = 'ym000';
+
+        $setting = str_replace('LAST', 'FORMAT', $this->name);
+
+        if (auth()->user()) {
+            $result = auth()->user()->company->settings()
+                ->get(
+                    $setting,
+                    'ym000'
+                );
+        }
+
+        $zeros = Str::substrCount($result, '0');
+
+        $datePatterns = ['y', 'Y', 'm', 'M', 'd'];
+
+        foreach ($datePatterns as $pattern) {
+            if (Str::contains($result, $pattern)) {
+                $replace = Carbon::now()->format($pattern);
+                $result = str_replace($pattern, $replace, $result);
+            }
+        }
+
+        $formatedNumber = str_pad($number, $zeros, '0', STR_PAD_LEFT);
+
+        $result = str_replace(
+            str_pad('', $zeros, '0', STR_PAD_LEFT),
+            $formatedNumber,
+            $result
+        );
+
+        return $result;
+    }
+
+    public function getNextDocNumberFormated()
+    {
+        $number = $this->getNextDocNumber();
+
+        return $this->formatDocNumer($number);
     }
 }
