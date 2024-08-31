@@ -209,11 +209,8 @@ class WorkSessionResource extends Resource
 
         $start = CarbonImmutable::parse($start);
 
-        if ($fromDuration) {
-            $end = $start->addMinutes($duration);
-        }
+        $end = $fromDuration ? $start->addMinutes($duration) : Carbon::parse($end);
 
-        $end = Carbon::createFromFormat(PejotaHelper::getUserDateTimeFormat(), $end);
         $set('end', $end->toDateTimeString());
 
         $duration = (int)$start->diffInMinutes($end);
@@ -223,6 +220,11 @@ class WorkSessionResource extends Resource
         $set('time', PejotaHelper::formatDuration((int)$get('duration')));
 
         $set('is_running', $duration == 0);
+    }
+
+    private static function evalEndForSetTimers(bool $fromDuration, Forms\Get $get, $start)
+    {
+
     }
 
     public static function getFormSchema(): array
@@ -300,7 +302,7 @@ class WorkSessionResource extends Resource
                             $set('end', null);
                             $set('duration', 0);
                         } else {
-                            $set('end', now()->timezone(PejotaHelper::getUserTimeZone())->format(PejotaHelper::getUserDateTimeFormat()));
+                            $set('end', now()->timezone(PejotaHelper::getUserTimeZone())->format('Y-m-d H:i'));
                             self::setTimers(false, $get, $set);
                         }
                     }),
