@@ -14,6 +14,9 @@ enum CompanySettingsEnum: string
     case LOCALIZATION_DATE_FORMAT = 'localization.date_format';
     case LOCALIZATION_DATE_TIME_FORMAT = 'localization.date_time_format';
 
+    case DOCS_INVOICE_NUMBER_LAST = 'docs.invoice_number_last';
+    case DOCS_INVOICE_NUMBER_FORMAT = 'docs.invoice_number_format';
+
     public static function getLocales(): array
     {
         return [
@@ -101,5 +104,32 @@ enum CompanySettingsEnum: string
             'Y.m.d H:i' => 'Y.m.d H:i',
             'Y.m.d H:i:s' => 'Y.m.d H:i:s',
         ];
+    }
+
+    public function getNextNumber(): int
+    {
+        $allowed = [
+            self::DOCS_INVOICE_NUMBER_LAST,
+        ];
+
+        if (in_array($this, $allowed) === false) {
+            throw new \Exception($this . ' setting is not allowed to get the next number');
+        }
+
+        $number = auth()->user()->company->settings()
+            ->get(
+                $this->value,
+                0
+            );
+
+        $number++;
+
+        auth()->user()->company->settings()
+            ->set(
+                $this,
+                $number
+            );
+
+        return $number;
     }
 }
