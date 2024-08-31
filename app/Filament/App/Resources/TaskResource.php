@@ -5,11 +5,14 @@ namespace App\Filament\App\Resources;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
+use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use App\Models\Task;
+use App\Models\WorkSession;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
@@ -31,6 +34,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
@@ -226,7 +230,7 @@ class TaskResource extends Resource
             ])
             ->columns([
                 Tables\Columns\IconColumn::make('priority')
-                    ->label('')
+                    ->translateLabel()
                     ->sortable()
                     ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
                     ->color(fn($state) => PriorityEnum::from($state)->getColor())
@@ -247,7 +251,7 @@ class TaskResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('due_date')
                     ->translateLabel()
-                    ->date()
+                    ->date(PejotaHelper::getUserDateFormat())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('effort')
                     ->translateLabel()
@@ -255,12 +259,12 @@ class TaskResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('planned_start')
                     ->translateLabel()
-                    ->date()
+                    ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('planned_end')
                     ->translateLabel()
-                    ->date()
+                    ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('client.labelName')
@@ -325,41 +329,101 @@ class TaskResource extends Resource
                     }),
                 Tables\Filters\Filter::make('due_date')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
+                        Forms\Components\DatePicker::make('from_due_date')
                             ->translateLabel(),
-                        Forms\Components\DatePicker::make('to')
+                        Forms\Components\DatePicker::make('to_due_date')
                             ->translateLabel(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['from'],
-                                fn(Builder $query, $date): Builder => $query->where('due_date', '>=', $data['from'])
+                                $data['from_due_date'],
+                                fn(Builder $query, $date): Builder => $query->where('due_date', '>=', $data['from_due_date'])
                             )
                             ->when(
-                                $data['to'],
-                                fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to'])
+                                $data['to_due_date'],
+                                fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to_due_date'])
                             );
                     })
                     ->indicateUsing(function (array $data): ?string {
-                        if ($data['from'] || $data['to']) {
-                            return __('Due date') . ': ' . $data['from'] . ' - ' . $data['to'];
+                        if ($data['from_due_date'] || $data['to_due_date']) {
+                            return __('Due date') . ': ' . $data['from_due_date'] . ' - ' . $data['to_due_date'];
                         }
 
                         return null;
                     }),
-            ], layout: Tables\Enums\FiltersLayout::Modal)
+                Tables\Filters\Filter::make('planned_end')
+                    ->form([
+                        Forms\Components\DatePicker::make('from_planned_end')
+                            ->translateLabel(),
+                        Forms\Components\DatePicker::make('to_planned_end')
+                            ->translateLabel(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from_planned_end'],
+                                fn(Builder $query, $date): Builder => $query->where('planned_end', '>=', $data['from_planned_end'])
+                            )
+                            ->when(
+                                $data['to_planned_end'],
+                                fn(Builder $query, $date): Builder => $query->where('planned_end', '<=', $data['to_planned_end'])
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if ($data['from_planned_end'] || $data['to_planned_end']) {
+                            return __('Due date') . ': ' . $data['from_planned_end'] . ' - ' . $data['to_planned_end'];
+                        }
+
+                        return null;
+                    }),
+            ], layout: Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     CommentsAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\Action::make(__('Clone'))
+                        ->tooltip(__('Clone this record with same details but the dates, then open the form to you fill dates'))
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color(Color::Amber)
+                        ->action(fn(Task $record) => self::clone($record)),
+
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                ]),
+
+                    Tables\Actions\BulkActionGroup::make(
+                        self::getPostponeActions('planned_start'),
+                    )
+                        ->label('Postpone planned start')
+                        ->translateLabel()
+                        ->icon('heroicon-o-calendar'),
+
+                    Tables\Actions\BulkActionGroup::make(
+                        self::getPostponeActions('planned_end'),
+                    )
+                        ->label('Postpone planned end')
+                        ->translateLabel()
+                        ->icon('heroicon-o-calendar'),
+
+                    Tables\Actions\BulkActionGroup::make(
+                        self::getPostponeActions('due_date'),
+                    )
+                        ->label('Postpone due date')
+                        ->translateLabel()
+                        ->icon('heroicon-o-calendar'),
+
+                    Tables\Actions\BulkAction::make(__('Clone selected'))
+                        ->tooltip(__('Clone this session with same time and details, updating to current date'))
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color(Color::Amber)
+                        ->action(fn(\Illuminate\Support\Collection $records) => self::cloneCollection($records))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
+                ])
             ])
             ->persistFiltersInSession()
             ->persistSearchInSession()
@@ -645,13 +709,6 @@ class TaskResource extends Resource
                             ->formatStateUsing(fn(Model $record): string => PejotaHelper::formatDuration($record->workSessions->sum('duration'))),
 
                         Actions::make([
-                            Action::make('edit')
-                                ->translateLabel()
-                                ->url(
-                                    fn(Model $record) => "{$record->id}/edit"
-                                )
-                                ->icon('heroicon-o-pencil'),
-
                             Action::make('list')
                                 ->translateLabel()
                                 ->url(
@@ -659,6 +716,13 @@ class TaskResource extends Resource
                                 )
                                 ->icon('heroicon-o-chevron-left')
                                 ->color(Color::Neutral),
+
+                            Action::make('edit')
+                                ->translateLabel()
+                                ->url(
+                                    fn(Model $record) => "{$record->id}/edit"
+                                )
+                                ->icon('heroicon-o-pencil'),
 
                             Action::make('session')
                                 ->translateLabel()
@@ -704,5 +768,76 @@ class TaskResource extends Resource
             ->getState()[$index];
 
         return $data['completed'];
+    }
+
+    protected static function getPostponeActions($field): array
+    {
+        return [
+            Tables\Actions\BulkAction::make($field . '_postpone_1_day')
+                ->label('1 day')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '1 day')),
+            Tables\Actions\BulkAction::make($field . '_postpone_3_days')
+                ->label('3 days')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '3 days')),
+            Tables\Actions\BulkAction::make($field . '_postpone_5_days')
+                ->label('5 days')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '5 days')),
+            Tables\Actions\BulkAction::make($field . '_postpone_1_week')
+                ->label('1 week')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '1 week')),
+            Tables\Actions\BulkAction::make($field . '_postpone_2_weeks')
+                ->label('2 weeks')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '2 weeks')),
+            Tables\Actions\BulkAction::make($field . '_postpone_1_month')
+                ->label('1 month')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '1 month')),
+            Tables\Actions\BulkAction::make($field . '_postpone_custom')
+                ->label('Custom')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->form([
+                    Forms\Components\DatePicker::make($field)
+                        ->translateLabel()
+                        ->required()
+                ])
+                ->action(function ($data, Collection $records) use ($field) {
+                    foreach ($records as $record) {
+                        $record->{$field} = $data[$field];
+                        $record->save();
+                    }
+                }),
+
+        ];
+    }
+
+    public static function cloneCollection(\Illuminate\Support\Collection $records)
+    {
+        $records->each(fn($record) => self::clone($record));
+    }
+
+    public static function clone(Task $record)
+    {
+        $newModel = $record->replicate();
+        $newModel->due_date = null;
+        $newModel->planned_end = null;
+        $newModel->planned_start = null;
+        $newModel->actual_end = null;
+        $newModel->actual_start = null;
+        $newModel->status_id = Status::select('id')->orderBy('order')->first()?->id;
+        $newModel->save();
+
+        return redirect(Pages\EditTask::getUrl([$newModel->id]));
     }
 }

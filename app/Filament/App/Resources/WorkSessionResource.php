@@ -9,6 +9,7 @@ use App\Helpers\PejotaHelper;
 use App\Models\WorkSession;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
@@ -64,23 +65,28 @@ class WorkSessionResource extends Resource
         return $table
             ->defaultSort('start', 'desc')
             ->columns([
+                Tables\Columns\IconColumn::make('is_running')
+                    ->translateLabel()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('start')
                     ->label('Started at')
                     ->translateLabel()
-                    ->dateTime()
+                    ->dateTime(PejotaHelper::getUserDateTimeFormat())
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end')
                     ->label('End at')
                     ->translateLabel()
-                    ->dateTime()
+                    ->dateTime(PejotaHelper::getUserDateTimeFormat())
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
+                    ->hidden(fn ($livewire) => $livewire->activeTab === 'running')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Time')
                     ->translateLabel()
                     ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
+                    ->hidden(fn ($livewire) => $livewire->activeTab === 'running')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
                     ->translateLabel()
@@ -88,9 +94,11 @@ class WorkSessionResource extends Resource
                 Tables\Columns\TextColumn::make('value')
                     ->translateLabel()
                     ->numeric()
+                    ->hidden(fn ($livewire) => $livewire->activeTab === 'running')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('currency')
                     ->translateLabel()
+                    ->hidden(fn ($livewire) => $livewire->activeTab === 'running')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('task.title')
                     ->translateLabel()
@@ -106,13 +114,13 @@ class WorkSessionResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->translateLabel()
-                    ->dateTime()
+                    ->dateTime(PejotaHelper::getUserDateTimeFormat())
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->translateLabel()
-                    ->dateTime()
+                    ->dateTime(PejotaHelper::getUserDateTimeFormat())
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -201,11 +209,8 @@ class WorkSessionResource extends Resource
 
         $start = CarbonImmutable::parse($start);
 
-        if ($fromDuration) {
-            $end = $start->addMinutes($duration);
-        }
+        $end = $fromDuration ? $start->addMinutes($duration) : Carbon::parse($end);
 
-        $end = Carbon::parse($end);
         $set('end', $end->toDateTimeString());
 
         $duration = (int)$start->diffInMinutes($end);
@@ -213,106 +218,131 @@ class WorkSessionResource extends Resource
         $set('duration', $duration);
 
         $set('time', PejotaHelper::formatDuration((int)$get('duration')));
+
+        $set('is_running', $duration == 0);
+    }
+
+    private static function evalEndForSetTimers(bool $fromDuration, Forms\Get $get, $start)
+    {
+
     }
 
     public static function getFormSchema(): array
     {
         return [
             Forms\Components\TextInput::make('title')
+                ->placeholder(__('Title'))
+                ->hiddenLabel()
+                ->required()
                 ->translateLabel(),
 
-            Forms\Components\Split::make([
-                Forms\Components\Section::make('')->schema([
+            Forms\Components\Grid::make(6)->schema([
+                Forms\Components\DateTimePicker::make('start')
+                    ->label('Start at')
+                    ->translateLabel()
+                    ->timezone(PejotaHelper::getUserTimeZone())
+                    ->seconds(false)
+                    ->required()
+                    ->default(fn(): string => now()->toDateTimeString())
+                    ->live(),
 
-                    Forms\Components\Grid::make(2)->schema([
-                        Forms\Components\DateTimePicker::make('start')
-                            ->label('Start at')
-                            ->translateLabel()
-                            ->timezone(PejotaHelper::getUserTimeZone())
-                            ->required()
-                            ->default(fn(): string => now()->toDateTimeString())
-                            ->live(),
+                Forms\Components\DateTimePicker::make('end')
+                    ->label('End at')
+                    ->translateLabel()
+                    ->timezone(PejotaHelper::getUserTimeZone())
+                    ->seconds(false)
+                    ->required(fn (Forms\Get $get): bool => !$get('is_running'))
+                    ->live()
+                    ->afterStateUpdated(
+                        fn(
+                            Forms\Get $get,
+                            Forms\Set $set): mixed => self::setTimers(
+                            fromDuration: false,
+                            get: $get,
+                            set: $set
+                        )
+                    ),
 
-                        Forms\Components\DateTimePicker::make('end')
-                            ->label('End at')
-                            ->translateLabel()
-                            ->timezone(PejotaHelper::getUserTimeZone())
-                            ->required()
-                            ->live()
-                            ->afterStateUpdated(
-                                fn(
-                                    Forms\Get $get,
-                                    Forms\Set $set): mixed => self::setTimers(
-                                    fromDuration: false,
-                                    get: $get,
-                                    set: $set
-                                )
-                            ),
-                    ]),
+                Forms\Components\TextInput::make('duration')
+                    ->translateLabel()
+                    ->required(fn (Forms\Get $get): bool => !$get('is_running'))
+                    ->numeric()
+                    ->integer()
+                    ->default(0)
+//                    ->helperText(__('Duration in minutes. If you enter manually end time, it will be calculated.'))
+                    ->prefixIcon('heroicon-o-play')
+                    ->live()
+                    ->afterStateUpdated(
+                        fn(
+                            Forms\Get $get,
+                            Forms\Set $set): mixed => self::setTimers(
+                            fromDuration: true,
+                            get: $get,
+                            set: $set
+                        )
+                    ),
 
-                    Forms\Components\Grid::make(3)->schema([
-                        Forms\Components\TextInput::make('duration')
-                            ->translateLabel()
-                            ->required()
-                            ->numeric()
-                            ->integer()
-                            ->default(0)
-                            ->helperText(__('Duration in minutes. If you enter manually end time, it will be calculated.'))
-                            ->live()
-                            ->afterStateUpdated(
-                                fn(
-                                    Forms\Get $get,
-                                    Forms\Set $set): mixed => self::setTimers(
-                                    fromDuration: true,
-                                    get: $get,
-                                    set: $set
-                                )
-                            ),
+                Forms\Components\TextInput::make('rate')
+                    ->translateLabel()
+                    ->required()
+                    ->numeric()
+                    ->default(0),
 
-                        Forms\Components\TextInput::make('rate')
-                            ->translateLabel()
-                            ->required()
-                            ->numeric()
-                            ->default(0),
+                Forms\Components\Toggle::make('is_running')
+                    ->label(fn(bool $state) => $state ? 'Running': 'Finished')
+                    ->onIcon('heroicon-o-stop')
+                    ->offIcon('heroicon-o-play')
+                    ->offColor('danger')
+                    ->translateLabel()
+                    ->inline(false)
+                    ->default(true)
+                    ->live()
+                    ->afterStateUpdated(function (bool $state, Forms\Get $get, Forms\Set $set) {
+                        if ($state) {
+                            $set('end', null);
+                            $set('duration', 0);
+                        } else {
+                            $set('end', now()->timezone(PejotaHelper::getUserTimeZone())->format('Y-m-d H:i'));
+                            self::setTimers(false, $get, $set);
+                        }
+                    }),
 
-                        Forms\Components\TextInput::make('time')
-                            ->translateLabel()
-                            ->label('Session time')
-                            ->disabled(),
-                    ]),
-
-                    Forms\Components\Select::make('task')
-                        ->translateLabel()
-                        ->relationship('task', 'title')
-                        ->searchable(),
-
-                    Forms\Components\Grid::make(2)->schema([
-                        Forms\Components\Select::make('client')
-                            ->translateLabel()
-                            ->relationship('client', 'name')
-                            ->searchable()->preload(),
-                        Forms\Components\Select::make('project')
-                            ->label('Project')
-                            ->translateLabel()
-                            ->relationship(
-                                'project',
-                                'name',
-                                fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
-                            )
-                            ->searchable()->preload(),
-                    ]),
-
-                ]),
-
-                Forms\Components\Section::make()->schema([
-
-                    Forms\Components\RichEditor::make('description')
-                        ->hiddenLabel()
-                        ->fileAttachmentsDisk('work_sessions')
-                        ->fileAttachmentsDirectory(auth()->user()->company->id)
-                        ->fileAttachmentsVisibility('private'),
-                ]),
+                Forms\Components\TextInput::make('time')
+                    ->translateLabel()
+                    ->label('Session time')
+                    ->disabled(),
             ]),
+
+            Forms\Components\Grid::make(3)->schema([
+                Forms\Components\Select::make('task')
+                    ->translateLabel()
+                    ->relationship('task', 'title')
+                    ->searchable(),
+
+                Forms\Components\Select::make('client')
+                    ->translateLabel()
+                    ->relationship('client', 'name')
+                    ->searchable()->preload(),
+                Forms\Components\Select::make('project')
+                    ->label('Project')
+                    ->translateLabel()
+                    ->relationship(
+                        'project',
+                        'name',
+                        fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                    )
+                    ->searchable()->preload(),
+            ]),
+
+
+            Forms\Components\Section::make(__('Description'))->schema([
+
+                Forms\Components\RichEditor::make('description')
+                    ->hiddenLabel()
+                    ->fileAttachmentsDisk('work_sessions')
+                    ->fileAttachmentsDirectory(auth()->user()->company->id)
+                    ->fileAttachmentsVisibility('private'),
+            ])->collapsible()->collapsed()->translateLabel(),
         ];
     }
 

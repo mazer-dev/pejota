@@ -11,6 +11,8 @@ enum CompanySettingsEnum: string
     case FINANCE_CURRENCY = 'finance.currency';
     case LOCALIZATION_LOCALE = 'localization.locale';
     case LOCALIZATION_TIMEZONE = 'localization.timezone';
+    case LOCALIZATION_DATE_FORMAT = 'localization.date_format';
+    case LOCALIZATION_DATE_TIME_FORMAT = 'localization.date_time_format';
 
     case DOCS_QUOTATION_NUMBER_LAST = 'docs.quotation_number_last';
     case DOCS_QUOTATION_NUMBER_FORMAT = 'docs.quotation_number_format';
@@ -53,13 +55,54 @@ enum CompanySettingsEnum: string
 
                 // Remove region name and add a sample time
                 $timezones[$name][$timezone] =
-                    substr($timezone, strlen($name) + 1).' - '.
-                    $time->format('H:i').$ampm.
-                    ' ('.$time_offset - $utc_offset.'h) ';
+                    substr($timezone, strlen($name) + 1) . ' - ' .
+                    $time->format('H:i') . $ampm .
+                    ' (' . $time_offset - $utc_offset . 'h) ';
             }
         }
 
         return $timezones;
     }
 
+    public static function getDateFormats(): array
+    {
+        return [
+            'd/m/Y' => 'd/m/Y',
+            'm/d/Y' => 'm/d/Y',
+            'Y/m/d' => 'Y/m/d',
+            'd-m-Y' => 'd-m-Y',
+            'm-d-Y' => 'm-d-Y',
+            'Y-m-d' => 'Y-m-d',
+            'd.m.Y' => 'd.m.Y',
+            'm.d.Y' => 'm.d.Y',
+            'Y.m.d' => 'Y.m.d',
+        ];
+    }
+
+    public static function getDateTimeFormats(): array
+    {
+        return [
+            'd/m/Y H:i' => 'd/m/Y H:i',
+            'd/m/Y H:i:s' => 'd/m/Y H:i:s',
+            'm/d/Y h:i' => 'm/d/Y h:i',
+            'm/d/Y h:i:s' => 'm/d/Y h:i:s',
+            'm/d/Y h:i A' => 'm/d/Y h:i A',
+            'Y/m/d H:i' => 'Y/m/d H:i',
+            'Y/m/d H:i:s' => 'Y/m/d H:i:s',
+            'd-m-Y H:i' => 'd-m-Y H:i',
+            'd-m-Y H:i:s' => 'd-m-Y H:i:s',
+            'm-d-Y h:i' => 'm-d-Y h:i',
+            'm-d-Y h:i:s' => 'm-d-Y h:i:s',
+            'm-d-Y h:i A' => 'm-d-Y h:i A',
+            'Y-m-d H:i' => 'Y-m-d H:i',
+            'Y-m-d H:i:s' => 'Y-m-d H:i:s',
+            'd.m.Y H:i' => 'd.m.Y H:i',
+            'd.m.Y H:i:s' => 'd.m.Y H:i:s',
+            'm.d.Y h:i' => 'm.d.Y h:i',
+            'm.d.Y h:i:s' => 'm.d.Y h:i:s',
+            'm.d.Y h:i A' => 'm.d.Y h:i A',
+            'Y.m.d H:i' => 'Y.m.d H:i',
+            'Y.m.d H:i:s' => 'Y.m.d H:i:s',
+        ];
+    }
 }

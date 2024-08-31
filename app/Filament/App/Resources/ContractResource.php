@@ -6,6 +6,7 @@ use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\ContractResource\Pages;
 use App\Filament\App\Resources\ContractResource\RelationManagers;
+use App\Helpers\PejotaHelper;
 use App\Models\Contract;
 use Carbon\Carbon;
 use Faker\Provider\Text;
@@ -155,13 +156,15 @@ class ContractResource extends Resource
                     ->getStateUsing((fn(Contract $record): string => $record->client_id ? __('Client') : __('Vendor'))),
                 TextColumn::make('who')
                     ->translateLabel()
-                    ->getStateUsing((fn(Contract $record): string => $record->client_id ? $record->client->name: $record->vendor->name)),
+                    ->getStateUsing((fn(Contract $record): string => $record->client_id ? $record->client->name : $record->vendor->name)),
                 TextColumn::make('project.name')
                     ->translateLabel(),
                 TextColumn::make('start_at')
-                    ->translateLabel(),
+                    ->translateLabel()
+                    ->date(PejotaHelper::getUserDateFormat()),
                 TextColumn::make('end_at')
-                    ->translateLabel(),
+                    ->translateLabel()
+                    ->date(PejotaHelper::getUserDateFormat()),
                 TextColumn::make('total')
                     ->translateLabel()
                     ->money(),

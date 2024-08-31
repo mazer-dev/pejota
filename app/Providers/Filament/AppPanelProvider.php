@@ -32,6 +32,7 @@ class AppPanelProvider extends PanelProvider
             ->id('app')
             ->path('app')
             ->login()
+            ->passwordReset()
             ->colors([
                 'primary' => Color::Green,
             ])
@@ -68,6 +69,8 @@ class AppPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make(fn() => __(MenuGroupsEnum::DAILY_WORK->value))
                     ->icon('heroicon-o-inbox-stack'),
+                NavigationGroup::make(fn() => __(MenuGroupsEnum::FINANCE->value))
+                    ->icon('heroicon-o-currency-dollar'),
                 NavigationGroup::make(fn() => __(MenuGroupsEnum::ADMINISTRATION->value))
                     ->icon('heroicon-o-briefcase'),
                 NavigationGroup::make(fn() => __(MenuGroupsEnum::SETTINGS->value))
