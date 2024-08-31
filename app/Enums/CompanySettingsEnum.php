@@ -126,9 +126,10 @@ enum CompanySettingsEnum: string
 
         auth()->user()->company->settings()
             ->set(
-                $this,
+                $this->value,
                 $number
             );
+
 
         return $number;
     }
