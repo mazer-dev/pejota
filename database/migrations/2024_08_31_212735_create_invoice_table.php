@@ -35,7 +35,7 @@ return new class extends Migration
             $table->unique(['company_id', 'number']);
         });
 
-        Schema::create('invoice_product', function (Blueprint $table) {
+        Schema::create('invoice_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('invoice_id')
                 ->constrained()
