@@ -120,6 +120,16 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                     'USD' => 'USD',
                                 ]),
                         ]),
+
+                    Forms\Components\Tabs\Tab::make('Invoices')
+                        ->translateLabel()
+                        ->schema([
+                            Forms\Components\TextInput::make(CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value)
+                                ->translateLabel()
+                                ->default(fn() => 'ym00'), // TODO this should come from enum maybe
+                        ]),
+
+
                 ]),
 
             ]);
