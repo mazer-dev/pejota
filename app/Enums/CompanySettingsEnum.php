@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+
 enum CompanySettingsEnum: string
 {
     case CLIENT_PREFER_TRADENAME = 'clients.prefer_tradename';
@@ -13,6 +16,9 @@ enum CompanySettingsEnum: string
     case LOCALIZATION_TIMEZONE = 'localization.timezone';
     case LOCALIZATION_DATE_FORMAT = 'localization.date_format';
     case LOCALIZATION_DATE_TIME_FORMAT = 'localization.date_time_format';
+
+    case DOCS_INVOICE_NUMBER_LAST = 'docs.invoice_number_last';
+    case DOCS_INVOICE_NUMBER_FORMAT = 'docs.invoice_number_format';
 
     public static function getLocales(): array
     {
@@ -101,5 +107,76 @@ enum CompanySettingsEnum: string
             'Y.m.d H:i' => 'Y.m.d H:i',
             'Y.m.d H:i:s' => 'Y.m.d H:i:s',
         ];
+    }
+
+    public function getNextDocNumber(): int
+    {
+        $allowed = [
+            self::DOCS_INVOICE_NUMBER_LAST,
+        ];
+
+        if (in_array($this, $allowed) === false) {
+            throw new \Exception($this . ' setting is not allowed to get the next number');
+        }
+
+        $number = auth()->user()->company->settings()
+            ->get(
+                $this->value,
+                0
+            );
+
+        $number++;
+
+        auth()->user()->company->settings()
+            ->set(
+                $this->value,
+                $number
+            );
+
+
+        return $number;
+    }
+
+    private function formatDocNumer(string $number): string
+    {
+        $result = 'ym000';
+
+        $setting = str_replace('LAST', 'FORMAT', $this->name);
+
+        if (auth()->user()) {
+            $result = auth()->user()->company->settings()
+                ->get(
+                    $setting,
+                    'ym000'
+                );
+        }
+
+        $zeros = Str::substrCount($result, '0');
+
+        $datePatterns = ['y', 'Y', 'm', 'M', 'd'];
+
+        foreach ($datePatterns as $pattern) {
+            if (Str::contains($result, $pattern)) {
+                $replace = Carbon::now()->format($pattern);
+                $result = str_replace($pattern, $replace, $result);
+            }
+        }
+
+        $formatedNumber = str_pad($number, $zeros, '0', STR_PAD_LEFT);
+
+        $result = str_replace(
+            str_pad('', $zeros, '0', STR_PAD_LEFT),
+            $formatedNumber,
+            $result
+        );
+
+        return $result;
+    }
+
+    public function getNextDocNumberFormated()
+    {
+        $number = $this->getNextDocNumber();
+
+        return $this->formatDocNumer($number);
     }
 }
