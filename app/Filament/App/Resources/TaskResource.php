@@ -733,8 +733,8 @@ class TaskResource extends Resource
                                     'task' => $record->id,
                                 ])),
                         ]),
-                    ])->grow(false),
-
+                    ])
+                        ->grow(false), // Section at right
                 ])
                     ->columnSpanFull(),
 
