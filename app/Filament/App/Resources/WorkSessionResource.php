@@ -7,6 +7,7 @@ use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
 use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
 use App\Filament\App\Resources\WorkSessionResource\Pages;
+use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Helpers\PejotaHelper;
 use App\Models\WorkSession;
 use Carbon\Carbon;
@@ -14,6 +15,7 @@ use Carbon\CarbonImmutable;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
+use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
@@ -202,31 +204,6 @@ class WorkSessionResource extends Resource
         ];
     }
 
-    public static function setTimers(bool $fromDuration, Forms\Get $get, Forms\Set $set)
-    {
-        $start = $get('start');
-        $end = $get('end');
-        $duration = (int)$get('duration');
-
-        if (!$end && !$duration) {
-            return;
-        }
-
-        $start = CarbonImmutable::parse($start);
-
-        $end = $fromDuration ? $start->addMinutes($duration) : Carbon::parse($end);
-
-        $set('end', $end->toDateTimeString());
-
-        $duration = (int)$start->diffInMinutes($end);
-
-        $set('duration', $duration);
-
-        $set('time', PejotaHelper::formatDuration((int)$get('duration')));
-
-        $set('is_running', $duration == 0);
-    }
-
     public static function getFormSchema(): array
     {
         return [
@@ -256,7 +233,7 @@ class WorkSessionResource extends Resource
                     ->afterStateUpdated(
                         fn(
                             Forms\Get $get,
-                            Forms\Set $set): mixed => self::setTimers(
+                            Forms\Set $set): mixed => self::formSetTimers(
                             fromDuration: false,
                             get: $get,
                             set: $set
@@ -275,7 +252,7 @@ class WorkSessionResource extends Resource
                     ->afterStateUpdated(
                         fn(
                             Forms\Get $get,
-                            Forms\Set $set): mixed => self::setTimers(
+                            Forms\Set $set): mixed => self::formSetTimers(
                             fromDuration: true,
                             get: $get,
                             set: $set
@@ -303,7 +280,7 @@ class WorkSessionResource extends Resource
                             $set('duration', 0);
                         } else {
                             $set('end', now()->timezone(PejotaHelper::getUserTimeZone())->format('Y-m-d H:i'));
-                            self::setTimers(false, $get, $set);
+                            self::formSetTimers(false, $get, $set);
                         }
                     }),
 
@@ -380,22 +357,35 @@ class WorkSessionResource extends Resource
 
                         Grid::make(5)->schema([
                             TextEntry::make('start')
+                                ->translateLabel()
                                 ->formatStateUsing(
-                                    fn(string $state): string => Carbon::parse($state)->tz(PejotaHelper::getUserTimeZone())->toDateTimeString()
+                                    fn(string $state): string => Carbon::parse($state)
+                                        ->tz(PejotaHelper::getUserTimeZone())
+                                        ->format(PejotaHelper::getUserDateTimeFormat())
                                 ),
-                            TextEntry::make('end')->formatStateUsing(
-                                fn(string $state): string => Carbon::parse($state)->tz(PejotaHelper::getUserTimeZone())->toDateTimeString()
-                            ),
-                            TextEntry::make('duration'),
-                            TextEntry::make('rate'),
+
+                            TextEntry::make('end')
+                                ->translateLabel()
+                                ->formatStateUsing(
+                                    fn(string $state): string => Carbon::parse($state)
+                                        ->tz(PejotaHelper::getUserTimeZone())
+                                        ->format(PejotaHelper::getUserDateTimeFormat())
+                                ),
+
+                            TextEntry::make('duration')
+                                ->translateLabel(),
+                            TextEntry::make('rate')
+                                ->translateLabel(),
                             TextEntry::make('time')->getStateUsing(
                                 fn(Model $record): string => PejotaHelper::formatDuration($record->duration)
                             ),
                         ]),
 
                         TextEntry::make('description')
+                            ->translateLabel()
                             ->formatStateUsing(fn(string $state): HtmlString => new HtmlString($state))
-                            ->icon('heroicon-o-document-text'),
+                            ->icon('heroicon-o-document-text')
+                            ->hidden(fn($state) => !$state),
 
                     ]),
 
@@ -425,6 +415,15 @@ class WorkSessionResource extends Resource
                                 )
                                 ->icon('heroicon-o-pencil'),
 
+                            Action::make('finish')
+                                ->translateLabel()
+                                ->icon(WorkSessionResource::getNavigationIcon())
+                                ->color(Color::Red)
+                                ->hidden(fn($record) => !$record->is_running)
+                                ->action(function ($record) {
+                                    self::infolistFinish($record);
+
+                                }),
                         ]),
                     ])
                         ->grow(false), // Section at right
@@ -459,4 +458,45 @@ class WorkSessionResource extends Resource
 
         return redirect(Pages\ViewWorkSession::getUrl([$newModel->id]));
     }
+
+    public static function formSetTimers(bool $fromDuration, Forms\Get $get, Forms\Set $set)
+    {
+        $start = $get('start');
+        $end = $get('end');
+        $duration = (int)$get('duration');
+
+        if (!$end && !$duration) {
+            return;
+        }
+
+        $start = CarbonImmutable::parse($start);
+
+        $end = $fromDuration ? $start->addMinutes($duration) : Carbon::parse($end);
+
+        $set('end', $end->toDateTimeString());
+
+        $duration = (int)$start->diffInMinutes($end);
+
+        $set('duration', $duration);
+
+        $set('time', PejotaHelper::formatDuration((int)$get('duration')));
+
+        $set('is_running', $duration == 0);
+    }
+
+    public static function infolistFinish(WorkSession $record): bool
+    {
+        if ($record->is_running) {
+            $record->end = now();
+            $record->duration = round($record->start->diffInMinutes($record->end));
+            $record->is_running = false;
+
+            $record->save();
+
+            return true;
+        }
+
+        return false;
+    }
+
 }
