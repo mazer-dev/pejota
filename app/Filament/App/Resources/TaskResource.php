@@ -460,21 +460,21 @@ class TaskResource extends Resource
                             Grid::make(4)->schema([
                                 TextEntry::make('planned_start')
                                     ->translateLabel()
-                                    ->date()
+                                    ->date(PejotaHelper::getUserDateFormat())
                                     ->icon('heroicon-o-calendar'),
                                 TextEntry::make('planned_end')
                                     ->translateLabel()
-                                    ->date()
+                                    ->date(PejotaHelper::getUserDateFormat())
                                     ->icon('heroicon-o-calendar'),
 
                                 TextEntry::make('actual_start')
                                     ->translateLabel()
-                                    ->date()
+                                    ->date(PejotaHelper::getUserDateFormat())
                                     ->icon('heroicon-o-calendar'),
 
                                 TextEntry::make('actual_end')
                                     ->translateLabel()
-                                    ->date()
+                                    ->date(PejotaHelper::getUserDateFormat())
                                     ->icon('heroicon-o-calendar'),
                             ]),
                         ]),
@@ -554,7 +554,7 @@ class TaskResource extends Resource
                                                 TextEntry::make('due_date')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
-                                                    ->date()
+                                                    ->date(PejotaHelper::getUserDateFormat())
                                                     ->icon('heroicon-o-calendar')
                                                     ->columnSpan(2),
                                             ]),
@@ -592,8 +592,7 @@ class TaskResource extends Resource
                                                     ->label('Started at')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
-                                                    ->dateTime()
-                                                    ->timezone(PejotaHelper::getUserTimeZone()),
+                                                    ->dateTime(PejotaHelper::getUserDateTimeFormat()),
                                                 TextEntry::make('duration')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
@@ -608,7 +607,7 @@ class TaskResource extends Resource
                                                     ->translateLabel()
                                                     ->html()
                                                     ->columnSpan(2)
-                                                    ->visible(fn($state) => $state ? true : false),
+                                                    ->visible(fn($state) => !$state),
                                             ]),
                                         ]),
                                 ]),
@@ -691,7 +690,7 @@ class TaskResource extends Resource
 
                         TextEntry::make('due_date')
                             ->translateLabel()
-                            ->date()
+                            ->date(PejotaHelper::getUserDateFormat())
                             ->icon('heroicon-o-exclamation-triangle'),
 
                         TextEntry::make('effort')
