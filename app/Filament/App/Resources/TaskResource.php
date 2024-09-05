@@ -236,6 +236,13 @@ class TaskResource extends Resource
                     ->color(fn($state) => PriorityEnum::from($state)->getColor())
                     ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel())
                     ->toggleable(),
+                Tables\Columns\IconColumn::make('work_session')
+                    ->translateLabel()
+                    ->wrapHeader()
+                    ->boolean()
+                    ->getStateUsing(fn($record) => $record->workSessions()->where('is_running', true)->count())
+                    ->falseColor(Color::hex('#ddd'))
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('title')
                     ->translateLabel()
                     ->wrap()
@@ -251,6 +258,7 @@ class TaskResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('due_date')
                     ->translateLabel()
+                    ->wrapHeader()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('effort')
@@ -259,11 +267,13 @@ class TaskResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('planned_start')
                     ->translateLabel()
+                    ->wrapHeader()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('planned_end')
                     ->translateLabel()
+                    ->wrapHeader()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
