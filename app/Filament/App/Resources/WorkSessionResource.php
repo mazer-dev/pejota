@@ -72,9 +72,16 @@ class WorkSessionResource extends Resource
         return $table
             ->defaultSort('start', 'desc')
             ->columns([
-                Tables\Columns\IconColumn::make('is_running')
+                Tables\Columns\ToggleColumn::make('is_running')
                     ->translateLabel()
-                    ->sortable(),
+                    ->sortable()
+                    ->updateStateUsing(function (bool $state, WorkSession $record) {
+                        if ($state) {
+                            return false;
+                        }
+
+                        return self::infolistFinish($record);
+                    }),
                 Tables\Columns\TextColumn::make('start')
                     ->label('Started at')
                     ->translateLabel()
