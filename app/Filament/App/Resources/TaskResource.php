@@ -36,6 +36,7 @@ use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 use Parallax\FilamentComments\Tables\Actions\CommentsAction;
@@ -373,11 +374,11 @@ class TaskResource extends Resource
                         return $query
                             ->when(
                                 $data['from_planned_end'],
-                                fn(Builder $query, $date): Builder => $query->where('planned_end', '>=', $data['from_planned_end'])
+                                fn(Builder $query, $date): Builder => $query->where(DB::raw('DATE(planned_end'), '>=', $data['from_planned_end'])
                             )
                             ->when(
                                 $data['to_planned_end'],
-                                fn(Builder $query, $date): Builder => $query->where('planned_end', '<=', $data['to_planned_end'])
+                                fn(Builder $query, $date): Builder => $query->where(DB::raw('DATE(planned_end)'), '<=', $data['to_planned_end'])
                             );
                     })
                     ->indicateUsing(function (array $data): ?string {
