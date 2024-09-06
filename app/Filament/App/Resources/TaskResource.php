@@ -301,6 +301,7 @@ class TaskResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->filtersFormColumns(4)
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->relationship('status', 'name')
@@ -311,15 +312,15 @@ class TaskResource extends Resource
                     ->relationship('client', 'name'),
                 Tables\Filters\Filter::make('due_date_not_empty')
                     ->form([
-                        Forms\Components\Grid::make(2)->schema([
-                            Forms\Components\ToggleButtons::make('due_date')
-                                ->translateLabel()
-                                ->options([
-                                    'not_empty' => __('Has due date'),
-                                    'empty' => __('No due date'),
-                                ]),
-                        ]),
+                        Forms\Components\ToggleButtons::make('due_date')
+                            ->translateLabel()
+                            ->inline()
+                            ->options([
+                                'not_empty' => __('Has due date'),
+                                'empty' => __('No due date'),
+                            ]),
                     ])
+                    ->columnSpan(2)
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
@@ -339,11 +340,14 @@ class TaskResource extends Resource
                         return null;
                     }),
                 Tables\Filters\Filter::make('due_date')
+                    ->columnSpan(2)
                     ->form([
                         Forms\Components\DatePicker::make('from_due_date')
-                            ->translateLabel(),
+                            ->translateLabel()
+                            ->inlineLabel(),
                         Forms\Components\DatePicker::make('to_due_date')
-                            ->translateLabel(),
+                            ->translateLabel()
+                            ->inlineLabel(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -364,11 +368,14 @@ class TaskResource extends Resource
                         return null;
                     }),
                 Tables\Filters\Filter::make('planned_end')
+                    ->columnSpan(2)
                     ->form([
                         Forms\Components\DatePicker::make('from_planned_end')
-                            ->translateLabel(),
+                            ->translateLabel()
+                            ->inlineLabel(),
                         Forms\Components\DatePicker::make('to_planned_end')
-                            ->translateLabel(),
+                            ->translateLabel()
+                            ->inlineLabel(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
