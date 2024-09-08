@@ -400,6 +400,13 @@ class TaskResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     CommentsAction::make(),
+                    Tables\Actions\Action::make(__('Start Session'))
+                        ->tooltip(__('Start a new session for this task'))
+                        ->icon('heroicon-o-play')
+                        ->color(Color::Amber)
+                        ->url(fn($record) => CreateWorkSession::getUrl([
+                                    'task' => $record->id,
+                                ])),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make(__('Clone'))
                         ->tooltip(__('Clone this record with same details but the dates, then open the form to you fill dates'))
@@ -842,19 +849,5 @@ class TaskResource extends Resource
     public static function cloneCollection(\Illuminate\Support\Collection $records)
     {
         $records->each(fn($record) => self::clone($record));
-    }
-
-    public static function clone(Task $record)
-    {
-        $newModel = $record->replicate();
-        $newModel->due_date = null;
-        $newModel->planned_end = null;
-        $newModel->planned_start = null;
-        $newModel->actual_end = null;
-        $newModel->actual_start = null;
-        $newModel->status_id = Status::select('id')->orderBy('order')->first()?->id;
-        $newModel->save();
-
-        return redirect(Pages\EditTask::getUrl([$newModel->id]));
     }
 }
