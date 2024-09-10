@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
+use App\Enums\MenuGroupsEnum;
 use App\Filament\App\Resources\InvoiceResource\Pages;
 use App\Filament\App\Resources\InvoiceResource\RelationManagers;
 use App\Helpers\PejotaHelper;
@@ -22,7 +23,12 @@ class InvoiceResource extends Resource
 {
     protected static ?string $model = Invoice::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return __(MenuGroupsEnum::FINANCE->value);
+    }
 
     public static function getModelLabel(): string
     {
