@@ -6,6 +6,7 @@ use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Resources\InvoiceResource\Pages;
 use App\Filament\App\Resources\InvoiceResource\RelationManagers;
+use App\Helpers\PejotaHelper;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\TabelaPreco;
@@ -143,36 +144,48 @@ class InvoiceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('status')
+                Tables\Columns\SelectColumn::make('status')
+                    ->translateLabel()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('number')
+                    ->translateLabel()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('title')
+                    ->translateLabel()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('due_date')
-                    ->date()
+                    ->translateLabel()
+                    ->date(PejotaHelper::getUserDateFormat())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('client.name')
+                    ->translateLabel()
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('project.title')
+                    ->translateLabel()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('contract.title')
+                    ->translateLabel()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('discount')
+                    ->translateLabel()
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('total')
+                    ->translateLabel()
+                    ->numeric()
+                    ->money()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->translateLabel()
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('discount')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('total')
-                    ->numeric()
-                    ->sortable(),
             ])
             ->filters([
                 //
