@@ -143,8 +143,9 @@ class InvoiceResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('due_date')
             ->columns([
-                Tables\Columns\SelectColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->translateLabel()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('number')
@@ -153,10 +154,6 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->translateLabel()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('due_date')
-                    ->translateLabel()
-                    ->date(PejotaHelper::getUserDateFormat())
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('client.name')
                     ->translateLabel()
                     ->numeric()
@@ -167,10 +164,15 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('contract.title')
                     ->translateLabel()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('due_date')
+                    ->translateLabel()
+                    ->date(PejotaHelper::getUserDateFormat())
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('discount')
                     ->translateLabel()
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('total')
                     ->translateLabel()
                     ->numeric()
