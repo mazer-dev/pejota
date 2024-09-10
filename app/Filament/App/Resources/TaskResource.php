@@ -261,7 +261,8 @@ class TaskResource extends Resource
                     ->translateLabel()
                     ->wrapHeader()
                     ->date(PejotaHelper::getUserDateFormat())
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('effort')
                     ->translateLabel()
                     ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit)
