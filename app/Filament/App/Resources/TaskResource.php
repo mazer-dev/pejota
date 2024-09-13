@@ -605,7 +605,7 @@ class TaskResource extends Resource
                                         ->label('')
                                         ->columnSpanFull()
                                         ->getStateUsing(function (Model $record) {
-                                            $items = $record->workSessions;
+                                            $items = $record->workSessions->sortByDesc('start');
                                             foreach ($items as $key => $value) {
                                                 $value->sort = $key;
                                             }
