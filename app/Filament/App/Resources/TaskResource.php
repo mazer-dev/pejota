@@ -8,6 +8,7 @@ use App\Enums\PriorityEnum;
 use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
+use App\Filament\App\Resources\WorkSessionResource\Pages\ViewWorkSession;
 use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use App\Models\Task;
@@ -406,8 +407,8 @@ class TaskResource extends Resource
                         ->icon('heroicon-o-play')
                         ->color(Color::Amber)
                         ->url(fn($record) => CreateWorkSession::getUrl([
-                                    'task' => $record->id,
-                                ])),
+                            'task' => $record->id,
+                        ])),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make(__('Clone'))
                         ->tooltip(__('Clone this record with same details but the dates, then open the form to you fill dates'))
@@ -618,7 +619,13 @@ class TaskResource extends Resource
                                                     ->label('Started at')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
-                                                    ->dateTime(PejotaHelper::getUserDateTimeFormat()),
+                                                    ->dateTime(PejotaHelper::getUserDateTimeFormat())
+                                                    ->url(
+                                                        fn($record) => ViewWorkSession::getUrl([
+                                                            'record' => $record->id,
+                                                        ])
+                                                    )
+                                                ,
                                                 TextEntry::make('duration')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
