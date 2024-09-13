@@ -118,7 +118,7 @@ class TaskResource extends Resource
                         ->translateLabel()
                         ->relationship('client', 'name')
                         ->preload()->searchable(),
-                    Forms\Components\Select::make('project_id')
+                    Forms\Components\Select::make('project')
                         ->label('Project')
                         ->translateLabel()
                         ->relationship(
@@ -755,6 +755,15 @@ class TaskResource extends Resource
                                     fn(Model $record) => "{$record->id}/edit"
                                 )
                                 ->icon('heroicon-o-pencil'),
+
+                            Action::make('subtask')
+                                ->translateLabel()
+                                ->icon(TaskResource::getNavigationIcon())
+                                ->color(Color::Green)
+                                ->modal(true)
+                                ->url(fn($record) => Pages\CreateTask::getUrl([
+                                    'parent' => $record->id,
+                                ])),
 
                             Action::make('session')
                                 ->translateLabel()

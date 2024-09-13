@@ -15,6 +15,24 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Tags\HasTags;
 
+/**
+ * Class Model Task
+ *
+ * @property int $id
+ * @property string $title
+ * @property int|null $client_id
+ * @property int|null $project_id
+ * @property int $status_id
+ * @property int|null $parent_id
+ * @property \Illuminate\Support\Carbon|null $planned_start
+ * @property \Illuminate\Support\Carbon|null $planned_end
+ * @property \Illuminate\Support\Carbon|null $actual_start
+ * @property \Illuminate\Support\Carbon|null $actual_end
+ * @property \Illuminate\Support\Carbon|null $due_date
+ * @property array|null $checklist
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Task extends Model
 {
     use BelongsToTenants,
