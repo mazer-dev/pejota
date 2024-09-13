@@ -6,6 +6,8 @@ use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
 use App\Enums\StatusPhaseEnum;
+use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
+use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Filament\App\Resources\WorkSessionResource\Pages\ViewWorkSession;
@@ -472,11 +474,21 @@ class TaskResource extends Resource
                             Grid::make(2)->schema([
                                 TextEntry::make('project.name')
                                     ->label('')
-                                    ->icon('heroicon-o-presentation-chart-bar'),
+                                    ->icon('heroicon-o-presentation-chart-bar')
+                                    ->hidden(fn($state) => !$state)
+                                    ->url(fn($record) => ViewProject::getUrl([$record->project_id])),
 
                                 TextEntry::make('client.name')
                                     ->label('')
-                                    ->icon('heroicon-o-building-office'),
+                                    ->icon('heroicon-o-building-office')
+                                    ->hidden(fn($state) => !$state)
+                                    ->url(fn($record) => ViewClient::getUrl([$record->client_id])),
+
+                                TextEntry::make('parent.title')
+                                    ->label('')
+                                    ->icon(TaskResource::getNavigationIcon())
+                                    ->hidden(fn($state) => !$state)
+                                    ->url(fn($record) => Pages\ViewTask::getUrl([$record->parent_id]))
                             ]),
 
                             TextEntry::make('description')
