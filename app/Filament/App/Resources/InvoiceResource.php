@@ -76,7 +76,9 @@ class InvoiceResource extends Resource
                     ->translateLabel()
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('discount')
-                    ->numeric(),
+                    ->numeric()
+                    ->live()
+                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
                 Forms\Components\TextInput::make('total')
                     ->required()
                     ->numeric()
@@ -249,14 +251,17 @@ class InvoiceResource extends Resource
 
         self::calcInvoiceTotal($get, $set);
     }
+
     public static function calcInvoiceTotal(Forms\Get $get, Forms\Set $set)
     {
         $items = $get('../../items');
         $totalComponent = '../../total';
+        $discountComponent = '../../discount';
 
         if ($items == null) {
             $items = $get('items');
             $totalComponent = 'total';
+            $discountComponent = 'discount';
         }
 
         // the get up two levels to get items fom repeater .. remember we are in the repeater item here
@@ -264,9 +269,12 @@ class InvoiceResource extends Resource
             ->pluck('total')
             ->sum();
 
+        $discountValue = (float)$get($discountComponent);
+        $invoiceValue = $totalInvoice - $discountValue;
+
         $set(
             $totalComponent,
-            $totalInvoice
+            $invoiceValue
         );
     }
 }
