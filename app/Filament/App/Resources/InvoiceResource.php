@@ -133,6 +133,7 @@ class InvoiceResource extends Resource
                         Forms\Components\TextInput::make('discount')
                             ->translateLabel()
                             ->numeric()
+                            ->live()
                             ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
                         Forms\Components\TextInput::make('total')
                             ->translateLabel()
@@ -234,9 +235,12 @@ class InvoiceResource extends Resource
     {
         $price = (float)str_replace(',', '.', $get('price'));
         $qty = (float)$get('quantity');
-        $discount = (float)$get('discount') ?? 0;
 
-        $total = round(($price * $qty) * (100 - $discount) / 100, 2);
+        $total = $price * $qty;
+
+        $discount = (float)$get('discount');
+
+        $total = round($total - $discount, 2);
 
         $set(
             'total',
