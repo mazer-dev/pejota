@@ -14,6 +14,7 @@ use App\Models\TabelaPreco;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -76,7 +77,9 @@ class InvoiceResource extends Resource
                     ->translateLabel()
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('discount')
-                    ->numeric(),
+                    ->numeric()
+                    ->live()
+                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
                 Forms\Components\TextInput::make('total')
                     ->required()
                     ->numeric()
@@ -123,17 +126,18 @@ class InvoiceResource extends Resource
                             ->required()
                             ->numeric()
                             ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcTotal($get, $set)),
+                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
                         Forms\Components\TextInput::make('price')
                             ->translateLabel()
                             ->required()
                             ->numeric()
                             ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcTotal($get, $set)),
+                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
                         Forms\Components\TextInput::make('discount')
                             ->translateLabel()
                             ->numeric()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcTotal($get, $set)),
+                            ->live()
+                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
                         Forms\Components\TextInput::make('total')
                             ->translateLabel()
                             ->required()
@@ -142,7 +146,11 @@ class InvoiceResource extends Resource
                         Forms\Components\Textarea::make('obs')
                             ->translateLabel()
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->deleteAction(function (Forms\Components\Actions\Action $action) {
+                        // call cal total after delete a row item of the repeater
+                        return $action->after(fn(Forms\Set $set, Forms\Get $get) => self::calcInvoiceTotal($get, $set));
+                    }),
             ]);
     }
 
@@ -164,25 +172,25 @@ class InvoiceResource extends Resource
                     ->translateLabel()
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('project.title')
-                    ->translateLabel()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('contract.title')
-                    ->translateLabel()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('due_date')
                     ->translateLabel()
+                    ->wrapHeader()
+                    ->alignCenter()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('discount')
                     ->translateLabel()
                     ->numeric()
+                    ->money()
+                    ->alignEnd()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('total')
                     ->translateLabel()
+                    ->weight(FontWeight::Bold)
                     ->numeric()
                     ->money()
+                    ->alignEnd()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->translateLabel()
@@ -226,28 +234,48 @@ class InvoiceResource extends Resource
         ];
     }
 
-    public static function calcTotal(Forms\Get $get, Forms\Set $set)
+    public static function calcItemTotal(Forms\Get $get, Forms\Set $set)
     {
         $price = (float)str_replace(',', '.', $get('price'));
         $qty = (float)$get('quantity');
-        $discount = (float)$get('discount') ?? 0;
 
-        $total = round(($price * $qty) * (100 - $discount) / 100, 2);
+        $total = $price * $qty;
+
+        $discount = (float)$get('discount');
+
+        $total = round($total - $discount, 2);
 
         $set(
             'total',
             $total
         );
 
-        // calculate now total of invoice
+        self::calcInvoiceTotal($get, $set);
+    }
+
+    public static function calcInvoiceTotal(Forms\Get $get, Forms\Set $set)
+    {
+        $items = $get('../../items');
+        $totalComponent = '../../total';
+        $discountComponent = '../../discount';
+
+        if ($items == null) {
+            $items = $get('items');
+            $totalComponent = 'total';
+            $discountComponent = 'discount';
+        }
+
         // the get up two levels to get items fom repeater .. remember we are in the repeater item here
-        $totalInvoice = collect($get('../../items'))
+        $totalInvoice = collect($items)
             ->pluck('total')
             ->sum();
 
+        $discountValue = (float)$get($discountComponent);
+        $invoiceValue = $totalInvoice - $discountValue;
+
         $set(
-            '../../total',
-            $totalInvoice
+            $totalComponent,
+            $invoiceValue
         );
     }
 }
