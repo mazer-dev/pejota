@@ -39,7 +39,7 @@ class InvoiceResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->columns(3)
+            ->columns(4)
             ->schema([
                 Forms\Components\TextInput::make('number')
                     ->translateLabel()
@@ -48,10 +48,17 @@ class InvoiceResource extends Resource
                 Forms\Components\Select::make('status')
                     ->options(InvoiceStatusEnum::class)
                     ->default(fn() => InvoiceStatusEnum::DRAFT)
-                    ->required(),
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(fn(Forms\Set $set, $state) => $state == InvoiceStatusEnum::PAID->value ? $set('payment_date', now()->format(PejotaHelper::getUserDateFormat())) : null),
                 Forms\Components\DatePicker::make('due_date')
                     ->translateLabel()
                     ->date(),
+                Forms\Components\DatePicker::make('payment_date')
+                    ->translateLabel()
+                    ->date()
+                    ->live()
+                    ->required(fn(Forms\Get $get) => $get('status') == InvoiceStatusEnum::PAID->value),
                 Forms\Components\Select::make('client_id')
                     ->translateLabel()
                     ->required()
@@ -68,14 +75,7 @@ class InvoiceResource extends Resource
                 Forms\Components\TextInput::make('title')
                     ->translateLabel()
                     ->required()
-                    ->columnSpanFull(),
-                Forms\Components\Textarea::make('extra_info')
-                    ->translateLabel()
-                    ->columnSpanFull(),
-                Forms\Components\Textarea::make('obs_internal')
-                    ->label('Internal observations')
-                    ->translateLabel()
-                    ->columnSpanFull(),
+                    ->columnSpan(2),
                 Forms\Components\TextInput::make('discount')
                     ->numeric()
                     ->live()
@@ -84,6 +84,15 @@ class InvoiceResource extends Resource
                     ->required()
                     ->numeric()
                     ->readOnly(),
+                Forms\Components\Textarea::make('extra_info')
+                    ->translateLabel()
+                    ->columnSpan(2)
+                    ->rows(3),
+                Forms\Components\Textarea::make('obs_internal')
+                    ->label('Internal observations')
+                    ->translateLabel()
+                    ->columnSpan(2)
+                    ->rows(3),
 
                 Forms\Components\Repeater::make('items')
                     ->relationship()
@@ -178,6 +187,12 @@ class InvoiceResource extends Resource
                     ->alignCenter()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable(),
+                Tables\Columns\TextColumn::make('payment_date')
+                    ->translateLabel()
+                    ->wrapHeader()
+                    ->alignCenter()
+                    ->date(PejotaHelper::getUserDateFormat())
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('discount')
                     ->translateLabel()
                     ->numeric()
@@ -207,8 +222,10 @@ class InvoiceResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

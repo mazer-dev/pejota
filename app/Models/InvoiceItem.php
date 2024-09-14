@@ -15,9 +15,9 @@ class InvoiceItem extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'due_date' => 'date',
+        'price' => MoneyCast::class,
         'total' => MoneyCast::class,
-        'status' => InvoiceItem::class,
+        'discount' => MoneyCast::class,
     ];
 
     public function invoice(): BelongsTo
