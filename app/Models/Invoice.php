@@ -17,7 +17,8 @@ class Invoice extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'due_date' => 'date',
+        'due_date' => 'date:Y-m-d',
+        'payment_date' => 'date:Y-m-d',
         'total' => MoneyCast::class,
         'discount' => MoneyCast::class,
     ];
