@@ -123,17 +123,17 @@ class InvoiceResource extends Resource
                             ->required()
                             ->numeric()
                             ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcTotal($get, $set)),
+                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
                         Forms\Components\TextInput::make('price')
                             ->translateLabel()
                             ->required()
                             ->numeric()
                             ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcTotal($get, $set)),
+                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
                         Forms\Components\TextInput::make('discount')
                             ->translateLabel()
                             ->numeric()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcTotal($get, $set)),
+                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
                         Forms\Components\TextInput::make('total')
                             ->translateLabel()
                             ->required()
@@ -142,7 +142,11 @@ class InvoiceResource extends Resource
                         Forms\Components\Textarea::make('obs')
                             ->translateLabel()
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->deleteAction(function (Forms\Components\Actions\Action $action) {
+                        // call cal total after delete a row item of the repeater
+                        return $action->after(fn(Forms\Set $set, Forms\Get $get) => self::calcInvoiceTotal($get, $set));
+                    }),
             ]);
     }
 
@@ -226,7 +230,7 @@ class InvoiceResource extends Resource
         ];
     }
 
-    public static function calcTotal(Forms\Get $get, Forms\Set $set)
+    public static function calcItemTotal(Forms\Get $get, Forms\Set $set)
     {
         $price = (float)str_replace(',', '.', $get('price'));
         $qty = (float)$get('quantity');
@@ -239,14 +243,25 @@ class InvoiceResource extends Resource
             $total
         );
 
-        // calculate now total of invoice
+        self::calcInvoiceTotal($get, $set);
+    }
+    public static function calcInvoiceTotal(Forms\Get $get, Forms\Set $set)
+    {
+        $items = $get('../../items');
+        $totalComponent = '../../total';
+
+        if ($items == null) {
+            $items = $get('items');
+            $totalComponent = 'total';
+        }
+
         // the get up two levels to get items fom repeater .. remember we are in the repeater item here
-        $totalInvoice = collect($get('../../items'))
+        $totalInvoice = collect($items)
             ->pluck('total')
             ->sum();
 
         $set(
-            '../../total',
+            $totalComponent,
             $totalInvoice
         );
     }
