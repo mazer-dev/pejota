@@ -14,6 +14,7 @@ use App\Models\TabelaPreco;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -171,25 +172,25 @@ class InvoiceResource extends Resource
                     ->translateLabel()
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('project.title')
-                    ->translateLabel()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('contract.title')
-                    ->translateLabel()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('due_date')
                     ->translateLabel()
+                    ->wrapHeader()
+                    ->alignCenter()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable(),
                 Tables\Columns\TextColumn::make('discount')
                     ->translateLabel()
                     ->numeric()
+                    ->money()
+                    ->alignEnd()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('total')
                     ->translateLabel()
+                    ->weight(FontWeight::Bold)
                     ->numeric()
                     ->money()
+                    ->alignEnd()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->translateLabel()
