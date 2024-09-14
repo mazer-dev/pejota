@@ -33,6 +33,8 @@ class AppPanelProvider extends PanelProvider
             ->path('app')
             ->login()
             ->passwordReset()
+            ->brandLogo(asset('imgs/pejota-logo.svg'))
+            ->brandLogoHeight('10em')
             ->colors([
                 'primary' => Color::Green,
             ])
