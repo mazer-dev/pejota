@@ -879,4 +879,18 @@ class TaskResource extends Resource
     {
         $records->each(fn($record) => self::clone($record));
     }
+
+    public static function clone(Task $record)
+    {
+        $newModel = $record->replicate();
+        $newModel->due_date = null;
+        $newModel->planned_end = null;
+        $newModel->planned_start = null;
+        $newModel->actual_end = null;
+        $newModel->actual_start = null;
+        $newModel->status_id = Status::select('id')->orderBy('order')->first()?->id;
+        $newModel->save();
+
+        return redirect(Pages\EditTask::getUrl([$newModel->id]));
+    }
 }
