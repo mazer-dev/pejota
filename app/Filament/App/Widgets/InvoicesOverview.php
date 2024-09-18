@@ -31,14 +31,14 @@ class InvoicesOverview extends BaseWidget
         $fmt = \NumberFormatter::create(PejotaHelper::getUserLocate(), \NumberFormatter::CURRENCY);
 
         return [
-            Stat::make(__('Invoices Opened'),
+            Stat::make(__('Invoices opened'),
                 $fmt->formatCurrency($totalOpened, PejotaHelper::getUserCurrency())
             )
                 ->description(__('Invoices with status SENT'))
                 ->icon('heroicon-o-currency-dollar')
                 ->color(Color::hex('#dadada')),
 
-            Stat::make(__('Invoices Overdue'),
+            Stat::make(__('Invoices overdue'),
                 $fmt->formatCurrency($totalOverdue, PejotaHelper::getUserCurrency())
             )
                 ->description(__('Invoices SENT and overdue'))
