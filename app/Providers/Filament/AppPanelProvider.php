@@ -38,6 +38,7 @@ class AppPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Green,
             ])
+            ->sidebarWidth('15rem;')
             ->renderHook(
                 PanelsRenderHook::FOOTER,
                 fn (): string => ' <div class="inline text-gray-400 justify-center max-w-full">
