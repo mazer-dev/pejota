@@ -170,6 +170,8 @@ class InvoiceResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('status')
                     ->translateLabel()
+                    ->badge()
+                    ->color(fn($record) => $record->status->getColor())
                     ->searchable(),
                 Tables\Columns\TextColumn::make('number')
                     ->translateLabel()

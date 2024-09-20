@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Enums\InvoiceStatusEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +22,7 @@ class Invoice extends Model
         'payment_date' => 'date:Y-m-d',
         'total' => MoneyCast::class,
         'discount' => MoneyCast::class,
+        'status' => InvoiceStatusEnum::class,
     ];
 
     public function client(): BelongsTo
