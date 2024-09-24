@@ -17,13 +17,11 @@ enum PriorityEnum: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): ?string
     {
-        return match ($this) {
-            self::LOW => 'Low',
-            self::MEDIUM => 'Medium',
-            self::HIGH => 'High',
-            self::URGENT => 'Urgent',
-            self::CRITICAL => 'Critical',
-        };
+        return __(
+            ucwords(
+                str_replace('_', ' ', $this->value)
+            )
+        );
     }
 
     public function getOrder(): ?int
