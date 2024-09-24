@@ -33,11 +33,14 @@ class AppPanelProvider extends PanelProvider
             ->path('app')
             ->login()
             ->passwordReset()
+            ->brandName('Pejota')
             ->brandLogo(asset('imgs/pejota-logo.svg'))
             ->brandLogoHeight('10em')
+            ->favicon(asset('imgs/pejota-logo.svg'))
             ->colors([
                 'primary' => Color::Green,
             ])
+            ->viteTheme('resources/css/filament/app/theme.css')
             ->sidebarWidth('15rem;')
             ->renderHook(
                 PanelsRenderHook::FOOTER,

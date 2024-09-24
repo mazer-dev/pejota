@@ -1,0 +1,7 @@
+@import '/vendor/filament/filament/resources/css/theme.css';
+
+@config 'tailwind.config.js';
+
+.column-header-no-label span.fi-ta-header-cell-label {
+    display: none;
+}
