@@ -244,23 +244,25 @@ class TaskResource extends Resource
                 Tables\Columns\IconColumn::make('work_session')
                     ->translateLabel()
                     ->wrapHeader()
+                    ->extraHeaderAttributes(['class' => 'column-header-no-label'])
                     ->boolean()
                     ->getStateUsing(fn($record) => $record->workSessions()->where('is_running', true)->count())
                     ->falseColor(Color::hex('#ddd'))
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('title')
-                    ->translateLabel()
-                    ->wrap()
-                    ->searchable(),
                 Tables\Columns\SelectColumn::make('status_id')
                     ->label('Status')
                     ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\ColorColumn::make('status.color')
-                    ->label('')
+                    ->label('Status Color')
+                    ->extraHeaderAttributes(['class' => 'column-header-no-label'])
                     ->tooltip(fn(Model $record) => $record->status->name)
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('title')
+                    ->translateLabel()
+                    ->wrap()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('due_date')
                     ->translateLabel()
                     ->wrapHeader()
