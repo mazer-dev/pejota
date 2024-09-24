@@ -10,6 +10,17 @@ that allow a quick high quality monolith to be created.
 
 **PLEASE READ THE UPGRADE SECTION IF YOU ALREADY HAS PEJOTA INSTALLED**
 
+## Installation
+
+- Clone the repository
+- Run `composer install`
+- Run `cp .env.example .env`
+- Run `php artisan key:generate`
+- Configure your `.env` file with your database credentials
+- Run `php artisan migrate`
+- Run `npm install`
+- Run `npm run build`
+
 ## How to contribute
 
 - See the issues list
