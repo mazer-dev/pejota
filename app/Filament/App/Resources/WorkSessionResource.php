@@ -110,7 +110,7 @@ class WorkSessionResource extends Resource
                     ->translateLabel()
                     ->numeric()
                     ->hidden(fn($livewire) => $livewire->activeTab === 'running')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('currency')
                     ->translateLabel()
                     ->hidden(fn($livewire) => $livewire->activeTab === 'running')
