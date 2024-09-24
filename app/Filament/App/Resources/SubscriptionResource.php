@@ -146,8 +146,10 @@ class SubscriptionResource extends Resource
                     ->getTitleFromRecordUsing(fn(Model $record) => SubscriptionBillingPeriodEnum::from($record->billing_period)->getLabel())
             )
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
