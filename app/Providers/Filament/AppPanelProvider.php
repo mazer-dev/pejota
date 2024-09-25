@@ -38,13 +38,13 @@ class AppPanelProvider extends PanelProvider
             ->brandLogoHeight('10em')
             ->favicon(asset('imgs/pejota-logo.svg'))
             ->colors([
-                'primary' => Color::Green,
+                'primary' => '#00BF63',
             ])
             ->viteTheme('resources/css/filament/app/theme.css')
             ->sidebarWidth('15rem;')
             ->renderHook(
                 PanelsRenderHook::FOOTER,
-                fn (): string => ' <div class="inline text-gray-400 justify-center max-w-full">
+                fn(): string => ' <div class="inline text-gray-400 justify-center max-w-full">
                         By
                         <a href="https://mazer.dev" target="_blank"
                         >
