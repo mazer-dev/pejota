@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Arr;
 use NunoMazer\Samehouse\BelongsToTenants;
 use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 use Spatie\Activitylog\LogOptions;
@@ -135,43 +136,29 @@ class Task extends Model
     {
         $attributes = $activity->properties->get('attributes', []);
         $old = $activity->properties->get('old', []);
+    
+        $mappings = [
+            'status.name' => 'status_id',
+            'parent.title' => 'parent_id',
+            'client.name' => 'client_id',
+        ];
 
-        if (isset($attributes['status.name'])) {
-            $attributes['status_id'] = $attributes['status.name'];
-            unset($attributes['status.name']);
+        foreach ($mappings as $key => $newKey) {
+            if (Arr::has($attributes, $key)) {
+                $attributes[$newKey] = Arr::pull($attributes, $key);
+            }
+    
+            if (Arr::has($old, $key)) {
+                $old[$newKey] = Arr::pull($old, $key);
+            }
         }
-
-        if (isset($old['status.name'])) {
-            $old['status_id'] = $old['status.name'];
-            unset($old['status.name']);
-        }
-
-        if (isset($attributes['parent.title'])) {
-            $attributes['parent_id'] = $attributes['parent.title'];
-            unset($attributes['parent.title']);
-        }
-
-        if (isset($old['parent.name'])) {
-            $old['parent_id'] = $old['parent.name'];
-            unset($old['parent.name']);
-        }
-
-        if (isset($attributes['client.name'])) {
-            $attributes['client_id'] = $attributes['client.name'];
-            unset($attributes['client.name']);
-        }
-
-        if (isset($old['client.name'])) {
-            $old['client_id'] = $old['client.name'];
-            unset($old['client.name']);
-        }
-
+    
         $activity->properties = $activity->properties->merge([
             'attributes' => $attributes,
             'old' => $old,
         ]);
     }
-
+    
     public function scopeOpened(Builder $query)
     {
         $query->whereHas('status', function (Builder $query) {

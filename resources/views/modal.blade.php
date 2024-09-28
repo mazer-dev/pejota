@@ -8,14 +8,11 @@
     </thead>
     <tbody>
         @foreach($properties['attributes'] as $key => $newValue)
-            @php
-                $oldValue = $properties['old'][$key] ?? null;
-            @endphp
-            @if($newValue !== $oldValue)
+            @if($newValue !== ($properties['old'][$key] ?? null))
                 <tr>
-                    <td>{{ ucfirst(str_replace('_', ' ', $key)) }}</td>
+                    <td>{{ ucfirst(str_replace('_', ' ', $labels[$key] ?? $key)) }}</td>
                     <td>{!! $newValue !!}</td>
-                    <td>{!! $oldValue !!}</td>
+                    <td>{!! $properties['old'][$key] ?? '' !!}</td>
                 </tr>
             @endif
         @endforeach

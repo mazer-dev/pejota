@@ -127,7 +127,7 @@ class TaskResource extends Resource
                         ->relationship(
                             'project',
                             'name',
-                            fn (Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                            fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
                         )
                         ->searchable()->preload(),
                     Forms\Components\Select::make('parent_task')
@@ -253,7 +253,7 @@ class TaskResource extends Resource
                     ->toggleable(),
                 Tables\Columns\SelectColumn::make('status_id')
                     ->label('Status')
-                    ->options(fn (): array => Status::all()->pluck('name', 'id')->toArray())
+                    ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\ColorColumn::make('status.color')
@@ -540,7 +540,7 @@ class TaskResource extends Resource
                                                     return new HtmlString($state);
                                                 })
                                                 ->prefixAction(
-                                                    fn ($component) => Action::make('checkCompleted')
+                                                    fn($component) => Action::make('checkCompleted')
                                                         ->icon(self::getStateCompleted($component) ? 'heroicon-o-check' : 'heroicon-o-stop')
                                                         ->color(self::getStateCompleted($component) ? Color::Green : Color::Gray)
                                                         ->action(function (Model $record, $component) {
@@ -641,8 +641,7 @@ class TaskResource extends Resource
                                                         fn($record) => ViewWorkSession::getUrl([
                                                             'record' => $record->id,
                                                         ])
-                                                    )
-                                                ,
+                                                    ),
                                                 TextEntry::make('duration')
                                                     ->hiddenLabel(fn ($record) => $record->sort != 0)
                                                     ->translateLabel()
@@ -685,7 +684,7 @@ class TaskResource extends Resource
                                         ->columnSpanFull()
                                         ->contained(false)
                                         ->schema([
-                                            Grid::make(4)->schema([
+                                            Grid::make(5)->schema([
                                                 TextEntry::make('created_at')
                                                     ->hiddenLabel()
                                                     ->icon('heroicon-o-chevron-double-right')
@@ -697,14 +696,18 @@ class TaskResource extends Resource
                                                     ->hiddenLabel(),
                                                 TextEntry::make('properties.attributes')
                                                     ->hiddenLabel()
-                                                    ->icon('heroicon-o-information-circle')
                                                     ->getStateUsing(
                                                         function (Model $record): array {
                                                             if (key_exists('status_id', $record->properties->get('attributes')))
                                                                 return [$record->properties->get('attributes')['status_id']];
                                                             return [$record->properties->get('attributes')['status.name']];
                                                         }
-                                                    )->action(self::getModalHistory()),
+                                                    ),
+                                                TextEntry::make('log')
+                                                    ->hiddenLabel()
+                                                    ->default('Log')
+                                                    ->icon('heroicon-s-book-open')
+                                                    ->action(self::getModalHistory())
                                             ]),
                                         ])
                                 ]),
@@ -902,5 +905,38 @@ class TaskResource extends Resource
         $newModel->save();
 
         return redirect(Pages\EditTask::getUrl([$newModel->id]));
+    }
+
+    public static function getModalHistory()
+    {
+        return Action::make('Changed fields')
+            ->action(fn(Model $record) => error_log(json_encode($record)))
+            ->modalSubmitAction(false)
+            ->modalContent(function (Model $record): View {
+                $properties = $record->properties->toArray();
+                $labels = [
+                    'status.name' => 'Status',
+                    'parent.title' => 'Parent',
+                    'client.name' => 'Client'
+                ];
+
+                if (key_exists('checklist', $properties['attributes']) && is_array($properties['attributes']['checklist'])) {
+                    $aux = array_map(function ($value) {
+                        return $value['item'] . ":" . ($value['completed'] ? "Completed" : "Not complete");
+                    }, $properties['attributes']['checklist']);
+                    $properties['attributes']['checklist'] = implode(", ", $aux);
+                }
+                if (key_exists('old', $properties))
+                    if (key_exists('checklist', $properties['old']) && is_array($properties['old']['checklist'])) {
+                        $aux = array_map(function ($value) {
+                            return $value['item'] . ":" . ($value['completed'] ? "Completed" : "Not complete");
+                        }, $properties['old']['checklist']);
+                        $properties['old']['checklist'] = implode(", ", $aux);
+                    }
+                return view(
+                    'modal',
+                    ['properties' => $properties, 'labels' => $labels],
+                );
+            });
     }
 }
