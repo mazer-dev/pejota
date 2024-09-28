@@ -17,13 +17,11 @@ enum PriorityEnum: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): ?string
     {
-        return match ($this) {
-            self::LOW => 'Low',
-            self::MEDIUM => 'Medium',
-            self::HIGH => 'High',
-            self::URGENT => 'Urgent',
-            self::CRITICAL => 'Critical',
-        };
+        return __(
+            ucwords(
+                str_replace('_', ' ', $this->value)
+            )
+        );
     }
 
     public function getOrder(): ?int
@@ -40,7 +38,7 @@ enum PriorityEnum: string implements HasColor, HasIcon, HasLabel
     public function getIcon(): ?string
     {
         return match ($this) {
-            self::CRITICAL => 'heroicon-o-exclamation-triangle',
+            self::CRITICAL => 'heroicon-o-exclamation-circle',
             self::URGENT => 'heroicon-o-chevron-double-up',
             self::HIGH => 'heroicon-o-chevron-up',
             self::MEDIUM => 'heroicon-o-minus',
@@ -51,9 +49,9 @@ enum PriorityEnum: string implements HasColor, HasIcon, HasLabel
     public function getColor(): ?array
     {
         return match ($this) {
-            self::CRITICAL => Color::Purple,
-            self::URGENT => Color::Red,
-            self::HIGH => Color::Orange,
+            self::CRITICAL => Color::Red,
+            self::URGENT => Color::Orange,
+            self::HIGH => Color::Yellow,
             self::MEDIUM => Color::Blue,
             self::LOW => Color::Neutral,
         };

@@ -25,4 +25,24 @@ class PejotaHelper
     {
         return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value);
     }
+
+    public static function getUserDateFormat()
+    {
+        return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value) ?? 'Y-m-d';
+    }
+
+    public static function getUserDateTimeFormat()
+    {
+        return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value) ?? 'Y-m-d H:i:s';
+    }
+
+    public static function getUserLocate()
+    {
+        return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_LOCALE->value) ?? 'en';
+    }
+
+    public static function getUserCurrency()
+    {
+        return auth()->user()->company->settings()->get(CompanySettingsEnum::FINANCE_CURRENCY->value) ?? 'USD';
+    }
 }

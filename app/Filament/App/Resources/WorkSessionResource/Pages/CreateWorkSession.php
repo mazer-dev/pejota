@@ -27,6 +27,7 @@ class CreateWorkSession extends CreateRecord
                 'task' => $task->id,
                 'start' => now(),
                 'rate' => 0,
+                'is_running' => true,
             ]);
 
             $this->redirectUrl = URL::previous();

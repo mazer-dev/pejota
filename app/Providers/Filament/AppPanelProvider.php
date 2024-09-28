@@ -32,12 +32,19 @@ class AppPanelProvider extends PanelProvider
             ->id('app')
             ->path('app')
             ->login()
+            ->passwordReset()
+            ->brandName('Pejota')
+            ->brandLogo(asset('imgs/pejota-logo.svg'))
+            ->brandLogoHeight('10em')
+            ->favicon(asset('imgs/pejota-logo.svg'))
             ->colors([
-                'primary' => Color::Green,
+                'primary' => '#00BF63',
             ])
+            ->viteTheme('resources/css/filament/app/theme.css')
+            ->sidebarWidth('15rem;')
             ->renderHook(
                 PanelsRenderHook::FOOTER,
-                fn (): string => ' <div class="inline text-gray-400 justify-center max-w-full">
+                fn(): string => ' <div class="inline text-gray-400 justify-center max-w-full">
                         By
                         <a href="https://mazer.dev" target="_blank"
                         >
@@ -68,6 +75,8 @@ class AppPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make(fn() => __(MenuGroupsEnum::DAILY_WORK->value))
                     ->icon('heroicon-o-inbox-stack'),
+                NavigationGroup::make(fn() => __(MenuGroupsEnum::FINANCE->value))
+                    ->icon('heroicon-o-currency-dollar'),
                 NavigationGroup::make(fn() => __(MenuGroupsEnum::ADMINISTRATION->value))
                     ->icon('heroicon-o-briefcase'),
                 NavigationGroup::make(fn() => __(MenuGroupsEnum::SETTINGS->value))

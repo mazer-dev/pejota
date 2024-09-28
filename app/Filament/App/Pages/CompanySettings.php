@@ -64,6 +64,18 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->options(CompanySettingsEnum::getTimezones())
                                 ->default('UTC')
                                 ->searchable(),
+
+                            Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value)
+                                ->translateLabel()
+                                ->label('Date format')
+                                ->options(CompanySettingsEnum::getDateFormats())
+                                ->default('d/m/Y'),
+
+                            Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value)
+                                ->translateLabel()
+                                ->label('Date and time format')
+                                ->options(CompanySettingsEnum::getDateTimeFormats())
+                                ->default('d/m/Y H:i:s'),
                         ]),
 
                     Forms\Components\Tabs\Tab::make('Clients')
@@ -108,6 +120,16 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                     'USD' => 'USD',
                                 ]),
                         ]),
+
+                    Forms\Components\Tabs\Tab::make('Invoices')
+                        ->translateLabel()
+                        ->schema([
+                            Forms\Components\TextInput::make(CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value)
+                                ->translateLabel()
+                                ->default(fn() => 'ym00'), // TODO this should come from enum maybe
+                        ]),
+
+
                 ]),
 
             ]);

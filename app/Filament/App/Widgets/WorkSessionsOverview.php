@@ -24,7 +24,8 @@ class WorkSessionsOverview extends BaseWidget
                         ])
                         ->sum('duration')
                 )
-            ),
+            )
+            ->icon('heroicon-o-clock'),
 
             Stat::make(__('This Week'),
                 PejotaHelper::formatDuration(
@@ -35,7 +36,8 @@ class WorkSessionsOverview extends BaseWidget
                         ])
                         ->sum('duration')
                 )
-            ),
+            )
+            ->icon('heroicon-o-clock'),
 
             Stat::make(__('This Month'),
                 PejotaHelper::formatDuration(
@@ -46,7 +48,8 @@ class WorkSessionsOverview extends BaseWidget
                         ])
                         ->sum('duration')
                 )
-            ),
+            )
+            ->icon('heroicon-o-clock'),
 
         ];
     }

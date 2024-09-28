@@ -16,6 +16,24 @@ use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Tags\HasTags;
 
+/**
+ * Class Model Task
+ *
+ * @property int $id
+ * @property string $title
+ * @property int|null $client_id
+ * @property int|null $project_id
+ * @property int $status_id
+ * @property int|null $parent_id
+ * @property \Illuminate\Support\Carbon|null $planned_start
+ * @property \Illuminate\Support\Carbon|null $planned_end
+ * @property \Illuminate\Support\Carbon|null $actual_start
+ * @property \Illuminate\Support\Carbon|null $actual_end
+ * @property \Illuminate\Support\Carbon|null $due_date
+ * @property array|null $checklist
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Task extends Model
 {
     use BelongsToTenants,
@@ -33,6 +51,11 @@ class Task extends Model
     protected static $recordsEvents = ["updated"];
 
     protected $casts = [
+        'planned_start' => 'date',
+        'planned_end' => 'date',
+        'actual_start' => 'date',
+        'actual_end' => 'date',
+        'due_date' => 'date',
         'checklist' => 'array',
     ];
 
@@ -84,18 +107,20 @@ class Task extends Model
 
         $status = Status::find($model->status_id);
 
-        if (
-            $status->phase == StatusPhaseEnum::IN_PROGRESS->value &&
-            $settings->get(CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value)
-        ) {
-            $model->actual_start = $model->actual_start ?? now()->format('Y-m-d');
-        }
+        if ($status) {
+            if (
+                $status->phase == StatusPhaseEnum::IN_PROGRESS->value &&
+                $settings->get(CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value)
+            ) {
+                $model->actual_start = $model->actual_start ?? now()->format('Y-m-d');
+            }
 
-        if (
-            $status->phase == StatusPhaseEnum::CLOSED->value &&
-            $settings->get(CompanySettingsEnum::TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED->value)
-        ) {
-            $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
+            if (
+                $status->phase == StatusPhaseEnum::CLOSED->value &&
+                $settings->get(CompanySettingsEnum::TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED->value)
+            ) {
+                $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
+            }
         }
     }
 
@@ -164,5 +189,21 @@ class Task extends Model
                 StatusPhaseEnum::CLOSED,
             ]);
         });
+    }
+
+    /**
+     * Postpones the specified field by the given interval.
+     *
+     * @param string $field The name of the field to be postponed.
+     * @param string $interval The interval by which the field should be postponed.
+     *
+     * @return void
+     */
+    public function postpone(string $field, string $intertval)
+    {
+        if ($this->{$field}) {
+            $this->{$field} = $this->{$field}->add($intertval);
+            $this->save();
+        }
     }
 }

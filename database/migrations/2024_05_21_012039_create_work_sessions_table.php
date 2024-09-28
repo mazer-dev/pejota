@@ -14,11 +14,14 @@ return new class extends Migration
         Schema::create('work_sessions', function (Blueprint $table) {
             $table->id();
             $table->string('title')->nullable();
+
+            $table->boolean('is_running')->default(true);
+
             $table->text('description')->nullable();
             $table->unsignedInteger('duration')
-                ->default(0)->comment('in minutes');
+                ->nullable()->comment('in minutes');
             $table->timestamp('start');
-            $table->timestamp('end');
+            $table->timestamp('end')->nullable();
             $table->integer('rate')
                 ->default(0)->comment('in cents');
             $table->string('currency', 3)->default('USD');

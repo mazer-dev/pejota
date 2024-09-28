@@ -5,11 +5,17 @@ namespace App\Filament\App\Resources;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
+use App\Enums\StatusPhaseEnum;
+use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
+use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Filament\App\Resources\TaskResource\Pages;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
+use App\Filament\App\Resources\WorkSessionResource\Pages\ViewWorkSession;
 use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use App\Models\Task;
+use App\Models\WorkSession;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
@@ -32,7 +38,9 @@ use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 use Parallax\FilamentComments\Tables\Actions\CommentsAction;
@@ -113,7 +121,7 @@ class TaskResource extends Resource
                         ->translateLabel()
                         ->relationship('client', 'name')
                         ->preload()->searchable(),
-                    Forms\Components\Select::make('project_id')
+                    Forms\Components\Select::make('project')
                         ->label('Project')
                         ->translateLabel()
                         ->relationship(
@@ -228,41 +236,55 @@ class TaskResource extends Resource
             ])
             ->columns([
                 Tables\Columns\IconColumn::make('priority')
-                    ->label('')
+                    ->translateLabel()
+                    ->extraHeaderAttributes(['class' => 'column-header-no-label'])
                     ->sortable()
                     ->icon(fn ($state) => PriorityEnum::from($state)->getIcon())
                     ->color(fn ($state) => PriorityEnum::from($state)->getColor())
                     ->tooltip(fn ($state) => PriorityEnum::from($state)->getLabel())
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('title')
+                Tables\Columns\IconColumn::make('work_session')
                     ->translateLabel()
-                    ->wrap()
-                    ->searchable(),
+                    ->wrapHeader()
+                    ->extraHeaderAttributes(['class' => 'column-header-no-label'])
+                    ->boolean()
+                    ->getStateUsing(fn($record) => $record->workSessions()->where('is_running', true)->count())
+                    ->falseColor(Color::hex('#ddd'))
+                    ->toggleable(),
                 Tables\Columns\SelectColumn::make('status_id')
                     ->label('Status')
                     ->options(fn (): array => Status::all()->pluck('name', 'id')->toArray())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\ColorColumn::make('status.color')
-                    ->label('')
-                    ->tooltip(fn (Model $record) => $record->status->name)
+                    ->label('Status Color')
+                    ->extraHeaderAttributes(['class' => 'column-header-no-label'])
+                    ->tooltip(fn(Model $record) => $record->status->name)
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('title')
+                    ->translateLabel()
+                    ->wrap()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('due_date')
                     ->translateLabel()
-                    ->date()
-                    ->sortable(),
+                    ->wrapHeader()
+                    ->date(PejotaHelper::getUserDateFormat())
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('effort')
                     ->translateLabel()
                     ->formatStateUsing(fn (Model $record): string => $record->effort . ' ' . $record->effort_unit)
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('planned_start')
                     ->translateLabel()
-                    ->date()
+                    ->wrapHeader()
+                    ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('planned_end')
                     ->translateLabel()
-                    ->date()
+                    ->wrapHeader()
+                    ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('client.labelName')
@@ -287,6 +309,7 @@ class TaskResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->filtersFormColumns(4)
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->relationship('status', 'name')
@@ -297,15 +320,15 @@ class TaskResource extends Resource
                     ->relationship('client', 'name'),
                 Tables\Filters\Filter::make('due_date_not_empty')
                     ->form([
-                        Forms\Components\Grid::make(2)->schema([
-                            Forms\Components\ToggleButtons::make('due_date')
-                                ->translateLabel()
-                                ->options([
-                                    'not_empty' => __('Has due date'),
-                                    'empty' => __('No due date'),
-                                ]),
-                        ]),
+                        Forms\Components\ToggleButtons::make('due_date')
+                            ->translateLabel()
+                            ->inline()
+                            ->options([
+                                'not_empty' => __('Has due date'),
+                                'empty' => __('No due date'),
+                            ]),
                     ])
+                    ->columnSpan(2)
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
@@ -325,42 +348,115 @@ class TaskResource extends Resource
                         return null;
                     }),
                 Tables\Filters\Filter::make('due_date')
+                    ->columnSpan(2)
                     ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->translateLabel(),
-                        Forms\Components\DatePicker::make('to')
-                            ->translateLabel(),
+                        Forms\Components\DatePicker::make('from_due_date')
+                            ->translateLabel()
+                            ->inlineLabel(),
+                        Forms\Components\DatePicker::make('to_due_date')
+                            ->translateLabel()
+                            ->inlineLabel(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['from'],
-                                fn (Builder $query, $date): Builder => $query->where('due_date', '>=', $data['from'])
+                                $data['from_due_date'],
+                                fn(Builder $query, $date): Builder => $query->where('due_date', '>=', $data['from_due_date'])
                             )
                             ->when(
-                                $data['to'],
-                                fn (Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to'])
+                                $data['to_due_date'],
+                                fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to_due_date'])
                             );
                     })
                     ->indicateUsing(function (array $data): ?string {
-                        if ($data['from'] || $data['to']) {
-                            return __('Due date') . ': ' . $data['from'] . ' - ' . $data['to'];
+                        if ($data['from_due_date'] || $data['to_due_date']) {
+                            return __('Due date') . ': ' . $data['from_due_date'] . ' - ' . $data['to_due_date'];
                         }
 
                         return null;
                     }),
-            ], layout: Tables\Enums\FiltersLayout::Modal)
+                Tables\Filters\Filter::make('planned_end')
+                    ->columnSpan(2)
+                    ->form([
+                        Forms\Components\DatePicker::make('from_planned_end')
+                            ->translateLabel()
+                            ->inlineLabel(),
+                        Forms\Components\DatePicker::make('to_planned_end')
+                            ->translateLabel()
+                            ->inlineLabel(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from_planned_end'],
+                                fn(Builder $query, $date): Builder => $query->where(DB::raw('DATE(planned_end'), '>=', $data['from_planned_end'])
+                            )
+                            ->when(
+                                $data['to_planned_end'],
+                                fn(Builder $query, $date): Builder => $query->where(DB::raw('DATE(planned_end)'), '<=', $data['to_planned_end'])
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if ($data['from_planned_end'] || $data['to_planned_end']) {
+                            return __('Due date') . ': ' . $data['from_planned_end'] . ' - ' . $data['to_planned_end'];
+                        }
+
+                        return null;
+                    }),
+            ], layout: Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     CommentsAction::make(),
+                    Tables\Actions\Action::make(__('Start Session'))
+                        ->tooltip(__('Start a new session for this task'))
+                        ->icon('heroicon-o-play')
+                        ->color(Color::Amber)
+                        ->url(fn($record) => CreateWorkSession::getUrl([
+                            'task' => $record->id,
+                        ])),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\Action::make(__('Clone'))
+                        ->tooltip(__('Clone this record with same details but the dates, then open the form to you fill dates'))
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color(Color::Amber)
+                        ->action(fn(Task $record) => self::clone($record)),
+
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                ]),
+
+                    Tables\Actions\BulkActionGroup::make(
+                        self::getPostponeActions('planned_start'),
+                    )
+                        ->label('Postpone planned start')
+                        ->translateLabel()
+                        ->icon('heroicon-o-calendar'),
+
+                    Tables\Actions\BulkActionGroup::make(
+                        self::getPostponeActions('planned_end'),
+                    )
+                        ->label('Postpone planned end')
+                        ->translateLabel()
+                        ->icon('heroicon-o-calendar'),
+
+                    Tables\Actions\BulkActionGroup::make(
+                        self::getPostponeActions('due_date'),
+                    )
+                        ->label('Postpone due date')
+                        ->translateLabel()
+                        ->icon('heroicon-o-calendar'),
+
+                    Tables\Actions\BulkAction::make(__('Clone selected'))
+                        ->tooltip(__('Clone this session with same time and details, updating to current date'))
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color(Color::Amber)
+                        ->action(fn(\Illuminate\Support\Collection $records) => self::cloneCollection($records))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
+                ])
             ])
             ->persistFiltersInSession()
             ->persistSearchInSession()
@@ -382,11 +478,21 @@ class TaskResource extends Resource
                             Grid::make(2)->schema([
                                 TextEntry::make('project.name')
                                     ->label('')
-                                    ->icon('heroicon-o-presentation-chart-bar'),
+                                    ->icon('heroicon-o-presentation-chart-bar')
+                                    ->hidden(fn($state) => !$state)
+                                    ->url(fn($record) => ViewProject::getUrl([$record->project_id])),
 
                                 TextEntry::make('client.name')
                                     ->label('')
-                                    ->icon('heroicon-o-building-office'),
+                                    ->icon('heroicon-o-building-office')
+                                    ->hidden(fn($state) => !$state)
+                                    ->url(fn($record) => ViewClient::getUrl([$record->client_id])),
+
+                                TextEntry::make('parent.title')
+                                    ->label('')
+                                    ->icon(TaskResource::getNavigationIcon())
+                                    ->hidden(fn($state) => !$state)
+                                    ->url(fn($record) => Pages\ViewTask::getUrl([$record->parent_id]))
                             ]),
 
                             TextEntry::make('description')
@@ -397,21 +503,21 @@ class TaskResource extends Resource
                             Grid::make(4)->schema([
                                 TextEntry::make('planned_start')
                                     ->translateLabel()
-                                    ->date()
+                                    ->date(PejotaHelper::getUserDateFormat())
                                     ->icon('heroicon-o-calendar'),
                                 TextEntry::make('planned_end')
                                     ->translateLabel()
-                                    ->date()
+                                    ->date(PejotaHelper::getUserDateFormat())
                                     ->icon('heroicon-o-calendar'),
 
                                 TextEntry::make('actual_start')
                                     ->translateLabel()
-                                    ->date()
+                                    ->date(PejotaHelper::getUserDateFormat())
                                     ->icon('heroicon-o-calendar'),
 
                                 TextEntry::make('actual_end')
                                     ->translateLabel()
-                                    ->date()
+                                    ->date(PejotaHelper::getUserDateFormat())
                                     ->icon('heroicon-o-calendar'),
                             ]),
                         ]),
@@ -492,7 +598,7 @@ class TaskResource extends Resource
                                                 TextEntry::make('due_date')
                                                     ->hiddenLabel(fn ($record) => $record->sort != 0)
                                                     ->translateLabel()
-                                                    ->date()
+                                                    ->date(PejotaHelper::getUserDateFormat())
                                                     ->icon('heroicon-o-calendar')
                                                     ->columnSpan(2),
                                             ]),
@@ -517,7 +623,7 @@ class TaskResource extends Resource
                                         ->label('')
                                         ->columnSpanFull()
                                         ->getStateUsing(function (Model $record) {
-                                            $items = $record->workSessions;
+                                            $items = $record->workSessions->sortByDesc('start');
                                             foreach ($items as $key => $value) {
                                                 $value->sort = $key;
                                             }
@@ -530,8 +636,13 @@ class TaskResource extends Resource
                                                     ->label('Started at')
                                                     ->hiddenLabel(fn ($record) => $record->sort != 0)
                                                     ->translateLabel()
-                                                    ->dateTime()
-                                                    ->timezone(PejotaHelper::getUserTimeZone()),
+                                                    ->dateTime(PejotaHelper::getUserDateTimeFormat())
+                                                    ->url(
+                                                        fn($record) => ViewWorkSession::getUrl([
+                                                            'record' => $record->id,
+                                                        ])
+                                                    )
+                                                ,
                                                 TextEntry::make('duration')
                                                     ->hiddenLabel(fn ($record) => $record->sort != 0)
                                                     ->translateLabel()
@@ -546,7 +657,7 @@ class TaskResource extends Resource
                                                     ->translateLabel()
                                                     ->html()
                                                     ->columnSpan(2)
-                                                    ->visible(fn ($state) => $state ? true : false),
+                                                    ->visible(fn($state) => !$state),
                                             ]),
                                         ]),
                                 ]),
@@ -634,7 +745,7 @@ class TaskResource extends Resource
 
                         TextEntry::make('due_date')
                             ->translateLabel()
-                            ->date()
+                            ->date(PejotaHelper::getUserDateFormat())
                             ->icon('heroicon-o-exclamation-triangle'),
 
                         TextEntry::make('effort')
@@ -652,13 +763,6 @@ class TaskResource extends Resource
                             ->formatStateUsing(fn (Model $record): string => PejotaHelper::formatDuration($record->workSessions->sum('duration'))),
 
                         Actions::make([
-                            Action::make('edit')
-                                ->translateLabel()
-                                ->url(
-                                    fn (Model $record) => "{$record->id}/edit"
-                                )
-                                ->icon('heroicon-o-pencil'),
-
                             Action::make('list')
                                 ->translateLabel()
                                 ->url(
@@ -666,6 +770,22 @@ class TaskResource extends Resource
                                 )
                                 ->icon('heroicon-o-chevron-left')
                                 ->color(Color::Neutral),
+
+                            Action::make('edit')
+                                ->translateLabel()
+                                ->url(
+                                    fn(Model $record) => "{$record->id}/edit"
+                                )
+                                ->icon('heroicon-o-pencil'),
+
+                            Action::make('subtask')
+                                ->translateLabel()
+                                ->icon(TaskResource::getNavigationIcon())
+                                ->color(Color::Green)
+                                ->modal(true)
+                                ->url(fn($record) => Pages\CreateTask::getUrl([
+                                    'parent' => $record->id,
+                                ])),
 
                             Action::make('session')
                                 ->translateLabel()
@@ -676,8 +796,8 @@ class TaskResource extends Resource
                                     'task' => $record->id,
                                 ])),
                         ]),
-                    ])->grow(false),
-
+                    ])
+                        ->grow(false), // Section at right
                 ])
                     ->columnSpanFull(),
 
@@ -713,35 +833,74 @@ class TaskResource extends Resource
         return $data['completed'];
     }
 
-    public static function getModalHistory()
+    protected static function getPostponeActions($field): array
     {
-        return Action::make('Changed fields')
-            ->action(fn (Model $record) => error_log(json_encode($record)))
-            ->modalSubmitAction(false)
-            ->modalContent(function (Model $record): View {
-                $properties = $record->properties->toArray();
-
-                if (key_exists('checklist', $properties['attributes']) && is_array($properties['attributes']['checklist'])) {
-                    $aux = array_map(function ($value) {
-                        return $value['item']. ":" .($value['completed'] ? "Completed" : "Not complete");
-                    }, $properties['attributes']['checklist']);
-
-                    $properties['attributes']['checklist'] = implode(",", $aux);
-                }
-
-                if (key_exists('old', $properties))
-                    if (key_exists('checklist', $properties['old']) && is_array($properties['old']['checklist'])) {
-                        $aux = array_map(function ($value) {
-                            return $value['item']. ":" .($value['completed'] ? "Completed" : "Not complete");
-                        }, $properties['old']['checklist']);
-
-                        $properties['old']['checklist'] = implode(", ", $aux);
+        return [
+            Tables\Actions\BulkAction::make($field . '_postpone_1_day')
+                ->label('1 day')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '1 day')),
+            Tables\Actions\BulkAction::make($field . '_postpone_3_days')
+                ->label('3 days')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '3 days')),
+            Tables\Actions\BulkAction::make($field . '_postpone_5_days')
+                ->label('5 days')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '5 days')),
+            Tables\Actions\BulkAction::make($field . '_postpone_1_week')
+                ->label('1 week')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '1 week')),
+            Tables\Actions\BulkAction::make($field . '_postpone_2_weeks')
+                ->label('2 weeks')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '2 weeks')),
+            Tables\Actions\BulkAction::make($field . '_postpone_1_month')
+                ->label('1 month')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, '1 month')),
+            Tables\Actions\BulkAction::make($field . '_postpone_custom')
+                ->label('Custom')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->form([
+                    Forms\Components\DatePicker::make($field)
+                        ->translateLabel()
+                        ->required()
+                ])
+                ->action(function ($data, Collection $records) use ($field) {
+                    foreach ($records as $record) {
+                        $record->{$field} = $data[$field];
+                        $record->save();
                     }
+                }),
 
-                return view(
-                    'modal',
-                    ['properties' => $properties],
-                );
-            });
+        ];
+    }
+
+    public static function cloneCollection(\Illuminate\Support\Collection $records)
+    {
+        $records->each(fn($record) => self::clone($record));
+    }
+
+    public static function clone(Task $record)
+    {
+        $newModel = $record->replicate();
+        $newModel->due_date = null;
+        $newModel->planned_end = null;
+        $newModel->planned_start = null;
+        $newModel->actual_end = null;
+        $newModel->actual_start = null;
+        $newModel->status_id = Status::select('id')->orderBy('order')->first()?->id;
+        $newModel->save();
+
+        return redirect(Pages\EditTask::getUrl([$newModel->id]));
     }
 }
