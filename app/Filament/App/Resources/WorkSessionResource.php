@@ -98,7 +98,7 @@ class WorkSessionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Time')
-                    ->tooltip(fn($record) => $record->end->tz(PejotaHelper::getUserTimeZone())->format(PejotaHelper::getUserDateTimeFormat()))
+                    ->tooltip(fn($record) => $record?->end?->tz(PejotaHelper::getUserTimeZone())->format(PejotaHelper::getUserDateTimeFormat()))
                     ->translateLabel()
                     ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
                     ->hidden(fn($livewire) => $livewire->activeTab === 'running')
