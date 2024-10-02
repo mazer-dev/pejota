@@ -44,3 +44,21 @@ div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside 
 /*.fi-sidebar-group-label {*/
 /*    @apply text-gray-400 hover:text-white;*/
 /*}*/
+
+/* Table */
+/* Striped table */
+.fi-ta-row:nth-child(odd) {
+    /*background-color: rgba(var(--gray-100),1);*/
+    @apply bg-gray-100 dark:bg-gray-500 !important;
+}
+
+/* table hover */
+.fi-ta-row {
+    @apply hover:bg-gray-200 dark:hover:bg-danger-500 dark:hover:text-primary-900 !important;
+}
+
+@media (hover:hover) {
+    .fi-ta-row {
+        @apply dark:hover:bg-gray-900 dark:hover:text-gray-200 !important;
+    }
+}

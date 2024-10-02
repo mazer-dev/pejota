@@ -59,6 +59,7 @@ class StatusResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('Order')

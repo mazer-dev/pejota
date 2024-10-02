@@ -16,6 +16,7 @@ use App\Models\Status;
 use App\Models\Task;
 use App\Models\WorkSession;
 use Carbon\Carbon;
+use Filament\Actions\ActionGroup;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
@@ -207,9 +208,29 @@ class TaskResource extends Resource
                 ]),
 
                 Forms\Components\Grid::make(5)->schema([
+//                    Forms\Components\Select::make('date_setting')
+//                        ->translateLabel()
+//                        ->options([
+//                            'all-dates-today' => __('All dates today'),
+//                            'all-dates-tomorrow' => __('All dates tomorrow'),
+//                            'due-planned-today' => __('Due and planned dates today'),
+//                            'due-planned-tomorrow' => __('Due and planned dates tomorrow'),
+//                        ])
+//                        ->live()
+//                        ->afterStateUpdated(function ($state, $get, $set) {
+//                            $today = Carbon::today(PejotaHelper::getUserTimeZone())->toDayDateTimeString();
+//                            match ($state) {
+//                                'all-dates-today' => function () use ($set, $today) {
+//                                    $set('due_date', $today);
+//                                    $set('planned_start', $today);
+//                                    $set('planned_end', $today);
+//                                    $set('actual_start', $today);
+//                                    $set('actual_end', $today);
+//                                },
+//                            };
+//                        }),
                     Forms\Components\DatePicker::make('due_date')
                         ->translateLabel(),
-
                     Forms\Components\DatePicker::make('planned_start')
                         ->translateLabel(),
                     Forms\Components\DatePicker::make('planned_end')
@@ -232,6 +253,7 @@ class TaskResource extends Resource
                 'due_date',
                 'status.name',
             ])
+            ->striped()
             ->columns([
                 Tables\Columns\IconColumn::make('priority')
                     ->translateLabel()

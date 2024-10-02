@@ -167,6 +167,7 @@ class InvoiceResource extends Resource
     {
         return $table
             ->defaultSort('due_date')
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('status')
                     ->translateLabel()

@@ -71,6 +71,7 @@ class WorkSessionResource extends Resource
     {
         return $table
             ->defaultSort('start', 'desc')
+            ->striped()
             ->columns([
                 Tables\Columns\ToggleColumn::make('is_running')
                     ->translateLabel()

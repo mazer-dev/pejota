@@ -147,6 +147,7 @@ class ContractResource extends Resource
                 'project.name',
                 'start_at',
             ])
+            ->striped()
             ->columns([
                 TextColumn::make('title')
                     ->translateLabel()
