@@ -2,6 +2,45 @@
 
 @config 'tailwind.config.js';
 
+/** class to remove a table column header label **/
 .column-header-no-label span.fi-ta-header-cell-label {
     display: none;
 }
+
+/*sidebar*/
+/*div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav {*/
+/*    background-color: #004B27;*/
+/*}*/
+
+/*!*topbar*!*/
+/*div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > div > header,*/
+/*.fi-logo {*/
+/*    background-color: #F2F7F5;*/
+/*}*/
+
+ /*sidebar menus */
+/*div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li > a > span {*/
+/*    @apply text-gray-200;*/
+/*}*/
+
+/* sidebar menus hover */
+div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li > a:hover > span {
+    @apply text-gray-100;
+}
+
+div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li > a:hover {
+    @apply bg-primary-900;
+}
+
+/* sidebar active menu */
+div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li.fi-sidebar-item.fi-active.fi-sidebar-item-active.flex.flex-col.gap-y-1 > a > span {
+    @apply text-gray-900;
+}
+div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li.fi-sidebar-item.fi-active.fi-sidebar-item-active.flex.flex-col.gap-y-1 > a {
+    @apply bg-primary-200;
+}
+
+/** sidebar menu groups **/
+/*.fi-sidebar-group-label {*/
+/*    @apply text-gray-400 hover:text-white;*/
+/*}*/

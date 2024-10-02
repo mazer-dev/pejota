@@ -45,7 +45,7 @@ class AppPanelProvider extends PanelProvider
             ->sidebarWidth('15rem;')
             ->renderHook(
                 PanelsRenderHook::FOOTER,
-                fn(): string => ' <div class="inline text-gray-400 justify-center max-w-full">
+                fn(): string => ' <div class="inline footer-contacts text-gray-400 text-center max-w-full">
                         By
                         <a href="https://mazer.dev" target="_blank"
                         >
