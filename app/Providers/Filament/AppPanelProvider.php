@@ -39,7 +39,6 @@ class AppPanelProvider extends PanelProvider
             ->favicon(asset('imgs/pejota-logo.svg'))
             ->colors([
                 'primary' => Color::hex('#00BF63'),
-                'gray' => Color::hex('#506050'),
             ])
             ->viteTheme('resources/css/filament/app/theme.css')
             ->sidebarWidth('15rem;')
