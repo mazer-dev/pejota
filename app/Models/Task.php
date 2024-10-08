@@ -161,7 +161,7 @@ class Task extends Model
     public function postpone(string $field, string $intertval)
     {
         if ($this->{$field}) {
-            if ($intertval = 'today') {
+            if ($intertval == 'today') {
                 $this->{$field} = now()->format('Y-m-d');
             } else {
                 $this->{$field} = $this->{$field}->add($intertval);
