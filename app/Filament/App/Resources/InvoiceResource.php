@@ -44,7 +44,8 @@ class InvoiceResource extends Resource
                 Forms\Components\TextInput::make('number')
                     ->translateLabel()
                     ->required()
-                    ->default(fn() => CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumberFormated()),
+                    ->default(fn() => CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumberFormated())
+                    ->unique(),
                 Forms\Components\Select::make('status')
                     ->options(InvoiceStatusEnum::class)
                     ->default(fn() => InvoiceStatusEnum::DRAFT)
