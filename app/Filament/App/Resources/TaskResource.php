@@ -851,6 +851,11 @@ class TaskResource extends Resource
     protected static function getPostponeActions($field): array
     {
         return [
+            Tables\Actions\BulkAction::make($field . '_postpone_today')
+                ->label('Today')
+                ->translateLabel()
+                ->deselectRecordsAfterCompletion()
+                ->action(fn(Collection $records) => $records->each->postpone($field, 'today')),
             Tables\Actions\BulkAction::make($field . '_postpone_1_day')
                 ->label('1 day')
                 ->translateLabel()
