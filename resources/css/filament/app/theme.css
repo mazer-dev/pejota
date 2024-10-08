@@ -62,3 +62,8 @@ div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside 
         @apply dark:hover:bg-gray-900 dark:hover:text-gray-200 !important;
     }
 }
+
+/* dropdown list */
+.fi-dropdown-list-item {
+    @apply hover:bg-gray-200 dark:hover:bg-gray-900 dark:hover:text-gray-200 !important;
+}
