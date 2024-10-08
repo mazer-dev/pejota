@@ -64,6 +64,8 @@ div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside 
 }
 
 /* dropdown list */
+.fi-ta-actions .fi-btn,
 .fi-dropdown-list-item {
+    width: 100%;
     @apply hover:bg-gray-200 dark:hover:bg-gray-900 dark:hover:text-gray-200 !important;
 }
