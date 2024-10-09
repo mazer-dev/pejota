@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Arr;
 use NunoMazer\Samehouse\BelongsToTenants;
 use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Tags\HasTags;
 
@@ -46,6 +48,8 @@ class Task extends Model
     public const LOG_EVENT_STATUS_CHANGED = 'status_changed';
 
     protected $guarded = ['id'];
+
+    protected static $recordsEvents = ["updated"];
 
     protected $casts = [
         'planned_start' => 'date',
@@ -119,18 +123,42 @@ class Task extends Model
                 $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
             }
         }
-
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status.name'])
             ->useLogName(self::LOG_NAME)
-            ->dontSubmitEmptyLogs()
-            ->logOnlyDirty();
+            ->logOnly(['title', 'description', 'priority', 'checklist', 'parent.title', 'status.name', 'effort.name', 'effort_unit', 'planned_start', 'planned_end', 'actual_start', 'actual_end', 'due_date', 'client.name']);
     }
 
+    public function tapActivity(Activity $activity, string $eventName)
+    {
+        $attributes = $activity->properties->get('attributes', []);
+        $old = $activity->properties->get('old', []);
+    
+        $mappings = [
+            'status.name' => 'status_id',
+            'parent.title' => 'parent_id',
+            'client.name' => 'client_id',
+        ];
+
+        foreach ($mappings as $key => $newKey) {
+            if (Arr::has($attributes, $key)) {
+                $attributes[$newKey] = Arr::pull($attributes, $key);
+            }
+    
+            if (Arr::has($old, $key)) {
+                $old[$newKey] = Arr::pull($old, $key);
+            }
+        }
+    
+        $activity->properties = $activity->properties->merge([
+            'attributes' => $attributes,
+            'old' => $old,
+        ]);
+    }
+    
     public function scopeOpened(Builder $query)
     {
         $query->whereHas('status', function (Builder $query) {

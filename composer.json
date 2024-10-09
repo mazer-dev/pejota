@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.2",
         "abdelhamiderrahmouni/filament-monaco-editor": "^0.2.5",
+        "filament/actions": "^3.2",
         "filament/filament": "^3.2",
         "filament/spatie-laravel-tags-plugin": "^3.2",
         "icetalker/filament-table-repeater": "^1.3",
