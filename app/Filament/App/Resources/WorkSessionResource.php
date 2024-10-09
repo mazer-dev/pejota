@@ -103,7 +103,12 @@ class WorkSessionResource extends Resource
                     ->translateLabel()
                     ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
                     ->hidden(fn($livewire) => $livewire->activeTab === 'running')
-                    ->toggleable(),
+                    ->toggleable()
+                    ->summarize(
+                        Tables\Columns\Summarizers\Sum::make()
+                        ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
+                        ->label('Total time')
+                    ),
                 Tables\Columns\TextColumn::make('title')
                     ->translateLabel()
                     ->searchable(),
@@ -140,6 +145,15 @@ class WorkSessionResource extends Resource
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->groups([
+                Tables\Grouping\Group::make('client.name')
+                    ->label(__('Client'))
+                    ->collapsible(),
+                Tables\Grouping\Group::make('start')
+                    ->label(__('Date'))
+                    ->date()
+                    ->collapsible(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('client')
