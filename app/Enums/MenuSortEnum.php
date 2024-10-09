@@ -13,4 +13,6 @@ enum MenuSortEnum: int
     case NOTES = 50;
     case SUBSCRIPTIONS = 60;
     case SETTINGS = 70;
+    case PRODUCTS = 80;
+    case MY_COMPANY = 90;
 }
