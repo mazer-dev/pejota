@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Enums\MenuGroupsEnum;
+use App\Filament\App\Pages\Dashboard;
 use App\Http\Middleware\LocalizationMiddleware;
 use App\Http\Middleware\TenantMiddleware;
 use Filament\Http\Middleware\Authenticate;
@@ -68,7 +69,7 @@ class AppPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([])
