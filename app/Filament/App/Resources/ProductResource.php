@@ -3,6 +3,7 @@
 namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\ProductResource\Pages;
 use App\Filament\App\Resources\ProductResource\RelationManagers;
 use App\Models\Product;
@@ -20,7 +21,7 @@ class ProductResource extends Resource
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-inbox';
-    protected static ?int $navigationSort = 90;
+    protected static ?int $navigationSort = MenuSortEnum::PRODUCTS->value;
 
     public static function getModelLabel(): string
     {
