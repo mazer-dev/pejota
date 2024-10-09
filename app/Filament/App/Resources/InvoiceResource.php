@@ -174,11 +174,27 @@ class InvoiceResource extends Resource
                     ->translateLabel()
                     ->badge()
                     ->searchable(),
+                Tables\Columns\IconColumn::make('overdue_status')
+                    ->label('')
+                    ->translateLabel()
+                    ->wrapHeader()
+                    ->alignCenter()
+                    ->sortable()
+                    ->icon(fn($record) => match ($record->is_overdue) {
+                        true => 'heroicon-o-exclamation-circle',
+                        default => null,
+                    })
+                    ->color(fn($record) => match ($record->is_overdue) {
+                        true => 'danger',
+                        default => null,
+                    })
+                    ->getStateUsing(fn($record) => $record->is_overdue),
                 Tables\Columns\TextColumn::make('number')
                     ->translateLabel()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('title')
                     ->translateLabel()
+                    ->wrap()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('client.name')
                     ->translateLabel()
