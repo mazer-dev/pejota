@@ -8,6 +8,8 @@ use App\Models\Company;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -73,6 +75,16 @@ class MyCompany extends Page implements HasForms
                     ->label(__('Phone'))
                     ->tel(),
                 TextInput::make('website'),
+                SpatieMediaLibraryFileUpload::make('logo')
+                    ->translateLabel()
+                    ->disk('companies')
+                    ->image()
+                    ->imageEditor()
+                    ->imageEditorAspectRatios([
+                        '16:9',
+                        '4:3',
+                        '1:1',
+                    ])
             ])
             ->statePath('data')
             ->model($this->company);

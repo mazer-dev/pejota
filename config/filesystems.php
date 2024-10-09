@@ -68,6 +68,14 @@ return [
             'throw' => true,
         ],
 
+        'companies' => [
+            'driver' => 'local',
+            'root' => storage_path('app/companies'),
+            'url' => env('APP_URL').'/attachments/companies',
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
