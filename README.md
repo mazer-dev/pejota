@@ -20,6 +20,7 @@ that allow a quick high quality monolith to be created.
 - Run `php artisan migrate`
 - Run `npm install`
 - Run `npm run build`
+- Run `php artisan pj:install` to create the user and company records
 
 ## How to contribute
 
@@ -89,9 +90,17 @@ Control sessions of work, related to client / project / task.
 
 Each session has a start and end period, used to calculate the duration.
 
+### Invoices
+
+Simple invoice management, with the ability to export to PDF.
+
 ### Notes
 
 Save Links, Rich Text, Markdown, Plain text notes and Code Snippets.
+
+### Subscriptions
+
+Control your subscriptions, with a simple way to manage the subscriptions you have.
 
 ### Settings
 
