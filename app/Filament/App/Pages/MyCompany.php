@@ -77,7 +77,7 @@ class MyCompany extends Page implements HasForms
                 TextInput::make('website'),
                 SpatieMediaLibraryFileUpload::make('logo')
                     ->translateLabel()
-                    ->disk('companies')
+                    ->disk('companies-logo')
                     ->image()
                     ->imageEditor()
                     ->imageEditorAspectRatios([
