@@ -8,12 +8,14 @@ class AttachmentsController extends Controller
 {
     public function getAttachment(string $module, int $companyId, string $fileName)
     {
-        if (auth()->user()->company->id == $companyId) {
-            $file = Storage::disk($module)->get($companyId.'/'.$fileName);
-
+        if ($module == 'companies-logo') {
             return Storage::disk($module)->response($companyId.'/'.$fileName);
-        } else {
-            abort(404);
         }
+
+        if (auth()->user()->company->id == $companyId) {
+            return Storage::disk($module)->response($companyId.'/'.$fileName);
+        }
+
+        abort(404);
     }
 }

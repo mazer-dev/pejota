@@ -76,6 +76,14 @@ return [
             'throw' => true,
         ],
 
+        'companies-logo' => [
+            'driver' => 'local',
+            'root' => storage_path('app/companies/logo'),
+            'url' => env('APP_URL').'/attachments/companies-logo',
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
