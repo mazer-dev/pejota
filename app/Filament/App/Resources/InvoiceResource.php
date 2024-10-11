@@ -11,6 +11,7 @@ use App\Helpers\PejotaHelper;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\TabelaPreco;
+use App\Services\InvoiceService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -19,6 +20,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InvoiceResource extends Resource
 {
@@ -45,7 +47,7 @@ class InvoiceResource extends Resource
                     ->translateLabel()
                     ->required()
                     ->default(fn() => CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumberFormated())
-                    ->unique(ignorable: fn($record) => $record->isDirty('number') ? null: $record),
+                    ->unique(ignorable: fn($record) => $record->isDirty('number') ? null : $record),
                 Forms\Components\Select::make('status')
                     ->options(InvoiceStatusEnum::class)
                     ->default(fn() => InvoiceStatusEnum::DRAFT)
@@ -244,6 +246,11 @@ class InvoiceResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\Action::make('pdf')
+                        ->label('PDF')
+                        ->color('info')
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->action(fn($record) => self::generatePdf($record)),
                 ]),
             ])
             ->bulkActions([
@@ -313,5 +320,13 @@ class InvoiceResource extends Resource
             $totalComponent,
             $invoiceValue
         );
+    }
+
+    public static function generatePdf(Invoice $invoice): StreamedResponse
+    {
+        return response()->streamDownload(function () use ($invoice) {
+            $pdf = (new InvoiceService())->generatePdf($invoice);
+            echo $pdf->stream();
+        }, 'invoice_' . $invoice->number . '.pdf');
     }
 }

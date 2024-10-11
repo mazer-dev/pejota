@@ -33,6 +33,11 @@ class Invoice extends Model
                 $this->due_date->isPast() && $this->status != InvoiceStatusEnum::PAID,
         );
     }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
