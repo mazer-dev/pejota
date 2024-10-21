@@ -34,13 +34,13 @@ class ListTasks extends ListRecords
     public function getTabs(): array
     {
         return [
-            'all' => Tab::make(),
             'opened' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query): Builder => $query->opened())
                 ->badge(fn (Task $record): int => $record->opened()->count())
                 ->badgeColor(Color::Orange),
             'closed' => Tab::make()
                 ->modifyQueryUsing(fn (Builder $query): Builder => $query->closed()),
+            'all' => Tab::make(),
         ];
     }
 
