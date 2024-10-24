@@ -5,7 +5,6 @@ namespace App\Filament\App\Resources;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
-use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
 use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Filament\App\Resources\TaskResource\Pages;
@@ -15,8 +14,6 @@ use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\WorkSession;
-use Carbon\Carbon;
-use Filament\Actions\ActionGroup;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
@@ -488,6 +485,7 @@ class TaskResource extends Resource
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
+            ->name('Task')
             ->schema([
                 Split::make([
                     Grid::make(1)->schema([
@@ -661,13 +659,28 @@ class TaskResource extends Resource
                                                         fn($record) => ViewWorkSession::getUrl([
                                                             'record' => $record->id,
                                                         ])
-                                                    )
-                                                ,
+                                                    ),
+
                                                 TextEntry::make('duration')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
-                                                    ->icon('heroicon-o-clock')
-                                                    ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state)),
+                                                    ->icon(fn(Model $record): string => $record->is_running ? '' : 'heroicon-o-clock')
+                                                    ->formatStateUsing(fn($state): string => PejotaHelper::formatDuration($state))
+                                                    ->hidden(fn($record) => $record->is_running),
+
+                                                Actions::make([
+                                                    Action::make('stop')
+                                                        ->translateLabel()
+                                                        ->icon('heroicon-o-stop')
+                                                        ->color(Color::Red)
+                                                        ->requiresConfirmation()
+                                                        ->action(function (WorkSession $record) {
+                                                            unset($record->sort);
+                                                            return $record->finish();
+                                                        })
+                                                ])
+                                                    ->hidden(fn($record) => !$record->is_running),
+
                                                 TextEntry::make('title')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()

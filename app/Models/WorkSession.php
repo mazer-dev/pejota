@@ -52,4 +52,25 @@ class WorkSession extends Model
     {
         return $this->belongsTo(Task::class);
     }
+
+    /**
+     * Finish the WorkSession that is running
+     *
+     * @return bool
+     */
+    public function finish(): bool
+    {
+        if ($this->is_running) {
+            $now = now();
+            $this->update([
+                'end' => $now,
+                'duration' => round($this->start->diffInMinutes($now)),
+                'is_running' => false,
+            ]);
+
+            return true;
+        }
+
+        return false;
+    }
 }

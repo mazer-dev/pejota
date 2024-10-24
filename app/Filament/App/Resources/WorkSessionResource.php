@@ -511,17 +511,7 @@ class WorkSessionResource extends Resource
 
     public static function infolistFinish(WorkSession $record): bool
     {
-        if ($record->is_running) {
-            $record->end = now();
-            $record->duration = round($record->start->diffInMinutes($record->end));
-            $record->is_running = false;
-
-            $record->save();
-
-            return true;
-        }
-
-        return false;
+        return $record->finish();
     }
 
 }
