@@ -66,13 +66,16 @@ class ClientResource extends Resource
     {
         return $table
             ->striped(true)
+            ->defaultSort('name', 'asc')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('Name'))
+                    ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('tradename')
                     ->label(__('Tradename'))
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
