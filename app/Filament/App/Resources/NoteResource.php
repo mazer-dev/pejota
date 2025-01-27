@@ -79,6 +79,7 @@ class NoteResource extends Resource
                         Forms\Components\Builder::make('content')
                             ->hiddenLabel()
                             ->columnSpanFull()
+                            ->reorderableWithButtons()
                             ->blocks([
                                 Forms\Components\Builder\Block::make('link')
                                     ->columns(2)
