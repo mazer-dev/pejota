@@ -46,6 +46,6 @@ class ListTasks extends ListRecords
 
     public function getDefaultActiveTab(): string|int|null
     {
-        return session('tasks_active_tab_'.auth()->user()->id, 'all');
+        return session('tasks_active_tab_'.auth()->user()->id, 'opened');
     }
 }
