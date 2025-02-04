@@ -18,7 +18,8 @@
         "parallax/filament-comments": "^1.2",
         "pelmered/filament-money-field": "^1.3",
         "quadrubo/filament-model-settings": "^1.3",
-        "spatie/laravel-activitylog": "^4.8"
+        "spatie/laravel-activitylog": "^4.8",
+        "spatie/laravel-backup": "^9.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
