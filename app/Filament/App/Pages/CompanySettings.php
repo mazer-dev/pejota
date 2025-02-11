@@ -4,9 +4,11 @@ namespace App\Filament\App\Pages;
 
 use App\Enums\CompanySettingsEnum;
 use App\Enums\MenuGroupsEnum;
+use App\Filament\App\Resources\TaskResource;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Quadrubo\FilamentModelSettings\Pages\Contracts\HasModelSettings;
 use Quadrubo\FilamentModelSettings\Pages\ModelSettingsPage;
@@ -83,7 +85,11 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                         ->schema([
                             Forms\Components\Checkbox::make(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
                                 ->translateLabel()
-                                ->helperText(__('If checked the tradename will be used as the name of the client. Otherwise, the name will be used.'))
+                                ->helperText(
+                                    __(
+                                        'If checked the tradename will be used as the name of the client. Otherwise, the name will be used.'
+                                    )
+                                )
                                 ->default(false),
                         ]),
 
@@ -92,21 +98,48 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                         ->schema([
                             Forms\Components\Checkbox::make(CompanySettingsEnum::VENDOR_PREFER_TRADENAME->value)
                                 ->translateLabel()
-                                ->helperText(__('If checked the tradename will be used as the name of the vendor. Otherwise, the name will be used.'))
+                                ->helperText(
+                                    __(
+                                        'If checked the tradename will be used as the name of the vendor. Otherwise, the name will be used.'
+                                    )
+                                )
                                 ->default(false),
                         ]),
 
                     Forms\Components\Tabs\Tab::make('Tasks')
                         ->translateLabel()
                         ->schema([
-                            Forms\Components\Checkbox::make(CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value)
+                            Forms\Components\Checkbox::make(
+                                CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value
+                            )
                                 ->translateLabel()
-                                ->helperText(__('If checked when a task is updated with a status of in progress phase, if the actual start date is not set, then it will be filled with the date of update.'))
+                                ->helperText(
+                                    __(
+                                        'If checked when a task is updated with a status of in progress phase, if the actual start date is not set, then it will be filled with the date of update.'
+                                    )
+                                )
                                 ->default(false),
-                            Forms\Components\Checkbox::make(CompanySettingsEnum::TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED->value)
+                            Forms\Components\Checkbox::make(
+                                CompanySettingsEnum::TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED->value
+                            )
                                 ->translateLabel()
-                                ->helperText(__('If checked when a task is updated with a status of closed phase, if the actual end date is not set, then it will be filled with the date of update.'))
+                                ->helperText(
+                                    __(
+                                        'If checked when a task is updated with a status of closed phase, if the actual end date is not set, then it will be filled with the date of update.'
+                                    )
+                                )
                                 ->default(false),
+
+                            Forms\Components\CheckboxList::make(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value)
+                                ->options(
+                                    collect(TaskResource::getTableColumns())
+                                        ->mapWithKeys(function ($column) {
+                                            return [
+                                                $column->getName() => $column->getLabel(),
+                                            ];
+                                        })->toArray()
+                                )
+                                ->columns(2)
                         ]),
 
                     Forms\Components\Tabs\Tab::make('Finance')

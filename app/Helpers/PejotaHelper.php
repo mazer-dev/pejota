@@ -45,4 +45,9 @@ class PejotaHelper
     {
         return auth()->user()->company->settings()->get(CompanySettingsEnum::FINANCE_CURRENCY->value) ?? 'USD';
     }
+
+    public static function getUserTaskListDefaultColumns()
+    {
+        return auth()->user()->company->settings()->get(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value) ?? [];
+    }
 }

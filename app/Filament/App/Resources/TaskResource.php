@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\CompanySettingsEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
@@ -52,6 +53,10 @@ class TaskResource extends Resource
 
     protected static ?int $navigationSort = MenuSortEnum::TASKS->value;
 
+    public const LIST_COLUMNS = [
+
+    ];
+
     public static function getModelLabel(): string
     {
         return __('Task');
@@ -94,9 +99,11 @@ class TaskResource extends Resource
 
             Action::make('session')
                 ->hiddenLabel()
-                ->url(CreateWorkSession::getUrl([
-                    'task' => $record->id,
-                ]))
+                ->url(
+                    CreateWorkSession::getUrl([
+                        'task' => $record->id,
+                    ])
+                )
                 ->icon('heroicon-o-play')
                 ->color(Color::Amber)
                 ->size(ActionSize::ExtraSmall)
@@ -147,7 +154,8 @@ class TaskResource extends Resource
                             ->translateLabel()
                             ->columnSpanFull()
                             ->extraInputAttributes(
-                                ['style' => 'max-height: 300px; overflow: scroll'])
+                                ['style' => 'max-height: 300px; overflow: scroll']
+                            )
                             ->fileAttachmentsDisk('tasks')
                             ->fileAttachmentsDirectory(auth()->user()->company->id)
                             ->fileAttachmentsVisibility('private'),
@@ -251,82 +259,9 @@ class TaskResource extends Resource
                 'status.name',
             ])
             ->striped()
-            ->columns([
-                Tables\Columns\IconColumn::make('priority')
-                    ->translateLabel()
-                    ->extraHeaderAttributes(['class' => 'column-header-no-label'])
-                    ->sortable()
-                    ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
-                    ->color(fn($state) => PriorityEnum::from($state)->getColor())
-                    ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel())
-                    ->toggleable(),
-                Tables\Columns\IconColumn::make('work_session')
-                    ->translateLabel()
-                    ->wrapHeader()
-                    ->extraHeaderAttributes(['class' => 'column-header-no-label'])
-                    ->boolean()
-                    ->getStateUsing(fn($record) => $record->workSessions()->where('is_running', true)->count())
-                    ->falseColor(Color::hex('#ddd'))
-                    ->toggleable(),
-                Tables\Columns\SelectColumn::make('status_id')
-                    ->label('Status')
-                    ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: false),
-                Tables\Columns\ColorColumn::make('status.color')
-                    ->label('Status Color')
-                    ->extraHeaderAttributes(['class' => 'column-header-no-label'])
-                    ->tooltip(fn(Model $record) => $record->status->name)
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('title')
-                    ->translateLabel()
-                    ->wrap()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('due_date')
-                    ->translateLabel()
-                    ->wrapHeader()
-                    ->date(PejotaHelper::getUserDateFormat())
-                    ->sortable()
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('effort')
-                    ->translateLabel()
-                    ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit)
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('planned_start')
-                    ->translateLabel()
-                    ->wrapHeader()
-                    ->date(PejotaHelper::getUserDateFormat())
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('planned_end')
-                    ->translateLabel()
-                    ->wrapHeader()
-                    ->date(PejotaHelper::getUserDateFormat())
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('client.labelName')
-                    ->translateLabel()
-                    ->sortable()
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('project.name')
-                    ->translateLabel()
-                    ->sortable()
-                    ->toggleable(),
-                Tables\Columns\SpatieTagsColumn::make('tags')
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->translateLabel()
-                    ->dateTime()
-                    ->timezone(PejotaHelper::getUserTimeZone())
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->translateLabel()
-                    ->dateTime()
-                    ->timezone(PejotaHelper::getUserTimeZone())
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ->columns(
+                self::getTableColumns()
+            )
             ->filtersFormColumns(4)
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -379,11 +314,19 @@ class TaskResource extends Resource
                         return $query
                             ->when(
                                 $data['from_due_date'],
-                                fn(Builder $query, $date): Builder => $query->where('due_date', '>=', $data['from_due_date'])
+                                fn(Builder $query, $date): Builder => $query->where(
+                                    'due_date',
+                                    '>=',
+                                    $data['from_due_date']
+                                )
                             )
                             ->when(
                                 $data['to_due_date'],
-                                fn(Builder $query, $date): Builder => $query->where('due_date', '<=', $data['to_due_date'])
+                                fn(Builder $query, $date): Builder => $query->where(
+                                    'due_date',
+                                    '<=',
+                                    $data['to_due_date']
+                                )
                             );
                     })
                     ->indicateUsing(function (array $data): ?string {
@@ -407,11 +350,19 @@ class TaskResource extends Resource
                         return $query
                             ->when(
                                 $data['from_planned_end'],
-                                fn(Builder $query, $date): Builder => $query->where(DB::raw('DATE(planned_end'), '>=', $data['from_planned_end'])
+                                fn(Builder $query, $date): Builder => $query->where(
+                                    DB::raw('DATE(planned_end'),
+                                    '>=',
+                                    $data['from_planned_end']
+                                )
                             )
                             ->when(
                                 $data['to_planned_end'],
-                                fn(Builder $query, $date): Builder => $query->where(DB::raw('DATE(planned_end)'), '<=', $data['to_planned_end'])
+                                fn(Builder $query, $date): Builder => $query->where(
+                                    DB::raw('DATE(planned_end)'),
+                                    '<=',
+                                    $data['to_planned_end']
+                                )
                             );
                     })
                     ->indicateUsing(function (array $data): ?string {
@@ -435,7 +386,11 @@ class TaskResource extends Resource
                         ])),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make(__('Clone'))
-                        ->tooltip(__('Clone this record with same details but the dates, then open the form to you fill dates'))
+                        ->tooltip(
+                            __(
+                                'Clone this record with same details but the dates, then open the form to you fill dates'
+                            )
+                        )
                         ->icon('heroicon-o-document-duplicate')
                         ->color(Color::Amber)
                         ->action(fn(Task $record) => self::clone($record)),
@@ -559,8 +514,14 @@ class TaskResource extends Resource
                                                     return new HtmlString($state);
                                                 })
                                                 ->prefixAction(fn($component) => Action::make('checkCompleted')
-                                                    ->icon(self::getStateCompleted($component) ? 'heroicon-o-check' : 'heroicon-o-stop')
-                                                    ->color(self::getStateCompleted($component) ? Color::Green : Color::Gray)
+                                                    ->icon(
+                                                        self::getStateCompleted(
+                                                            $component
+                                                        ) ? 'heroicon-o-check' : 'heroicon-o-stop'
+                                                    )
+                                                    ->color(
+                                                        self::getStateCompleted($component) ? Color::Green : Color::Gray
+                                                    )
                                                     ->action(function (Model $record, $component) {
                                                         $index = explode('.', $component->getStatePath())[1];
                                                         $checklist = $record->checklist;
@@ -599,7 +560,9 @@ class TaskResource extends Resource
                                                 TextEntry::make('status.name')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->badge()
-                                                    ->color(fn(Model $record): array => Color::hex($record->status->color)),
+                                                    ->color(
+                                                        fn(Model $record): array => Color::hex($record->status->color)
+                                                    ),
                                                 TextEntry::make('title')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
@@ -664,8 +627,13 @@ class TaskResource extends Resource
                                                 TextEntry::make('duration')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
-                                                    ->icon(fn(Model $record): string => $record->is_running ? '' : 'heroicon-o-clock')
-                                                    ->formatStateUsing(fn($state): string => PejotaHelper::formatDuration($state))
+                                                    ->icon(
+                                                        fn(Model $record
+                                                        ): string => $record->is_running ? '' : 'heroicon-o-clock'
+                                                    )
+                                                    ->formatStateUsing(
+                                                        fn($state): string => PejotaHelper::formatDuration($state)
+                                                    )
                                                     ->hidden(fn($record) => $record->is_running),
 
                                                 Actions::make([
@@ -684,7 +652,8 @@ class TaskResource extends Resource
                                                 TextEntry::make('title')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
-                                                    ->columnSpan(fn(Model $record): int => $record->description ? 2 : 4),
+                                                    ->columnSpan(fn(Model $record): int => $record->description ? 2 : 4
+                                                    ),
                                                 TextEntry::make('description')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
@@ -731,7 +700,11 @@ class TaskResource extends Resource
                                                 TextEntry::make('properties.attributes')
                                                     ->hiddenLabel()
                                                     ->getStateUsing(
-                                                        fn(Model $record): array => [$record->properties->get('attributes')['status.name']]
+                                                        fn(Model $record): array => [
+                                                            $record->properties->get(
+                                                                'attributes'
+                                                            )['status.name']
+                                                        ]
                                                     ),
                                             ]),
                                         ]),
@@ -781,14 +754,19 @@ class TaskResource extends Resource
                             ->label('Estimated')
                             ->inlineLabel()
                             ->icon('heroicon-o-variable')
-                            ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit),
+                            ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit
+                            ),
 
                         TextEntry::make('workSessions')
                             ->label("Sessions")
                             ->translateLabel()
                             ->inlineLabel()
                             ->icon('heroicon-o-clock')
-                            ->formatStateUsing(fn(Model $record): string => PejotaHelper::formatDuration($record->workSessions->sum('duration'))),
+                            ->formatStateUsing(
+                                fn(Model $record): string => PejotaHelper::formatDuration(
+                                    $record->workSessions->sum('duration')
+                                )
+                            ),
 
                         Actions::make([
                             Action::make('list')
@@ -915,6 +893,114 @@ class TaskResource extends Resource
                     }
                 }),
 
+        ];
+    }
+
+    public static function getTableColumns(): array
+    {
+//        dd(PejotaHelper::getUserTaskListDefaultColumns());
+
+        return [
+            Tables\Columns\IconColumn::make('priority')
+                ->translateLabel()
+                ->extraHeaderAttributes(['class' => 'column-header-no-label'])
+                ->sortable()
+                ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
+                ->color(fn($state) => PriorityEnum::from($state)->getColor())
+                ->tooltip(fn($state) => PriorityEnum::from($state)->getLabel())
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('priority', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\IconColumn::make('work_session')
+                ->translateLabel()
+                ->wrapHeader()
+                ->extraHeaderAttributes(['class' => 'column-header-no-label'])
+                ->boolean()
+                ->getStateUsing(fn($record) => $record->workSessions()->where('is_running', true)->count())
+                ->falseColor(Color::hex('#ddd'))
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('work_session', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\SelectColumn::make('status_id')
+                ->label('Status')
+                ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
+                ->sortable()
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('status_id', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\ColorColumn::make('status.color')
+                ->label('Status Color')
+                ->extraHeaderAttributes(['class' => 'column-header-no-label'])
+                ->tooltip(fn(Model $record) => $record->status->name)
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('status_color', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\TextColumn::make('title')
+                ->translateLabel()
+                ->wrap()
+                ->searchable(),
+            Tables\Columns\TextColumn::make('due_date')
+                ->translateLabel()
+                ->wrapHeader()
+                ->date(PejotaHelper::getUserDateFormat())
+                ->sortable()
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('due_date', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\TextColumn::make('effort')
+                ->translateLabel()
+                ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit)
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('effort', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\TextColumn::make('planned_start')
+                ->translateLabel()
+                ->wrapHeader()
+                ->date(PejotaHelper::getUserDateFormat())
+                ->sortable()
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('planned_start', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\TextColumn::make('planned_end')
+                ->translateLabel()
+                ->wrapHeader()
+                ->date(PejotaHelper::getUserDateFormat())
+                ->sortable()
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('planned_end', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\TextColumn::make('client.labelName')
+                ->translateLabel()
+                ->sortable()
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('client.labelName', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\TextColumn::make('project.name')
+                ->translateLabel()
+                ->sortable()
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('project.name', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\SpatieTagsColumn::make('tags')
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('tags', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\TextColumn::make('created_at')
+                ->translateLabel()
+                ->dateTime()
+                ->timezone(PejotaHelper::getUserTimeZone())
+                ->sortable()
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('created_at', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            Tables\Columns\TextColumn::make('updated_at')
+                ->translateLabel()
+                ->dateTime()
+                ->timezone(PejotaHelper::getUserTimeZone())
+                ->sortable()
+                ->toggleable(
+                    isToggledHiddenByDefault: !in_array('updated_at', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
         ];
     }
 
