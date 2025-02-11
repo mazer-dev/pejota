@@ -131,6 +131,7 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->default(false),
 
                             Forms\Components\CheckboxList::make(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value)
+                                ->translateLabel()
                                 ->options(
                                     collect(TaskResource::getTableColumns())
                                         ->mapWithKeys(function ($column) {
