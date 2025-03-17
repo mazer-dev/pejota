@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CompanySettingsEnum;
 use App\Enums\StatusPhaseEnum;
+use App\Helpers\PejotaHelper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -155,16 +156,22 @@ class Task extends Model
      *
      * @param string $field The name of the field to be postponed.
      * @param string $interval The interval by which the field should be postponed.
+     * @param bool $fromNow Whether to postpone from now or from the current value of the field.
      *
      * @return void
      */
-    public function postpone(string $field, string $intertval)
+    public function postpone(string $field, string $interval, bool $fromNow = true): void
     {
         if ($this->{$field}) {
-            if ($intertval == 'today') {
-                $this->{$field} = now()->format('Y-m-d');
+            $now = now()->tz(PejotaHelper::getUserTimeZone());
+            if ($interval == 'today') {
+                $this->{$field} = $now->format('Y-m-d');
             } else {
-                $this->{$field} = $this->{$field}->add($intertval);
+                $nextDate = $now->add($interval);
+                if ($fromNow == false) {
+                    $nextDate = $this->{$field}->add($interval);
+                }
+                $this->{$field} = $nextDate;
             }
             $this->save();
         }
