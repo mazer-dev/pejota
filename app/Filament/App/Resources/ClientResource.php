@@ -47,19 +47,9 @@ class ClientResource extends Resource
     {
         return $form
             ->columns(1)
-            ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->label(__('Name'))
-                    ->required(),
-                Forms\Components\TextInput::make('tradename')
-                    ->label(__('Tradename')),
-                Forms\Components\TextInput::make('email')
-                    ->label(__('Email'))
-                    ->email(),
-                Forms\Components\TextInput::make('phone')
-                    ->label(__('Phone'))
-                    ->tel(),
-            ]);
+            ->schema(
+                self::getSchema()
+            );
     }
 
     public static function table(Table $table): Table
@@ -161,14 +151,14 @@ class ClientResource extends Resource
                             Action::make('edit')
                                 ->translateLabel()
                                 ->url(
-                                    fn (Model $record) => "{$record->id}/edit"
+                                    fn(Model $record) => "{$record->id}/edit"
                                 )
                                 ->icon('heroicon-o-pencil'),
 
                             Action::make('back')
                                 ->translateLabel()
                                 ->url(
-                                    fn (Model $record) => './.'
+                                    fn(Model $record) => './.'
                                 )
                                 ->icon('heroicon-o-chevron-left')
                                 ->color(Color::Neutral),
@@ -195,6 +185,23 @@ class ClientResource extends Resource
             'create' => Pages\CreateClient::route('/create'),
             'view' => Pages\ViewClient::route('/{record}'),
             'edit' => Pages\EditClient::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getSchema()
+    {
+        return [
+            Forms\Components\TextInput::make('name')
+                ->label(__('Name'))
+                ->required(),
+            Forms\Components\TextInput::make('tradename')
+                ->label(__('Tradename')),
+            Forms\Components\TextInput::make('email')
+                ->label(__('Email'))
+                ->email(),
+            Forms\Components\TextInput::make('phone')
+                ->label(__('Phone'))
+                ->tel(),
         ];
     }
 }

@@ -124,7 +124,9 @@ class TaskResource extends Resource
                     Forms\Components\Select::make('client')
                         ->translateLabel()
                         ->relationship('client', 'name')
-                        ->preload()->searchable(),
+                        ->preload()
+                        ->searchable()
+                        ->createOptionForm(ClientResource::getSchema()),
                     Forms\Components\Select::make('project')
                         ->label('Project')
                         ->translateLabel()
