@@ -931,7 +931,8 @@ class TaskResource extends Resource
                 ->sortable()
                 ->toggleable(
                     isToggledHiddenByDefault: !in_array('status_id', PejotaHelper::getUserTaskListDefaultColumns()),
-                ),
+                )
+                ->selectablePlaceholder(false),
             Tables\Columns\ColorColumn::make('status.color')
                 ->label('Status Color')
                 ->extraHeaderAttributes(['class' => 'column-header-no-label'])
