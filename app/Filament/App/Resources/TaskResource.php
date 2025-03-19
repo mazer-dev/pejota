@@ -973,8 +973,9 @@ class TaskResource extends Resource
                 ->toggleable(
                     isToggledHiddenByDefault: !in_array('planned_end', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
-            Tables\Columns\TextColumn::make('client.labelName')
+            Tables\Columns\TextColumn::make('client')
                 ->translateLabel()
+                ->formatStateUsing(fn(Model $record): string => $record->client->labelName ?? $record->client->name)
                 ->sortable()
                 ->toggleable(
                     isToggledHiddenByDefault: !in_array('client.labelName', PejotaHelper::getUserTaskListDefaultColumns()),
