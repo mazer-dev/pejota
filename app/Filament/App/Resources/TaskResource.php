@@ -135,7 +135,9 @@ class TaskResource extends Resource
                             'name',
                             fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
                         )
-                        ->searchable()->preload(),
+                        ->searchable()
+                        ->preload()
+                        ->createOptionForm(ProjectResource::getFormComponents()),
                     Forms\Components\Select::make('parent_task')
                         ->translateLabel()
                         ->relationship('parent', 'title')
