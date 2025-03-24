@@ -326,7 +326,9 @@ class WorkSessionResource extends Resource
                 Forms\Components\Select::make('client')
                     ->translateLabel()
                     ->relationship('client', 'name')
-                    ->searchable()->preload(),
+                    ->searchable()
+                    ->preload()
+                    ->createOptionForm(ClientResource::getSchema()),
                 Forms\Components\Select::make('project')
                     ->label('Project')
                     ->translateLabel()
@@ -335,7 +337,9 @@ class WorkSessionResource extends Resource
                         'name',
                         fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
                     )
-                    ->searchable()->preload(),
+                    ->searchable()
+                    ->preload()
+                    ->createOptionForm(ProjectResource::getFormComponents()),
                 Forms\Components\Select::make('task')
                     ->translateLabel()
                     ->relationship('task', 'title')
