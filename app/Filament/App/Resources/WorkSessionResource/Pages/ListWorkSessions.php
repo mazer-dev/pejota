@@ -26,10 +26,12 @@ class ListWorkSessions extends ListRecords
     {
         return [
             'running' => Tab::make()
+                ->label(__('Running'))
                 ->modifyQueryUsing(fn(Builder $query): Builder => $query->where('is_running', true))
                 ->badge(fn(WorkSession $record): int => $record->where('is_running', true)->count())
                 ->badgeColor(Color::Green),
-            'all' => Tab::make(),
+            'all' => Tab::make()
+                ->label(__('All')),
         ];
     }
 

@@ -20,15 +20,11 @@ class CreateWorkSession extends CreateRecord
         if (request()->get('task')) {
             $task = Task::find(request()->get('task'));
 
-            $this->form->fill([
-                'title' => $task->title,
-                'client' => $task->client_id,
-                'project' => $task->project_id,
-                'task' => $task->id,
-                'start' => now(),
-                'rate' => 0,
-                'is_running' => true,
-            ]);
+            if ($task) {
+                $this->form->fill(
+                    self::getFillFormArray($task)
+                );
+            }
 
             $this->redirectUrl = URL::previous();
         }
@@ -37,5 +33,29 @@ class CreateWorkSession extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->redirectUrl ?? parent::getRedirectUrl();
+    }
+
+    public static function getFillFormArray(Task $task): array
+    {
+        $fill = [
+            'title' => $task->title,
+            'start' => now(),
+            'rate' => 0,
+            'is_running' => true,
+        ];
+
+        if ($task->client_id) {
+            $fill['client'] = $task->client_id;
+        }
+
+        if ($task->project_id) {
+            $fill['project'] = $task->project_id;
+        }
+
+        if ($task->id) {
+            $fill['task'] = $task->id;
+        }
+
+        return $fill;
     }
 }
