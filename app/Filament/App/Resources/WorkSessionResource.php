@@ -365,11 +365,6 @@ class WorkSessionResource extends Resource
             ->schema([
                 Split::make([
                     Section::make([
-                        TextEntry::make('title')
-                            ->hiddenLabel()
-                            ->icon(WorkSessionResource::getNavigationIcon())
-                            ->size(TextEntry\TextEntrySize::Large),
-
                         Grid::make(2)->schema([
                             TextEntry::make('project.name')
                                 ->hiddenLabel()
