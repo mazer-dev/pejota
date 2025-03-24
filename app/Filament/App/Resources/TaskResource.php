@@ -385,6 +385,10 @@ class TaskResource extends Resource
                         ->tooltip(__('Start a new session for this task'))
                         ->icon('heroicon-o-play')
                         ->color(Color::Amber)
+//                        ->form(WorkSessionResource::getFormSchema())
+//                        ->fillForm(function(Task $task) {
+//                            return CreateWorkSession::getFillFormArray($task);
+//                        }),
                         ->url(fn($record) => CreateWorkSession::getUrl([
                             'task' => $record->id,
                         ])),
@@ -978,12 +982,14 @@ class TaskResource extends Resource
                 ->translateLabel()
                 ->formatStateUsing(fn(Model $record): string => $record->client->labelName ?? $record->client->name)
                 ->sortable()
+                ->wrap()
                 ->toggleable(
                     isToggledHiddenByDefault: !in_array('client.labelName', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
             Tables\Columns\TextColumn::make('project.name')
                 ->translateLabel()
                 ->sortable()
+                ->wrap()
                 ->toggleable(
                     isToggledHiddenByDefault: !in_array('project.name', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
