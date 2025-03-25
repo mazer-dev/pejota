@@ -58,13 +58,6 @@ class WorkSessionResource extends Resource
         return __(MenuGroupsEnum::DAILY_WORK->value);
     }
 
-    public static function getNavigationBadge(): ?string
-    {
-        $count = WorkSession::where('is_running', true)->count();
-
-        return $count > 0 ? (string)$count : null;
-    }
-
     public static function form(Form $form): Form
     {
         return $form

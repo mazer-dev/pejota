@@ -22,6 +22,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AppPanelProvider extends PanelProvider
@@ -63,6 +64,10 @@ class AppPanelProvider extends PanelProvider
                         </a>
 
                 </div>'
+            )
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
+                fn() => Blade::render('@livewire(\'work-sessions-top-nav\')')
             )
             ->maxContentWidth(MaxWidth::Full)
             ->sidebarCollapsibleOnDesktop()
