@@ -662,12 +662,17 @@ class TaskResource extends Resource
                                                     ->translateLabel()
                                                     ->columnSpan(fn(Model $record): int => $record->description ? 2 : 4
                                                     ),
-                                                TextEntry::make('description')
+                                                IconEntry::make('description')
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
-                                                    ->html()
                                                     ->columnSpan(2)
-                                                    ->visible(fn($state) => !$state),
+                                                    ->icon('heroicon-o-information-circle')
+                                                    ->color(Color::Green)
+                                                    ->tooltip(
+                                                        fn (string $state): HtmlString =>
+                                                            new HtmlString($state)
+                                                    )
+                                                    ->visible(fn($state) => $state)
                                             ]),
                                         ]),
                                 ]),
