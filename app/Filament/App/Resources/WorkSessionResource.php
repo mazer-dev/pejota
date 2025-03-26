@@ -95,14 +95,14 @@ class WorkSessionResource extends Resource
                     ->dateTime(PejotaHelper::getUserDateTimeFormat())
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
-                    ->hidden(fn($livewire) => $livewire->activeTab === 'running')
+                    ->hidden(fn($livewire) => isset($livewire->activeTab) ? $livewire->activeTab === 'running' : true)
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Time')
                     ->tooltip(fn($record) => $record?->end?->tz(PejotaHelper::getUserTimeZone())->format(PejotaHelper::getUserDateTimeFormat()))
                     ->translateLabel()
                     ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
-                    ->hidden(fn($livewire) => $livewire->activeTab === 'running')
+                    ->hidden(fn($livewire) => isset($livewire->activeTab) ? $livewire->activeTab === 'running' : true)
                     ->toggleable()
                     ->summarize(
                         Tables\Columns\Summarizers\Sum::make()
@@ -115,11 +115,11 @@ class WorkSessionResource extends Resource
                 Tables\Columns\TextColumn::make('value')
                     ->translateLabel()
                     ->numeric()
-                    ->hidden(fn($livewire) => $livewire->activeTab === 'running')
+                    ->hidden(fn($livewire) => isset($livewire->activeTab) ? $livewire->activeTab === 'running' : true)
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('currency')
                     ->translateLabel()
-                    ->hidden(fn($livewire) => $livewire->activeTab === 'running')
+                    ->hidden(fn($livewire) => isset($livewire->activeTab) ? $livewire->activeTab === 'running' : true)
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('task.title')
                     ->translateLabel()
