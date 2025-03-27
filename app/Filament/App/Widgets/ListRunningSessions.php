@@ -21,11 +21,15 @@ class ListRunningSessions extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $table = WorkSessionResource::table($table);
         return $table
             ->query(
                 WorkSession::query()
                     ->where('is_running', true)
             )
-            ->columns(WorkSessionResource::table($table)->getColumns());
+            ->actions([])
+            ->recordUrl(
+                fn ($record) => WorkSessionResource::getUrl('view', ['record' => $record])
+            );
     }
 }
