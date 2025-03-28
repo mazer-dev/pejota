@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Detection\MobileDetect;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
@@ -23,10 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::GLOBAL_SEARCH_AFTER,
-            fn (): string => Blade::render("@livewire('top-navigate-action')"),
-        );
+        if ((new MobileDetect())->isMobile() == false) {
+            FilamentView::registerRenderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn(): string => Blade::render("@livewire('top-navigate-action')"),
+            );
+        }
 
         if (app()->environment('production')) {
             URL::forceScheme('https');
