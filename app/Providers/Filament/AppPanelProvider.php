@@ -33,6 +33,7 @@ class AppPanelProvider extends PanelProvider
             ->default()
             ->id('app')
             ->path('app')
+            ->spa()
             ->login()
             ->passwordReset()
             ->brandName('Pejota')
