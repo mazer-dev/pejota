@@ -196,7 +196,8 @@ class NoteResource extends Resource
                             ->searchable()->preload(),
                     ])
                         ->grow(false),
-                ]),
+                ])
+                    ->from('md'),
             ]);
     }
 
