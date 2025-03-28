@@ -167,6 +167,7 @@ class ProjectResource extends Resource
                     ])->grow(false),
 
                 ])
+                    ->from('md')
                     ->columnSpanFull(),
 
                 Section::make('Tasks')

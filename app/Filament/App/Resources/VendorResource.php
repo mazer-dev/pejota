@@ -176,6 +176,7 @@ class VendorResource extends Resource
                     ])->grow(false),
 
                 ])
+                    ->from('md')
                     ->columnSpanFull(),
 
             ]);

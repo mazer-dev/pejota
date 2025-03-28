@@ -166,6 +166,7 @@ class ClientResource extends Resource
                     ])->grow(false),
 
                 ])
+                    ->from('md')
                     ->columnSpanFull(),
 
             ]);

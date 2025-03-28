@@ -110,32 +110,29 @@ class ContractResource extends Resource
                 RichEditor::make('content')
                     ->translateLabel()
                     ->required(),
-                Grid::make(3)
+                TableRepeater::make('signatures')
+                    ->label(__('Signatures'))
                     ->schema([
-                        TableRepeater::make('signatures')
-                            ->label(__('Signatures'))
-                            ->schema([
-                                TextInput::make('name')
-                                    ->translateLabel()
-                                    ->required(),
-                                Select::make('role')
-                                    ->translateLabel()
-                                    ->options([
-                                        'client' => __('Client'),
-                                        'vendor' => __('Vendor'),
-                                        'witness' => __('Witness'),
-                                    ])
-                                    ->required(),
-                                DatePicker::make('date')
-                                    ->translateLabel()
-                                    ->required()
+                        TextInput::make('name')
+                            ->translateLabel()
+                            ->required(),
+                        Select::make('role')
+                            ->translateLabel()
+                            ->options([
+                                'client' => __('Client'),
+                                'vendor' => __('Vendor'),
+                                'witness' => __('Witness'),
                             ])
-                            ->addActionLabel(__('Add item'))
-                            ->defaultItems(0)
-                            ->colStyles([
-                                'item' => 'width:70%'
-                            ]),
+                            ->required(),
+                        DatePicker::make('date')
+                            ->translateLabel()
+                            ->required()
                     ])
+                    ->addActionLabel(__('Add item'))
+                    ->defaultItems(0)
+                    ->colStyles([
+                        'item' => 'width:70%'
+                    ]),
             ]);
     }
 
@@ -157,7 +154,10 @@ class ContractResource extends Resource
                     ->getStateUsing((fn(Contract $record): string => $record->client_id ? __('Client') : __('Vendor'))),
                 TextColumn::make('who')
                     ->translateLabel()
-                    ->getStateUsing((fn(Contract $record): string => $record->client_id ? $record->client->name : $record->vendor->name)),
+                    ->getStateUsing(
+                        (fn(Contract $record
+                        ): string => $record->client_id ? $record->client->name : $record->vendor->name)
+                    ),
                 TextColumn::make('project.name')
                     ->translateLabel(),
                 TextColumn::make('start_at')
@@ -192,8 +192,10 @@ class ContractResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         if ($data['end_at'] == 'not_empty') {
                             return $query->whereNotNull('end_at');
-                        } else if ($data['end_at'] == 'empty') {
-                            return $query->whereNull('end_at');
+                        } else {
+                            if ($data['end_at'] == 'empty') {
+                                return $query->whereNull('end_at');
+                            }
                         }
                         return $query;
                     }),
