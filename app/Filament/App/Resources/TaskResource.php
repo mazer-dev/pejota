@@ -802,6 +802,7 @@ class TaskResource extends Resource
                         Actions::make([
                             Action::make('list')
                                 ->translateLabel()
+                                ->hiddenLabel(PejotaHelper::isMobile())
                                 ->url(
                                     fn(Model $record) => './.'
                                 )
@@ -810,6 +811,7 @@ class TaskResource extends Resource
 
                             Action::make('edit')
                                 ->translateLabel()
+                                ->hiddenLabel(PejotaHelper::isMobile())
                                 ->url(
                                     fn(Model $record) => "{$record->id}/edit"
                                 )
@@ -817,6 +819,7 @@ class TaskResource extends Resource
 
                             Action::make('subtask')
                                 ->translateLabel()
+                                ->hiddenLabel(PejotaHelper::isMobile())
                                 ->icon(TaskResource::getNavigationIcon())
                                 ->color(Color::Green)
                                 ->modal(true)
@@ -826,6 +829,7 @@ class TaskResource extends Resource
 
                             Action::make('session')
                                 ->translateLabel()
+                                ->hiddenLabel(PejotaHelper::isMobile())
                                 ->icon(WorkSessionResource::getNavigationIcon())
                                 ->color(Color::Amber)
                                 ->modal(true)

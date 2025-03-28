@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Enums\CompanySettingsEnum;
+use Detection\MobileDetect;
 
 class PejotaHelper
 {
@@ -49,5 +50,10 @@ class PejotaHelper
     public static function getUserTaskListDefaultColumns()
     {
         return auth()->user()->company->settings()->get(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value) ?? [];
+    }
+
+    public static function isMobile(): bool
+    {
+        return (new MobileDetect())->isMobile();
     }
 }
