@@ -1060,7 +1060,7 @@ class TaskResource extends Resource
         $newModel->planned_start = null;
         $newModel->actual_end = null;
         $newModel->actual_start = null;
-        $newModel->status_id = Status::select('id')->orderBy('order')->first()?->id;
+        $newModel->status_id = Status::select('id')->orderBy('sort_order')->first()?->id;
         $newModel->save();
 
         return redirect(Pages\EditTask::getUrl([$newModel->id]));
