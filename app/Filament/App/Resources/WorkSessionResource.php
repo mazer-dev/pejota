@@ -99,15 +99,19 @@ class WorkSessionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Time')
-                    ->tooltip(fn($record) => $record?->end?->tz(PejotaHelper::getUserTimeZone())->format(PejotaHelper::getUserDateTimeFormat()))
+                    ->tooltip(
+                        fn($record) => $record?->end?->tz(PejotaHelper::getUserTimeZone())->format(
+                            PejotaHelper::getUserDateTimeFormat()
+                        )
+                    )
                     ->translateLabel()
                     ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
                     ->hidden(fn($livewire) => isset($livewire->activeTab) ? $livewire->activeTab === 'running' : true)
                     ->toggleable()
                     ->summarize(
                         Tables\Columns\Summarizers\Sum::make()
-                        ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
-                        ->label('Total time')
+                            ->formatStateUsing(fn($state) => PejotaHelper::formatDuration($state))
+                            ->label('Total time')
                     ),
                 Tables\Columns\TextColumn::make('title')
                     ->translateLabel()
@@ -250,7 +254,17 @@ class WorkSessionResource extends Resource
                     ->seconds(false)
                     ->required()
                     ->default(fn(): string => now()->toDateTimeString())
-                    ->live(),
+                    ->live()
+                    ->afterStateUpdated(
+                        fn(
+                            Forms\Get $get,
+                            Forms\Set $set
+                        ): mixed => self::formSetTimers(
+                            fromDuration: true,
+                            get: $get,
+                            set: $set
+                        )
+                    ),
 
                 Forms\Components\DateTimePicker::make('end')
                     ->label('End at')
@@ -262,7 +276,8 @@ class WorkSessionResource extends Resource
                     ->afterStateUpdated(
                         fn(
                             Forms\Get $get,
-                            Forms\Set $set): mixed => self::formSetTimers(
+                            Forms\Set $set
+                        ): mixed => self::formSetTimers(
                             fromDuration: false,
                             get: $get,
                             set: $set
@@ -281,7 +296,8 @@ class WorkSessionResource extends Resource
                     ->afterStateUpdated(
                         fn(
                             Forms\Get $get,
-                            Forms\Set $set): mixed => self::formSetTimers(
+                            Forms\Set $set
+                        ): mixed => self::formSetTimers(
                             fromDuration: true,
                             get: $get,
                             set: $set
@@ -450,7 +466,6 @@ class WorkSessionResource extends Resource
                                 ->hidden(fn($record) => !$record->is_running)
                                 ->action(function ($record) {
                                     self::infolistFinish($record);
-
                                 }),
                         ]),
                     ])
