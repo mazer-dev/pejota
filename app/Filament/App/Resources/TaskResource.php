@@ -492,7 +492,10 @@ class TaskResource extends Resource
                                 ->formatStateUsing(fn(string $state): HtmlString => new HtmlString($state))
                                 ->icon('heroicon-o-document-text'),
 
-                            Grid::make(4)->schema([
+                            Grid::make([
+                                'default' => 2,
+                                'md' => 4
+                            ])->schema([
                                 TextEntry::make('planned_start')
                                     ->translateLabel()
                                     ->date(PejotaHelper::getUserDateFormat())
@@ -679,8 +682,7 @@ class TaskResource extends Resource
                                                     ->icon('heroicon-o-information-circle')
                                                     ->color(Color::Green)
                                                     ->tooltip(
-                                                        fn (string $state): HtmlString =>
-                                                            new HtmlString($state)
+                                                        fn(string $state): HtmlString => new HtmlString($state)
                                                     )
                                                     ->visible(fn($state) => $state)
                                             ]),
@@ -739,7 +741,9 @@ class TaskResource extends Resource
                      * Sidebar infolist with priority and status
                      ******************************/
                     Section::make([
-                        Grid::make(2)->schema([
+                        Grid::make([
+                            'default' => 2
+                        ])->schema([
                             IconEntry::make('priority')
                                 ->translateLabel()
                                 ->icon(fn($state) => PriorityEnum::from($state)->getIcon())
@@ -765,31 +769,35 @@ class TaskResource extends Resource
                                                 ->options(fn(): array => Status::all()->pluck('name', 'id')->toArray())
                                         ]),
                                 ]),
+
+                            TextEntry::make('due_date')
+                                ->translateLabel()
+                                ->inlineLabel()
+                                ->date(PejotaHelper::getUserDateFormat())
+                                ->icon('heroicon-o-exclamation-triangle')
+                                ->columnSpanFull(),
+
+                            TextEntry::make('effort')
+                                ->translateLabel()
+                                ->label('Estimated')
+                                ->inlineLabel()
+                                ->icon('heroicon-o-variable')
+                                ->formatStateUsing(
+                                    fn(Model $record): string => $record->effort . ' ' . $record->effort_unit
+                                ),
+
+                            TextEntry::make('workSessions')
+                                ->label("Sessions")
+                                ->translateLabel()
+                                ->inlineLabel()
+                                ->icon('heroicon-o-clock')
+                                ->formatStateUsing(
+                                    fn(Model $record): string => PejotaHelper::formatDuration(
+                                        $record->workSessions->sum('duration')
+                                    )
+                                ),
                         ]),
 
-                        TextEntry::make('due_date')
-                            ->translateLabel()
-                            ->date(PejotaHelper::getUserDateFormat())
-                            ->icon('heroicon-o-exclamation-triangle'),
-
-                        TextEntry::make('effort')
-                            ->translateLabel()
-                            ->label('Estimated')
-                            ->inlineLabel()
-                            ->icon('heroicon-o-variable')
-                            ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit
-                            ),
-
-                        TextEntry::make('workSessions')
-                            ->label("Sessions")
-                            ->translateLabel()
-                            ->inlineLabel()
-                            ->icon('heroicon-o-clock')
-                            ->formatStateUsing(
-                                fn(Model $record): string => PejotaHelper::formatDuration(
-                                    $record->workSessions->sum('duration')
-                                )
-                            ),
 
                         Actions::make([
                             Action::make('list')
@@ -828,6 +836,7 @@ class TaskResource extends Resource
                     ])
                         ->grow(false), // Section at right
                 ])
+                    ->from('md')
                     ->columnSpanFull(),
 
             ]);
@@ -999,7 +1008,10 @@ class TaskResource extends Resource
                 ->sortable()
                 ->wrap()
                 ->toggleable(
-                    isToggledHiddenByDefault: !in_array('client.labelName', PejotaHelper::getUserTaskListDefaultColumns()),
+                    isToggledHiddenByDefault: !in_array(
+                        'client.labelName',
+                        PejotaHelper::getUserTaskListDefaultColumns()
+                    ),
                 ),
             Tables\Columns\TextColumn::make('project.name')
                 ->translateLabel()
