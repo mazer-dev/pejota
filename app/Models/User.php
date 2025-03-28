@@ -60,4 +60,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Company::class);
     }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
+    }
 }
