@@ -188,7 +188,10 @@ class TaskResource extends Resource
 
                     ]),
 
-                Forms\Components\Grid::make(4)->schema([
+                Forms\Components\Grid::make([
+                    'default' => 2,
+                    'md' => 4
+                ])->schema([
                     Forms\Components\Select::make('priority')
                         ->translateLabel()
                         ->options(PriorityEnum::class)
@@ -216,7 +219,10 @@ class TaskResource extends Resource
 
                 ]),
 
-                Forms\Components\Grid::make(5)->schema([
+                Forms\Components\Grid::make([
+                    'default' => 2,
+                    'md' => 5
+                ])->schema([
 //                    Forms\Components\Select::make('date_setting')
 //                        ->translateLabel()
 //                        ->options([
@@ -239,6 +245,10 @@ class TaskResource extends Resource
 //                            };
 //                        }),
                     Forms\Components\DatePicker::make('due_date')
+                        ->columnSpan([
+                            'default' => 2,
+                            'md' => 1
+                        ])
                         ->translateLabel(),
                     Forms\Components\DatePicker::make('planned_start')
                         ->translateLabel(),
