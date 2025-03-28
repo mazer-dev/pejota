@@ -2,9 +2,9 @@ name: Laravel
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "none" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "none" ]
 jobs:
   lint:
     runs-on: ubuntu-latest
