@@ -38,42 +38,46 @@ class SubscriptionResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('service')
-                    ->columnSpan(2)
-                    ->translateLabel()
-                    ->required(),
-                Forms\Components\TextInput::make('price')
-                    ->translateLabel()
-                    ->required()
-                    ->numeric()
-                    ->prefix('$'),
-                Forms\Components\TextInput::make('currency')
-                    ->translateLabel()
-                    ->required(),
-                Forms\Components\TextInput::make('payment_method')
-                    ->translateLabel()
-                    ->required(),
-                Forms\Components\TextInput::make('payment_info')
-                    ->label('Payment extra-info')
-                    ->translateLabel(),
-                Forms\Components\Select::make('status')
-                    ->options(SubscriptionStatusEnum::class)
-                    ->translateLabel()
-                    ->required(),
-                Forms\Components\Select::make('billing_period')
-                    ->options(SubscriptionBillingPeriodEnum::class)
-                    ->translateLabel()
-                    ->required(),
-                Forms\Components\DatePicker::make('trial_ends_at')
-                    ->translateLabel()
-                    ->required(fn(Forms\Get $get) => $get('status') == SubscriptionStatusEnum::TRIAL->value),
-                Forms\Components\DatePicker::make('canceled_at')
-                    ->translateLabel()
-                    ->required(fn(Forms\Get $get) => $get('status') == SubscriptionStatusEnum::CANCELED->value),
-                Forms\Components\Textarea::make('obs')
-                    ->translateLabel()
-                    ->columnSpanFull()
-                    ->rows(6),
+                Forms\Components\Grid::make([
+                    'default' => 2,
+                ])->schema([
+                    Forms\Components\TextInput::make('service')
+                        ->columnSpan(2)
+                        ->translateLabel()
+                        ->required(),
+                    Forms\Components\TextInput::make('price')
+                        ->translateLabel()
+                        ->required()
+                        ->numeric()
+                        ->prefix('$'),
+                    Forms\Components\TextInput::make('currency')
+                        ->translateLabel()
+                        ->required(),
+                    Forms\Components\TextInput::make('payment_method')
+                        ->translateLabel()
+                        ->required(),
+                    Forms\Components\TextInput::make('payment_info')
+                        ->label('Payment extra-info')
+                        ->translateLabel(),
+                    Forms\Components\Select::make('status')
+                        ->options(SubscriptionStatusEnum::class)
+                        ->translateLabel()
+                        ->required(),
+                    Forms\Components\Select::make('billing_period')
+                        ->options(SubscriptionBillingPeriodEnum::class)
+                        ->translateLabel()
+                        ->required(),
+                    Forms\Components\DatePicker::make('trial_ends_at')
+                        ->translateLabel()
+                        ->required(fn(Forms\Get $get) => $get('status') == SubscriptionStatusEnum::TRIAL->value),
+                    Forms\Components\DatePicker::make('canceled_at')
+                        ->translateLabel()
+                        ->required(fn(Forms\Get $get) => $get('status') == SubscriptionStatusEnum::CANCELED->value),
+                    Forms\Components\Textarea::make('obs')
+                        ->translateLabel()
+                        ->columnSpanFull()
+                        ->rows(6),
+                ])
             ]);
     }
 
@@ -144,7 +148,9 @@ class SubscriptionResource extends Resource
             ->defaultGroup(
                 Tables\Grouping\Group::make('billing_period')
                     ->label(__('Billing period'))
-                    ->getTitleFromRecordUsing(fn(Model $record) => SubscriptionBillingPeriodEnum::from($record->billing_period)->getLabel())
+                    ->getTitleFromRecordUsing(
+                        fn(Model $record) => SubscriptionBillingPeriodEnum::from($record->billing_period)->getLabel()
+                    )
             )
             ->actions([
                 Tables\Actions\ActionGroup::make([

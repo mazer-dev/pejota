@@ -41,128 +41,151 @@ class InvoiceResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->columns(4)
+//            ->columns(4)
             ->schema([
-                Forms\Components\TextInput::make('number')
-                    ->translateLabel()
-                    ->required()
-                    ->default(fn() => CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumberFormated())
-                    ->unique(ignorable: fn($record) => $record?->isDirty('number') ? null : $record),
-                Forms\Components\Select::make('status')
-                    ->options(InvoiceStatusEnum::class)
-                    ->default(fn() => InvoiceStatusEnum::DRAFT)
-                    ->required()
-                    ->live()
-                    ->afterStateUpdated(fn(Forms\Set $set, $state) => $state == InvoiceStatusEnum::PAID->value ? $set('payment_date', now()->format(PejotaHelper::getUserDateFormat())) : null),
-                Forms\Components\DatePicker::make('due_date')
-                    ->translateLabel()
-                    ->date(),
-                Forms\Components\DatePicker::make('payment_date')
-                    ->translateLabel()
-                    ->date()
-                    ->live()
-                    ->required(fn(Forms\Get $get) => $get('status') == InvoiceStatusEnum::PAID->value),
-                Forms\Components\Select::make('client_id')
-                    ->translateLabel()
-                    ->required()
-                    ->relationship('client', 'name')
-                    ->searchable(),
-                Forms\Components\Select::make('project_id')
-                    ->translateLabel()
-                    ->relationship('project', 'name')
-                    ->searchable(),
-                Forms\Components\Select::make('contract_id')
-                    ->translateLabel()
-                    ->relationship('contract', 'title')
-                    ->searchable(),
-                Forms\Components\TextInput::make('title')
-                    ->translateLabel()
-                    ->required()
-                    ->columnSpan(2),
-                Forms\Components\TextInput::make('discount')
-                    ->numeric()
-                    ->live()
-                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
-                Forms\Components\TextInput::make('total')
-                    ->required()
-                    ->numeric()
-                    ->readOnly(),
-                Forms\Components\Textarea::make('extra_info')
-                    ->translateLabel()
-                    ->columnSpan(2)
-                    ->rows(3),
-                Forms\Components\Textarea::make('obs_internal')
-                    ->label('Internal observations')
-                    ->translateLabel()
-                    ->columnSpan(2)
-                    ->rows(3),
+                Forms\Components\Grid::make([
+                    'default' => 2,
+                    'md' => 4,
+                ])->schema([
+                    Forms\Components\TextInput::make('number')
+                        ->translateLabel()
+                        ->required()
+                        ->default(fn() => CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumberFormated())
+                        ->unique(ignorable: fn($record) => $record?->isDirty('number') ? null : $record),
+                    Forms\Components\Select::make('status')
+                        ->options(InvoiceStatusEnum::class)
+                        ->default(fn() => InvoiceStatusEnum::DRAFT)
+                        ->required()
+                        ->live()
+                        ->afterStateUpdated(
+                            fn(Forms\Set $set, $state) => $state == InvoiceStatusEnum::PAID->value ? $set(
+                                'payment_date',
+                                now()->format(PejotaHelper::getUserDateFormat())
+                            ) : null
+                        ),
+                    Forms\Components\DatePicker::make('due_date')
+                        ->translateLabel()
+                        ->date(),
+                    Forms\Components\DatePicker::make('payment_date')
+                        ->translateLabel()
+                        ->date()
+                        ->live()
+                        ->required(fn(Forms\Get $get) => $get('status') == InvoiceStatusEnum::PAID->value),
+                    Forms\Components\Select::make('client_id')
+                        ->translateLabel()
+                        ->required()
+                        ->relationship('client', 'name')
+                        ->searchable(),
+                    Forms\Components\Select::make('project_id')
+                        ->translateLabel()
+                        ->relationship('project', 'name')
+                        ->searchable(),
+                    Forms\Components\Select::make('contract_id')
+                        ->translateLabel()
+                        ->relationship('contract', 'title')
+                        ->searchable(),
+                    Forms\Components\TextInput::make('title')
+                        ->translateLabel()
+                        ->required()
+                        ->columnSpan(2),
+                    Forms\Components\TextInput::make('discount')
+                        ->numeric()
+                        ->live()
+                        ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
+                    Forms\Components\TextInput::make('total')
+                        ->required()
+                        ->numeric()
+                        ->readOnly(),
+                    Forms\Components\Textarea::make('extra_info')
+                        ->translateLabel()
+                        ->columnSpan(2)
+                        ->rows(3),
+                    Forms\Components\Textarea::make('obs_internal')
+                        ->label('Internal observations')
+                        ->translateLabel()
+                        ->columnSpan(2)
+                        ->rows(3),
 
-                Forms\Components\Repeater::make('items')
-                    ->relationship()
-                    ->columnSpanFull()
-                    ->columns(5)
-                    ->schema([
-                        Forms\Components\Select::make('product_id')
-                            ->label('Reference product')
-                            ->translateLabel()
-                            ->relationship('product', 'name')
-                            ->required()
-                            ->columnSpan(2)
-                            ->searchable()
-                            ->live()
-                            ->afterStateUpdated(function ($state, $set) {
-                                if ($state) {
-                                    $product = Product::find($state);
-                                    if ($product) {
-                                        $set('name', $product->name);
-                                        $set('obs', $product->description);
-                                        $set('unit_id', $product->unit_id);
-                                        $set('price', $product->price);
+                    Forms\Components\Repeater::make('items')
+                        ->relationship()
+                        ->columnSpanFull()
+                        ->columns([
+                            'default' => 2,
+                            'md' => 5,
+                        ])
+                        ->schema([
+                            Forms\Components\Select::make('product_id')
+                                ->label('Reference product')
+                                ->translateLabel()
+                                ->relationship('product', 'name')
+                                ->required()
+                                ->columnSpan([
+                                    'default' => 2,
+                                ])
+                                ->searchable()
+                                ->live()
+                                ->afterStateUpdated(function ($state, $set) {
+                                    if ($state) {
+                                        $product = Product::find($state);
+                                        if ($product) {
+                                            $set('name', $product->name);
+                                            $set('obs', $product->description);
+                                            $set('unit_id', $product->unit_id);
+                                            $set('price', $product->price);
+                                        }
                                     }
-                                }
-                            }),
-                        Forms\Components\TextInput::make('name')
-                            ->label('Description at invoice')
-                            ->translateLabel()
-                            ->columnSpan(3)
-                            ->required(),
-                        Forms\Components\Select::make('unit_id')
-                            ->translateLabel()
-                            ->relationship('unit', 'name')
-                            ->placeholder('Select')
-                            ->required()
-                            ->preload()
-                            ->searchable(),
-                        Forms\Components\TextInput::make('quantity')
-                            ->translateLabel()
-                            ->required()
-                            ->numeric()
-                            ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
-                        Forms\Components\TextInput::make('price')
-                            ->translateLabel()
-                            ->required()
-                            ->numeric()
-                            ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
-                        Forms\Components\TextInput::make('discount')
-                            ->translateLabel()
-                            ->numeric()
-                            ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
-                        Forms\Components\TextInput::make('total')
-                            ->translateLabel()
-                            ->required()
-                            ->numeric()
-                            ->readOnly(),
-                        Forms\Components\Textarea::make('obs')
-                            ->translateLabel()
-                            ->columnSpanFull(),
-                    ])
-                    ->deleteAction(function (Forms\Components\Actions\Action $action) {
-                        // call cal total after delete a row item of the repeater
-                        return $action->after(fn(Forms\Set $set, Forms\Get $get) => self::calcInvoiceTotal($get, $set));
-                    }),
+                                }),
+                            Forms\Components\TextInput::make('name')
+                                ->label('Description at invoice')
+                                ->translateLabel()
+                                ->columnSpan(3)
+                                ->required(),
+                            Forms\Components\Select::make('unit_id')
+                                ->translateLabel()
+                                ->relationship('unit', 'name')
+                                ->placeholder('Select')
+                                ->required()
+                                ->preload()
+                                ->searchable(),
+                            Forms\Components\TextInput::make('quantity')
+                                ->translateLabel()
+                                ->required()
+                                ->numeric()
+                                ->live()
+                                ->afterStateUpdated(
+                                    fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)
+                                ),
+                            Forms\Components\TextInput::make('price')
+                                ->translateLabel()
+                                ->required()
+                                ->numeric()
+                                ->live()
+                                ->afterStateUpdated(
+                                    fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)
+                                ),
+                            Forms\Components\TextInput::make('discount')
+                                ->translateLabel()
+                                ->numeric()
+                                ->live()
+                                ->afterStateUpdated(
+                                    fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)
+                                ),
+                            Forms\Components\TextInput::make('total')
+                                ->translateLabel()
+                                ->required()
+                                ->numeric()
+                                ->readOnly(),
+                            Forms\Components\Textarea::make('obs')
+                                ->translateLabel()
+                                ->columnSpanFull(),
+                        ])
+                        ->deleteAction(function (Forms\Components\Actions\Action $action) {
+                            // call cal total after delete a row item of the repeater
+                            return $action->after(
+                                fn(Forms\Set $set, Forms\Get $get) => self::calcInvoiceTotal($get, $set)
+                            );
+                        }),
+                ])
             ]);
     }
 
