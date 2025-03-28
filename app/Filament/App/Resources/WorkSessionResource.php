@@ -378,7 +378,10 @@ class WorkSessionResource extends Resource
             ->schema([
                 Split::make([
                     Section::make([
-                        Grid::make(2)->schema([
+                        Grid::make([
+                            'default' => 1,
+                            'md' => 2,
+                        ])->schema([
                             TextEntry::make('project.name')
                                 ->hiddenLabel()
                                 ->icon(ProjectResource::getNavigationIcon())
@@ -399,7 +402,10 @@ class WorkSessionResource extends Resource
 
                         ]),
 
-                        Grid::make(5)->schema([
+                        Grid::make([
+                            'default' => 2,
+                            'md' => 5,
+                        ])->schema([
                             TextEntry::make('start')
                                 ->translateLabel()
                                 ->formatStateUsing(
@@ -420,9 +426,11 @@ class WorkSessionResource extends Resource
                                 ->translateLabel(),
                             TextEntry::make('rate')
                                 ->translateLabel(),
-                            TextEntry::make('time')->getStateUsing(
-                                fn(Model $record): string => PejotaHelper::formatDuration($record->duration)
-                            ),
+                            TextEntry::make('time')
+                                ->translateLabel()
+                                ->getStateUsing(
+                                    fn(Model $record): string => PejotaHelper::formatDuration($record->duration)
+                                ),
                         ]),
 
                         TextEntry::make('description')
@@ -471,6 +479,7 @@ class WorkSessionResource extends Resource
                     ])
                         ->grow(false), // Section at right
                 ])
+                    ->from('md')
                     ->columnSpanFull()
             ]);
     }
