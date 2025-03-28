@@ -238,7 +238,11 @@ class WorkSessionResource extends Resource
                 ->required()
                 ->translateLabel(),
 
-            Forms\Components\Grid::make(6)->schema([
+            Forms\Components\Grid::make([
+                'default' => 2,
+                'sm' => 2,
+                'md' => 6,
+            ])->schema([
                 Forms\Components\DateTimePicker::make('start')
                     ->label('Start at')
                     ->translateLabel()
