@@ -353,6 +353,37 @@ class TaskResource extends Resource
 
                         return null;
                     }),
+
+                Tables\Filters\Filter::make('planned_end_not_empty')
+                    ->form([
+                        Forms\Components\ToggleButtons::make('planned_end')
+                            ->translateLabel()
+                            ->inline()
+                            ->options([
+                                'not_empty' => __('Has planned_end date'),
+                                'empty' => __('No planned_end date'),
+                            ]),
+                    ])
+                    ->columnSpan(2)
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['planned_end'] == 'not_empty',
+                                fn(Builder $query): Builder => $query->whereNotNull('planned_end')
+                            )
+                            ->when(
+                                $data['due_date'] == 'empty',
+                                fn(Builder $query): Builder => $query->whereNull('planned_end')
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if ($data['planned_end']) {
+                            return $data['planned_end'] == 'not_empty' ? __('Has planned_end date') : __('No planned_end date');
+                        }
+
+                        return null;
+                    }),
+
                 Tables\Filters\Filter::make('planned_end')
                     ->columnSpan(2)
                     ->form([
