@@ -372,7 +372,7 @@ class TaskResource extends Resource
                                 fn(Builder $query): Builder => $query->whereNotNull('planned_end')
                             )
                             ->when(
-                                $data['due_date'] == 'empty',
+                                $data['planned_end'] == 'empty',
                                 fn(Builder $query): Builder => $query->whereNull('planned_end')
                             );
                     })
