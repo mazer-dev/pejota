@@ -360,8 +360,8 @@ class TaskResource extends Resource
                             ->translateLabel()
                             ->inline()
                             ->options([
-                                'not_empty' => __('Has planned_end date'),
-                                'empty' => __('No planned_end date'),
+                                'not_empty' => __('Has planned end date'),
+                                'empty' => __('No planned end date'),
                             ]),
                     ])
                     ->columnSpan(2)
