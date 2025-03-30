@@ -378,7 +378,7 @@ class TaskResource extends Resource
                     })
                     ->indicateUsing(function (array $data): ?string {
                         if ($data['planned_end']) {
-                            return $data['planned_end'] == 'not_empty' ? __('Has planned_end date') : __('No planned_end date');
+                            return $data['planned_end'] == 'not_empty' ? __('Has planned end date') : __('No planned end date');
                         }
 
                         return null;
