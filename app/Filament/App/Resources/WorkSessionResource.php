@@ -154,6 +154,9 @@ class WorkSessionResource extends Resource
                 Tables\Grouping\Group::make('client.name')
                     ->label(__('Client'))
                     ->collapsible(),
+                Tables\Grouping\Group::make('project.name')
+                    ->label(__('Project'))
+                    ->collapsible(),
                 Tables\Grouping\Group::make('start')
                     ->label(__('Date'))
                     ->date()
