@@ -285,6 +285,9 @@ class TaskResource extends Resource
                 Tables\Filters\SelectFilter::make('client')
                     ->translateLabel()
                     ->relationship('client', 'name'),
+                Tables\Filters\SelectFilter::make('project')
+                    ->translateLabel()
+                    ->relationship('project', 'name'),
                 Tables\Filters\Filter::make('due_date_not_empty')
                     ->form([
                         Forms\Components\ToggleButtons::make('due_date')
