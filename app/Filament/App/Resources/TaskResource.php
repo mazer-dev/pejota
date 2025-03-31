@@ -673,6 +673,7 @@ class TaskResource extends Resource
                                                     ->hiddenLabel(fn($record) => $record->sort != 0)
                                                     ->translateLabel()
                                                     ->dateTime(PejotaHelper::getUserDateTimeFormat())
+                                                    ->timezone(PejotaHelper::getUserTimeZone())
                                                     ->url(
                                                         fn($record) => ViewWorkSession::getUrl([
                                                             'record' => $record->id,
