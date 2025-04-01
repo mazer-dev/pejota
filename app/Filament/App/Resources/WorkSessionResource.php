@@ -199,13 +199,11 @@ class WorkSessionResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
-                    Tables\Actions\ActionGroup::make([
-                        Tables\Actions\Action::make(__('Clone'))
-                            ->tooltip(__('Clone this session with same time and details, updating to current date'))
-                            ->icon('heroicon-o-document-duplicate')
-                            ->color(Color::Amber)
-                            ->action(fn(WorkSession $record) => self::clone($record)),
-                    ]),
+                    Tables\Actions\Action::make(__('Clone'))
+                        ->tooltip(__('Clone this session with same time and details, updating to current date'))
+                        ->icon('heroicon-o-document-duplicate')
+                        ->color(Color::Amber)
+                        ->action(fn(WorkSession $record) => self::clone($record)),
                 ]),
             ])
             ->bulkActions([
