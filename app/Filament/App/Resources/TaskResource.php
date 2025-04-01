@@ -31,6 +31,7 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\ActionSize;
+use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -265,6 +266,14 @@ class TaskResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $columns = self::getTableColumns();
+        if (PejotaHelper::isMobile()) {
+            $columns = [
+                Tables\Columns\Layout\Split::make($columns)
+                    ->from('sm')
+            ];
+        }
+
         return $table
             ->groups([
                 'client.name',
@@ -274,7 +283,7 @@ class TaskResource extends Resource
             ])
             ->striped()
             ->columns(
-                self::getTableColumns()
+                $columns
             )
             ->filtersFormColumns(4)
             ->filters([
@@ -970,6 +979,7 @@ class TaskResource extends Resource
     public static function getTableColumns(): array
     {
 //        dd(PejotaHelper::getUserTaskListDefaultColumns());
+        $isMobile = PejotaHelper::isMobile();
 
         return [
             Tables\Columns\IconColumn::make('priority')
@@ -1010,9 +1020,11 @@ class TaskResource extends Resource
             Tables\Columns\TextColumn::make('title')
                 ->translateLabel()
                 ->wrap()
+                ->weight(FontWeight::Bold)
                 ->searchable(),
             Tables\Columns\TextColumn::make('due_date')
                 ->translateLabel()
+                ->description(fn() => $isMobile ? __('Due date') : null, 'above')
                 ->wrapHeader()
                 ->date(PejotaHelper::getUserDateFormat())
                 ->sortable()
@@ -1021,12 +1033,14 @@ class TaskResource extends Resource
                 ),
             Tables\Columns\TextColumn::make('effort')
                 ->translateLabel()
+                ->description(fn() => $isMobile ? __('Effort') : null, 'above')
                 ->formatStateUsing(fn(Model $record): string => $record->effort . ' ' . $record->effort_unit)
                 ->toggleable(
                     isToggledHiddenByDefault: !in_array('effort', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
             Tables\Columns\TextColumn::make('planned_start')
                 ->translateLabel()
+                ->description(fn() => $isMobile ? __('Planned start') : null, 'above')
                 ->wrapHeader()
                 ->date(PejotaHelper::getUserDateFormat())
                 ->sortable()
@@ -1035,6 +1049,7 @@ class TaskResource extends Resource
                 ),
             Tables\Columns\TextColumn::make('planned_end')
                 ->translateLabel()
+                ->description(fn() => $isMobile ? __('Planned end') : null, 'above')
                 ->wrapHeader()
                 ->date(PejotaHelper::getUserDateFormat())
                 ->sortable()
@@ -1065,6 +1080,7 @@ class TaskResource extends Resource
                 ),
             Tables\Columns\TextColumn::make('created_at')
                 ->translateLabel()
+                ->description(fn() => $isMobile ? __('Created at') : null, 'above')
                 ->dateTime()
                 ->timezone(PejotaHelper::getUserTimeZone())
                 ->sortable()
@@ -1073,6 +1089,7 @@ class TaskResource extends Resource
                 ),
             Tables\Columns\TextColumn::make('updated_at')
                 ->translateLabel()
+                ->description(fn() => $isMobile ? __('Updated at') : null, 'above')
                 ->dateTime()
                 ->timezone(PejotaHelper::getUserTimeZone())
                 ->sortable()
