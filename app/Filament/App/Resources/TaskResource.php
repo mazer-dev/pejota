@@ -6,6 +6,7 @@ use App\Enums\CompanySettingsEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
+use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
 use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Filament\App\Resources\TaskResource\Pages;
@@ -134,14 +135,26 @@ class TaskResource extends Resource
                         ->relationship(
                             'project',
                             'name',
-                            fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                            fn(Builder $query, Forms\Get $get) =>
+                                $query->byClient($get('client'))
+                                    ->where('active', true)
+                                    ->orderBy('name')
+
                         )
                         ->searchable()
                         ->preload()
                         ->createOptionForm(ProjectResource::getFormComponents()),
                     Forms\Components\Select::make('parent_task')
                         ->translateLabel()
-                        ->relationship('parent', 'title')
+                        ->relationship(
+                            'parent',
+                            'title',
+                            fn(Builder $query, Forms\Get $get) =>
+                                $query
+                                    ->byProject($get('project'))
+                                    ->opened()
+                                    ->orderBy('title')
+                        )
                         ->searchable(),
                 ]),
                 Forms\Components\TextInput::make('title')
