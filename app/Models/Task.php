@@ -132,6 +132,12 @@ class Task extends Model
             ->logOnlyDirty();
     }
 
+    public function scopeByProject(Builder $query, Project|int|null $project)
+    {
+        if ($project) {
+            $query->where('project_id', $project);
+        }
+    }
     public function scopeOpened(Builder $query)
     {
         $query->whereHas('status', function (Builder $query) {
