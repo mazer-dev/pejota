@@ -120,7 +120,6 @@ class Task extends Model
                 $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
             }
         }
-
     }
 
     public function getActivitylogOptions(): LogOptions
@@ -138,6 +137,7 @@ class Task extends Model
             $query->where('project_id', $project);
         }
     }
+
     public function scopeOpened(Builder $query)
     {
         $query->whereHas('status', function (Builder $query) {
@@ -173,10 +173,16 @@ class Task extends Model
             if ($interval == 'today') {
                 $this->{$field} = $now->format('Y-m-d');
             } else {
-                $nextDate = $now->add($interval);
-                if ($fromNow == false) {
-                    $nextDate = $this->{$field}->add($interval);
+                if (in_array($field, ['planned_end', 'due_date'])) {
+                    if (!$this->{$field} || $this->{$field}->startOfDay()->lte($now->startOfDay())) {
+                        $nextDate = $now->copy()->add($interval);
+                    } else {
+                        $nextDate = $this->{$field}->copy()->add($interval);
+                    }
+                } else {
+                    $nextDate = $fromNow ? $now->copy()->add($interval) : $this->{$field}->copy()->add($interval);
                 }
+
                 $this->{$field} = $nextDate;
             }
             $this->save();
