@@ -3,7 +3,9 @@
 namespace App\Filament\App\Resources\TaskResource\Pages;
 
 use App\Filament\App\Resources\TaskResource;
+use App\Models\Task;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +19,19 @@ class EditTask extends EditRecord
     {
         return [
             CommentsAction::make(),
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->before(function (Actions\DeleteAction $action, Task $record) {
+                if ($record->workSessions->count() > 0) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('Cannot delete task'))
+                        ->body(
+                            __('This task cannot be deleted because it has work sessions associated with it.')
+                        )
+                        ->send();
+
+                    $action->halt();
+                }
+            }),
         ];
     }
 
