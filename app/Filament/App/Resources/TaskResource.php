@@ -304,6 +304,10 @@ class TaskResource extends Resource
                     ->relationship('status', 'name')
                     ->multiple(true)
                     ->preload(),
+                Tables\Filters\SelectFilter::make('priority')
+                    ->translateLabel()
+                    ->options(PriorityEnum::class)
+                    ->multiple(true),
                 Tables\Filters\SelectFilter::make('client')
                     ->translateLabel()
                     ->relationship('client', 'name'),
