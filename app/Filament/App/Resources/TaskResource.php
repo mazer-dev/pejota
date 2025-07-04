@@ -425,7 +425,7 @@ class TaskResource extends Resource
                             ->when(
                                 $data['from_planned_end'],
                                 fn(Builder $query, $date): Builder => $query->where(
-                                    DB::raw('DATE(planned_end'),
+                                    DB::raw('DATE(planned_end)'),
                                     '>=',
                                     $data['from_planned_end']
                                 )
