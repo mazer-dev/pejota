@@ -40,7 +40,7 @@ class TasksOverview extends BaseWidget
                     'tableFilters[due_date][to_due_date]' => now(PejotaHelper::getUserTimeZone())->format('Y-m-d'),
                 ])),
 
-            Stat::make(__('Tasks late due dates'),
+            Stat::make(__('Tasks overdue'),
                 Task::whereHas('status', function ($query) {
                     return $query->whereIn('phase', [
                         StatusPhaseEnum::TODO,
