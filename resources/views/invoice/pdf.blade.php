@@ -86,9 +86,12 @@
 <body>
 @php
     $media = $invoice->company->getFirstMedia();
-    $data = file_get_contents($media->getPath(), false);
-    $img_base_64 = base64_encode($data);
-    $path_img = 'data:image/' . $media->getTypeFromMime() . ';base64,' . $img_base_64;
+    $path_img = null;
+    if ($media) {
+        $data = file_get_contents($media->getPath(), false);
+        $img_base_64 = base64_encode($data);
+        $path_img = 'data:image/' . $media->getTypeFromMime() . ';base64,' . $img_base_64;
+    }
 @endphp
 
 <header>
