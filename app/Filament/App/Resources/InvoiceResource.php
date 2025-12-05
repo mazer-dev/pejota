@@ -18,8 +18,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InvoiceResource extends Resource
@@ -89,6 +88,7 @@ class InvoiceResource extends Resource
                         ->required()
                         ->columnSpan(2),
                     Forms\Components\TextInput::make('discount')
+                        ->translateLabel()
                         ->numeric()
                         ->live()
                         ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
@@ -350,6 +350,6 @@ class InvoiceResource extends Resource
         return response()->streamDownload(function () use ($invoice) {
             $pdf = (new InvoiceService())->generatePdf($invoice);
             echo $pdf->stream();
-        }, 'invoice_' . $invoice->number . '.pdf');
+        }, Str::snake($invoice->client->name).'_invoice_' . $invoice->number . '.pdf');
     }
 }

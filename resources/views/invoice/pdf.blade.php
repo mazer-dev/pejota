@@ -145,7 +145,7 @@
         <h4>@lang('Extra Information:')</h4>
         <div class="panel panel-default">
             <div class="panel-body">
-                {{ $invoice->extra_info }}
+                {!! nl2br($invoice->extra_info)  !!}
             </div>
         </div>
     @endif
