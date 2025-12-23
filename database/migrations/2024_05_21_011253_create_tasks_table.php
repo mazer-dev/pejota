@@ -16,6 +16,13 @@ return new class extends Migration
 
             $table->string('title');
             $table->text('description')->nullable();
+            // PDF requirement: assignee_id
+            $table->foreignId('assignee_id')->nullable()->constrained('users')->nullOnDelete();
+    
+            // PDF requirement: percent_complete
+            $table->integer('percent_complete')->default(0);
+
+
             $table->string('priority')->default('normal');
 
             $table->foreignId('parent_id')
@@ -46,7 +53,6 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('projects')
                 ->restrictOnDelete();
-
             $table->timestamps();
         });
     }

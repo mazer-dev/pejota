@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -62,6 +63,10 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasOne(Company::class);
     }
+
+    public function branch(): BelongsTo {
+    return $this->belongsTo(Branch::class);
+}
 
     public function canAccessPanel(Panel $panel): bool
     {

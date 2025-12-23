@@ -17,11 +17,19 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('role_id')->nullable(); 
+            // Original (Do not remove)
+            $table->foreignId('company_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('branch_id')->nullable()->constrained();
+
+            $table->timestamp('last_login')->nullable();
+
+
             $table->rememberToken();
-            $table->timestamps();
+            $table->timestamps(); //Automatically adds two columns: created_at and updated_at. This is vital for your ERP to know when a worker was added to the system.
         });
 
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
+        Schema::create('password_reset_tokens', function (Blueprint $table) { //this is for password reset functionality (if you forget your password)
             $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
