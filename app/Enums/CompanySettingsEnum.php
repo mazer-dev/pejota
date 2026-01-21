@@ -4,6 +4,7 @@ namespace App\Enums;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 enum CompanySettingsEnum: string
 {
@@ -54,8 +55,8 @@ enum CompanySettingsEnum: string
             $zones = \DateTimeZone::listIdentifiers($mask);
             foreach ($zones as $timezone) {
                 // Lets sample the time there right now
-                $time = new \DateTime(null, new \DateTimeZone($timezone));
-                $utcTime = new \DateTime(null, new \DateTimeZone('UTC'));
+                $time = new \DateTime('now', new \DateTimeZone($timezone));
+                $utcTime = new \DateTime('now', new \DateTimeZone('UTC'));
 
                 // Us Americans can't handle millitary time
                 $ampm = $time->format('H') > 12 ? ' (' . $time->format('g:i a') . ')' : '';
@@ -126,7 +127,8 @@ enum CompanySettingsEnum: string
             throw new \Exception($this . ' setting is not allowed to get the next number');
         }
 
-        $number = auth()->user()->company->settings()
+        $user = Auth::user();
+        $number = $user->company->settings()
             ->get(
                 $this->value,
                 0
@@ -134,7 +136,7 @@ enum CompanySettingsEnum: string
 
         $number++;
 
-        auth()->user()->company->settings()
+        $user->company->settings()
             ->set(
                 $this->value,
                 $number
@@ -150,8 +152,8 @@ enum CompanySettingsEnum: string
 
         $setting = str_replace('LAST', 'FORMAT', $this->name);
 
-        if (auth()->user()) {
-            $result = auth()->user()->company->settings()
+        if (Auth::user()) {
+            $result = Auth::user()->company->settings()
                 ->get(
                     $setting,
                     'ym000'

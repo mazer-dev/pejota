@@ -18,6 +18,6 @@ return [
     |
     */
 
-    'default_tenant_columns' => ['company_id'],
+    'default_tenant_columns' => ['branch_id'],
 
 ];

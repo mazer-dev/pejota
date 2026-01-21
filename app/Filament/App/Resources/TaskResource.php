@@ -7,9 +7,12 @@ use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
 use App\Enums\StatusPhaseEnum;
+use App\Filament\App\Resources\ClientResource;
 use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
+use App\Filament\App\Resources\ProjectResource;
 use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Filament\App\Resources\TaskResource\Pages;
+use App\Filament\App\Resources\WorkSessionResource;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Filament\App\Resources\WorkSessionResource\Pages\ViewWorkSession;
 use App\Helpers\PejotaHelper;
@@ -44,6 +47,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 use Parallax\FilamentComments\Tables\Actions\CommentsAction;
+use Illuminate\Support\Facades\Auth;  // Add this import at the top of the file
+
 
 class TaskResource extends Resource
 {
@@ -137,7 +142,6 @@ class TaskResource extends Resource
                             'name',
                             fn(Builder $query, Forms\Get $get) =>
                                 $query->byClient($get('client'))
-                                    ->where('active', true)
                                     ->orderBy('name')
 
                         )
@@ -175,7 +179,7 @@ class TaskResource extends Resource
                                 ['style' => 'max-height: 300px; overflow: scroll']
                             )
                             ->fileAttachmentsDisk('tasks')
-                            ->fileAttachmentsDirectory(auth()->user()->company->id)
+                            ->fileAttachmentsDirectory(Auth::user()->company->id)
                             ->fileAttachmentsVisibility('private'),
 
                     ]),
@@ -218,7 +222,7 @@ class TaskResource extends Resource
                         ->options(
                             Status::orderBy('sort_order')->pluck('name', 'id')
                         )
-                        ->default(Status::orderBy('sort_order')->first()->id),
+                        ->default(Status::orderBy('sort_order')->first()?->id),
 
                     Forms\Components\TextInput::make('effort')
                         ->translateLabel()
@@ -274,6 +278,20 @@ class TaskResource extends Resource
                         ->translateLabel(),
 
                 ]),
+                // Add this for the Assignee
+                Forms\Components\Select::make('assignee_id')
+                 ->relationship('assignee', 'name')
+                 ->label('Assigned To')
+                 ->searchable()
+                 ->preload(),
+
+                // Add this for the Percentage
+                Forms\Components\TextInput::make('percent_complete')
+                 ->numeric()
+                 ->suffix('%')
+                 ->default(0)
+                 ->minValue(0)
+                 ->maxValue(100),
             ]);
     }
 
@@ -1039,6 +1057,20 @@ class TaskResource extends Resource
                 ->wrap()
                 ->weight(FontWeight::Bold)
                 ->searchable(),
+            Tables\Columns\TextColumn::make('assignee.name')
+            ->label('Assigned To')
+            ->translateLabel()
+            ->sortable()
+            ->searchable()
+            ->toggleable(isToggledHiddenByDefault: false),
+
+        Tables\Columns\TextColumn::make('percent_complete')
+            ->label('Progress')
+            ->translateLabel()
+            ->suffix('%')
+            ->sortable()
+            ->color(fn ($state) => $state >= 100 ? 'success' : ($state >= 50 ? 'warning' : 'gray'))
+            ->toggleable(isToggledHiddenByDefault: false),
             Tables\Columns\TextColumn::make('due_date')
                 ->translateLabel()
                 ->description(fn() => $isMobile ? __('Due date') : null, 'above')

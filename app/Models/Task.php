@@ -15,7 +15,8 @@ use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Tags\HasTags;
-
+use App\Models\Status;
+use Illuminate\Support\Facades\Auth;
 /**
  * Class Model Task
  *
@@ -55,8 +56,12 @@ class Task extends Model
         'actual_end' => 'date',
         'due_date' => 'date',
         'checklist' => 'array',
+        'percent_complete' => 'integer',
     ];
-
+    protected $attributes = [
+        'status_id' => 1,
+        'company_id' => 2,
+    ];
     protected static function boot()
     {
         parent::boot();
@@ -98,10 +103,13 @@ class Task extends Model
         return $this->hasMany(WorkSession::class);
     }
 
-    protected static function setStartEndDates(Model $model): void
+    public function assignee(): BelongsTo
     {
-        $settings = auth()->user()->company
-            ->settings();
+    return $this->belongsTo(User::class, 'assignee_id');
+    }
+
+    protected static function setStartEndDates(Model $model): void
+    {     $settings = Auth::user()?->company?->settings();  // Replace auth() with Auth facade
 
         $status = Status::find($model->status_id);
 
@@ -146,6 +154,11 @@ class Task extends Model
                 StatusPhaseEnum::IN_PROGRESS,
             ]);
         });
+    }
+
+    public function scopeOrdered(Builder $query)
+    {
+        return $query->orderBy('due_date', 'asc')->orderBy('created_at', 'desc');
     }
 
     public function scopeClosed(Builder $query)
