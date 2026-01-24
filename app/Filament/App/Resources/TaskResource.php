@@ -136,9 +136,9 @@ class TaskResource extends Resource
                             'project',
                             'name',
                             fn(Builder $query, Forms\Get $get) =>
-                                $query->byClient($get('client'))
-                                    ->where('active', true)
-                                    ->orderBy('name')
+                            $query->byClient($get('client'))
+                                ->where('active', true)
+                                ->orderBy('name')
 
                         )
                         ->searchable()
@@ -150,10 +150,10 @@ class TaskResource extends Resource
                             'parent',
                             'title',
                             fn(Builder $query, Forms\Get $get) =>
-                                $query
-                                    ->byProject($get('project'))
-                                    ->opened()
-                                    ->orderBy('title')
+                            $query
+                                ->byProject($get('project'))
+                                ->opened()
+                                ->orderBy('title')
                         )
                         ->searchable(),
                 ]),
@@ -237,27 +237,27 @@ class TaskResource extends Resource
                     'default' => 2,
                     'md' => 5
                 ])->schema([
-//                    Forms\Components\Select::make('date_setting')
-//                        ->translateLabel()
-//                        ->options([
-//                            'all-dates-today' => __('All dates today'),
-//                            'all-dates-tomorrow' => __('All dates tomorrow'),
-//                            'due-planned-today' => __('Due and planned dates today'),
-//                            'due-planned-tomorrow' => __('Due and planned dates tomorrow'),
-//                        ])
-//                        ->live()
-//                        ->afterStateUpdated(function ($state, $get, $set) {
-//                            $today = Carbon::today(PejotaHelper::getUserTimeZone())->toDayDateTimeString();
-//                            match ($state) {
-//                                'all-dates-today' => function () use ($set, $today) {
-//                                    $set('due_date', $today);
-//                                    $set('planned_start', $today);
-//                                    $set('planned_end', $today);
-//                                    $set('actual_start', $today);
-//                                    $set('actual_end', $today);
-//                                },
-//                            };
-//                        }),
+                    //                    Forms\Components\Select::make('date_setting')
+                    //                        ->translateLabel()
+                    //                        ->options([
+                    //                            'all-dates-today' => __('All dates today'),
+                    //                            'all-dates-tomorrow' => __('All dates tomorrow'),
+                    //                            'due-planned-today' => __('Due and planned dates today'),
+                    //                            'due-planned-tomorrow' => __('Due and planned dates tomorrow'),
+                    //                        ])
+                    //                        ->live()
+                    //                        ->afterStateUpdated(function ($state, $get, $set) {
+                    //                            $today = Carbon::today(PejotaHelper::getUserTimeZone())->toDayDateTimeString();
+                    //                            match ($state) {
+                    //                                'all-dates-today' => function () use ($set, $today) {
+                    //                                    $set('due_date', $today);
+                    //                                    $set('planned_start', $today);
+                    //                                    $set('planned_end', $today);
+                    //                                    $set('actual_start', $today);
+                    //                                    $set('actual_end', $today);
+                    //                                },
+                    //                            };
+                    //                        }),
                     Forms\Components\DatePicker::make('due_date')
                         ->columnSpan([
                             'default' => 2,
@@ -455,10 +455,10 @@ class TaskResource extends Resource
                         ->tooltip(__('Start a new session for this task'))
                         ->icon('heroicon-o-play')
                         ->color(Color::Amber)
-//                        ->form(WorkSessionResource::getFormSchema())
-//                        ->fillForm(function(Task $task) {
-//                            return CreateWorkSession::getFillFormArray($task);
-//                        }),
+                        //                        ->form(WorkSessionResource::getFormSchema())
+                        //                        ->fillForm(function(Task $task) {
+                        //                            return CreateWorkSession::getFillFormArray($task);
+                        //                        }),
                         ->url(fn($record) => CreateWorkSession::getUrl([
                             'task' => $record->id,
                         ])),
@@ -595,21 +595,21 @@ class TaskResource extends Resource
                                                     return new HtmlString($state);
                                                 })
                                                 ->prefixAction(fn($component) => Action::make('checkCompleted')
-                                                    ->icon(
-                                                        self::getStateCompleted(
-                                                            $component
-                                                        ) ? 'heroicon-o-check' : 'heroicon-o-stop'
-                                                    )
-                                                    ->color(
-                                                        self::getStateCompleted($component) ? Color::Green : Color::Gray
-                                                    )
-                                                    ->action(function (Model $record, $component) {
-                                                        $index = explode('.', $component->getStatePath())[1];
-                                                        $checklist = $record->checklist;
-                                                        $checklist[$index]['completed'] = !$record->checklist[$index]['completed'];
-                                                        $record->checklist = $checklist;
-                                                        $record->save();
-                                                    })
+                                                        ->icon(
+                                                            self::getStateCompleted(
+                                                                $component
+                                                            ) ? 'heroicon-o-check' : 'heroicon-o-stop'
+                                                        )
+                                                        ->color(
+                                                            self::getStateCompleted($component) ? Color::Green : Color::Gray
+                                                        )
+                                                        ->action(function (Model $record, $component) {
+                                                            $index = explode('.', $component->getStatePath())[1];
+                                                            $checklist = $record->checklist;
+                                                            $checklist[$index]['completed'] = !$record->checklist[$index]['completed'];
+                                                            $record->checklist = $checklist;
+                                                            $record->save();
+                                                        })
                                                 ),
                                         ]),
                                 ]),
@@ -821,8 +821,9 @@ class TaskResource extends Resource
                                         ->color(Color::hex('#ACA'))
                                         ->button()
                                         ->tooltip(__('Change status'))
-                                        ->action(function (Model $record, array $data): void {
+                                        ->action(function (Model $record, array $data, $livewire): void {
                                             $record->update($data);
+                                            $livewire->handleTaskClose($data, $record->id);
                                         })
                                         ->form([
                                             Forms\Components\Select::make('status_id')
@@ -995,7 +996,7 @@ class TaskResource extends Resource
 
     public static function getTableColumns(): array
     {
-//        dd(PejotaHelper::getUserTaskListDefaultColumns());
+        //        dd(PejotaHelper::getUserTaskListDefaultColumns());
         $isMobile = PejotaHelper::isMobile();
 
         return [
