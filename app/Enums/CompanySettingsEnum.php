@@ -20,6 +20,7 @@ enum CompanySettingsEnum: string
     case LOCALIZATION_DATE_TIME_FORMAT = 'localization.date_time_format';
     case DOCS_INVOICE_NUMBER_LAST = 'docs.invoice_number_last';
     case DOCS_INVOICE_NUMBER_FORMAT = 'docs.invoice_number_format';
+    case DOCS_INVOICE_NUMBER_LAST_PERIOD = 'docs.invoice_number_last_period';
 
     public static function getLocales(): array
     {
@@ -36,6 +37,7 @@ enum CompanySettingsEnum: string
 
         ];
     }
+
     public static function getTimezones(): array
     {
         $regions = [
@@ -58,16 +60,16 @@ enum CompanySettingsEnum: string
                 $utcTime = new \DateTime(null, new \DateTimeZone('UTC'));
 
                 // Us Americans can't handle millitary time
-                $ampm = $time->format('H') > 12 ? ' (' . $time->format('g:i a') . ')' : '';
+                $ampm = $time->format('H') > 12 ? ' ('.$time->format('g:i a').')' : '';
 
                 $time_offset = $time->getOffset() / 3600;
                 $utc_offset = $utcTime->getOffset() / 3600;
 
                 // Remove region name and add a sample time
                 $timezones[$name][$timezone] =
-                    substr($timezone, strlen($name) + 1) . ' - ' .
-                    $time->format('H:i') . $ampm .
-                    ' (' . $time_offset - $utc_offset . 'h) ';
+                    substr($timezone, strlen($name) + 1).' - '.
+                    $time->format('H:i').$ampm.
+                    ' ('.$time_offset - $utc_offset.'h) ';
             }
         }
 
@@ -116,6 +118,13 @@ enum CompanySettingsEnum: string
         ];
     }
 
+    /**
+     * Returns the next sequential document number, resetting to 1 when
+     * the date period encoded in the configured format mask changes.
+     *
+     * Side effects: updates docs.invoice_number_last and (on period change)
+     * docs.invoice_number_last_period in company settings.
+     */
     public function getNextDocNumber(): int
     {
         $allowed = [
@@ -123,64 +132,108 @@ enum CompanySettingsEnum: string
         ];
 
         if (in_array($this, $allowed) === false) {
-            throw new \Exception($this . ' setting is not allowed to get the next number');
+            throw new \Exception($this.' setting is not allowed to get the next number');
         }
 
-        $number = auth()->user()->company->settings()
-            ->get(
-                $this->value,
-                0
+        $company = auth()->user()->company;
+
+        $format = $company->settings()->get(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
+            'ym000'
+        ) ?? 'ym000';
+
+        $currentPeriod = $this->getCurrentPeriod($format);
+
+        $storedPeriod = $company->settings()->get(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST_PERIOD->value
+        );
+
+        if ($storedPeriod !== $currentPeriod) {
+            $number = 1;
+
+            $company->settings()->set($this->value, $number);
+
+            $company->settings()->set(
+                CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST_PERIOD->value,
+                $currentPeriod
             );
+        } else {
+            $number = $company->settings()->get($this->value, 0);
+            $number++;
 
-        $number++;
-
-        auth()->user()->company->settings()
-            ->set(
-                $this->value,
-                $number
-            );
-
+            $company->settings()->set($this->value, $number);
+        }
 
         return $number;
     }
 
-    private function formatDocNumer(string $number): string
+    /**
+     * Renders a format mask into a document number string.
+     * Replaces recognised date tokens with current date values and
+     * zero-padding sequences with the left-padded sequential number.
+     */
+    public static function applyFormat(string $format, int $number): string
     {
-        $result = 'ym000';
-
-        $setting = str_replace('LAST', 'FORMAT', $this->name);
-
-        if (auth()->user()) {
-            $result = auth()->user()->company->settings()
-                ->get(
-                    $setting,
-                    'ym000'
-                );
-        }
-
-        $zeros = Str::substrCount($result, '0');
-
         $datePatterns = ['y', 'Y', 'm', 'M', 'd'];
+        $zeros = Str::substrCount($format, '0');
 
-        foreach ($datePatterns as $pattern) {
-            if (Str::contains($result, $pattern)) {
-                $replace = Carbon::now()->format($pattern);
-                $result = str_replace($pattern, $replace, $result);
+        $result = '';
+        foreach (str_split($format) as $char) {
+            if (in_array($char, $datePatterns)) {
+                $result .= Carbon::now()->format($char);
+            } else {
+                $result .= $char;
             }
         }
 
-        $formatedNumber = str_pad($number, $zeros, '0', STR_PAD_LEFT);
+        $formatedNumber = str_pad((string) $number, $zeros, '0', STR_PAD_LEFT);
 
-        $result = str_replace(
+        return str_replace(
             str_pad('', $zeros, '0', STR_PAD_LEFT),
             $formatedNumber,
             $result
         );
-
-        return $result;
     }
 
-    public function getNextDocNumberFormated()
+    private function formatDocNumer(string $number): string
+    {
+        $format = 'ym000';
+
+        if (auth()->user()) {
+            $format = auth()->user()->company->settings()
+                ->get(
+                    CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
+                    'ym000'
+                ) ?? 'ym000';
+        }
+
+        return self::applyFormat($format, (int) $number);
+    }
+
+    /**
+     * Derives the current period string from the format mask by extracting
+     * and formatting only the recognised date tokens (y, Y, m, M, d).
+     *
+     * Examples:
+     * - 'ym000'  → extracts 'y', 'm'  → '2604' (monthly)
+     * - 'Y000'   → extracts 'Y'       → '2026' (yearly)
+     * - 'Y-m-000'→ extracts 'Y', 'm'  → '202603' (monthly, safe with separators)
+     */
+    private function getCurrentPeriod(string $format): string
+    {
+        $datePatterns = ['y', 'Y', 'm', 'M', 'd'];
+        $period = '';
+
+        foreach (str_split($format) as $char) {
+            if (in_array($char, $datePatterns)) {
+                $period .= Carbon::now()->format($char);
+            }
+        }
+
+        return $period;
+    }
+
+    public function getNextDocNumberFormated(): string
     {
         $number = $this->getNextDocNumber();
 
