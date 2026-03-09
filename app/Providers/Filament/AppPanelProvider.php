@@ -4,13 +4,13 @@ namespace App\Providers\Filament;
 
 use App\Enums\MenuGroupsEnum;
 use App\Filament\App\Pages\Dashboard;
+use App\Helpers\PejotaHelper;
 use App\Http\Middleware\LocalizationMiddleware;
 use App\Http\Middleware\TenantMiddleware;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationGroup;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -48,7 +48,7 @@ class AppPanelProvider extends PanelProvider
             ->sidebarWidth('15rem;')
             ->renderHook(
                 PanelsRenderHook::FOOTER,
-                fn(): string => ' <div class="inline footer-contacts text-gray-400 text-center max-w-full">
+                fn (): string => ' <div class="inline footer-contacts text-gray-400 text-center max-w-full">
                         By
                         <a href="https://mazer.dev" target="_blank"
                         >
@@ -64,12 +64,14 @@ class AppPanelProvider extends PanelProvider
                         >
                            Github
                         </a>
+                        <br />
+                        <span class="text-xs">v'.PejotaHelper::getVersion().'</span>
 
                 </div>'
             )
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
-                fn() => Blade::render('@livewire(\'work-sessions-top-nav\')')
+                fn () => Blade::render('@livewire(\'work-sessions-top-nav\')')
             )
             ->maxContentWidth(MaxWidth::Full)
             ->sidebarCollapsibleOnDesktop()
@@ -81,13 +83,13 @@ class AppPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([])
             ->navigationGroups([
-                NavigationGroup::make(fn() => __(MenuGroupsEnum::DAILY_WORK->value))
+                NavigationGroup::make(fn () => __(MenuGroupsEnum::DAILY_WORK->value))
                     ->icon('heroicon-o-inbox-stack'),
-                NavigationGroup::make(fn() => __(MenuGroupsEnum::FINANCE->value))
+                NavigationGroup::make(fn () => __(MenuGroupsEnum::FINANCE->value))
                     ->icon('heroicon-o-currency-dollar'),
-                NavigationGroup::make(fn() => __(MenuGroupsEnum::ADMINISTRATION->value))
+                NavigationGroup::make(fn () => __(MenuGroupsEnum::ADMINISTRATION->value))
                     ->icon('heroicon-o-briefcase'),
-                NavigationGroup::make(fn() => __(MenuGroupsEnum::SETTINGS->value))
+                NavigationGroup::make(fn () => __(MenuGroupsEnum::SETTINGS->value))
                     ->icon('heroicon-o-cog-6-tooth')
                     ->collapsed(),
             ])
