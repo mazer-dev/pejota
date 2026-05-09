@@ -3,7 +3,6 @@
 namespace App\Filament\App\Resources\TagResource\Pages;
 
 use App\Filament\App\Resources\TagResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListTags extends ListRecords

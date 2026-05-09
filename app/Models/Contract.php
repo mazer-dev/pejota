@@ -6,7 +6,6 @@ use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Contract extends Model
 {
@@ -28,15 +27,18 @@ class Contract extends Model
         'total' => MoneyCast::class,
     ];
 
-    public function client(): BelongsTo {
+    public function client(): BelongsTo
+    {
         return $this->belongsTo(Client::class);
     }
 
-    public function vendor(): BelongsTo {
+    public function vendor(): BelongsTo
+    {
         return $this->belongsTo(Vendor::class);
     }
 
-    public function project(): BelongsTo {
+    public function project(): BelongsTo
+    {
         return $this->belongsTo(Project::class);
     }
 

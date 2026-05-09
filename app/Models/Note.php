@@ -16,10 +16,6 @@ class Note extends Model
 
     protected $guarded = ['id'];
 
-    protected $casts = [
-        'content' => 'array',
-    ];
-
     protected static function boot()
     {
         parent::boot();
@@ -42,5 +38,12 @@ class Note extends Model
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'content' => 'array',
+        ];
     }
 }

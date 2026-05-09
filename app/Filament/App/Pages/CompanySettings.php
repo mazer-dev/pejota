@@ -6,9 +6,16 @@ use App\Enums\CompanySettingsEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Filament\App\Resources\TaskResource;
 use Filament\Actions\Action;
-use Filament\Forms;
 use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\HtmlString;
 use Quadrubo\FilamentModelSettings\Pages\Contracts\HasModelSettings;
@@ -51,40 +58,40 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
         return $form
             ->columns(1)
             ->schema([
-                Forms\Components\Tabs::make('Tabs')->tabs([
-                    Forms\Components\Tabs\Tab::make('Localization')
+                Tabs::make('Tabs')->tabs([
+                    Tab::make('Localization')
                         ->translateLabel()
                         ->schema([
-                            Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_LOCALE->value)
+                            Select::make(CompanySettingsEnum::LOCALIZATION_LOCALE->value)
                                 ->translateLabel()
                                 ->label('Locale')
                                 ->options(CompanySettingsEnum::getLocales())
                                 ->default('en'),
 
-                            Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value)
+                            Select::make(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value)
                                 ->translateLabel()
                                 ->label('Timezone')
                                 ->options(CompanySettingsEnum::getTimezones())
                                 ->default('UTC')
                                 ->searchable(),
 
-                            Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value)
+                            Select::make(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value)
                                 ->translateLabel()
                                 ->label('Date format')
                                 ->options(CompanySettingsEnum::getDateFormats())
                                 ->default('d/m/Y'),
 
-                            Forms\Components\Select::make(CompanySettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value)
+                            Select::make(CompanySettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value)
                                 ->translateLabel()
                                 ->label('Date and time format')
                                 ->options(CompanySettingsEnum::getDateTimeFormats())
                                 ->default('d/m/Y H:i:s'),
                         ]),
 
-                    Forms\Components\Tabs\Tab::make('Clients')
+                    Tab::make('Clients')
                         ->translateLabel()
                         ->schema([
-                            Forms\Components\Checkbox::make(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
+                            Checkbox::make(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
                                 ->translateLabel()
                                 ->helperText(
                                     __(
@@ -94,10 +101,10 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->default(false),
                         ]),
 
-                    Forms\Components\Tabs\Tab::make('Vendors')
+                    Tab::make('Vendors')
                         ->translateLabel()
                         ->schema([
-                            Forms\Components\Checkbox::make(CompanySettingsEnum::VENDOR_PREFER_TRADENAME->value)
+                            Checkbox::make(CompanySettingsEnum::VENDOR_PREFER_TRADENAME->value)
                                 ->translateLabel()
                                 ->helperText(
                                     __(
@@ -107,10 +114,10 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->default(false),
                         ]),
 
-                    Forms\Components\Tabs\Tab::make('Tasks')
+                    Tab::make('Tasks')
                         ->translateLabel()
                         ->schema([
-                            Forms\Components\Checkbox::make(
+                            Checkbox::make(
                                 CompanySettingsEnum::TASKS_FILL_ACTUAL_START_DATE_WHEN_IN_PROGRESS->value
                             )
                                 ->translateLabel()
@@ -120,7 +127,7 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                     )
                                 )
                                 ->default(false),
-                            Forms\Components\Checkbox::make(
+                            Checkbox::make(
                                 CompanySettingsEnum::TASKS_FILL_ACTUAL_END_DATE_WHEN_CLOSED->value
                             )
                                 ->translateLabel()
@@ -131,7 +138,7 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 )
                                 ->default(false),
 
-                            Forms\Components\CheckboxList::make(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value)
+                            CheckboxList::make(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value)
                                 ->translateLabel()
                                 ->options(
                                     collect(TaskResource::getTableColumns())
@@ -144,10 +151,10 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->columns(2),
                         ]),
 
-                    Forms\Components\Tabs\Tab::make('Finance')
+                    Tab::make('Finance')
                         ->translateLabel()
                         ->schema([
-                            Forms\Components\Select::make(CompanySettingsEnum::FINANCE_CURRENCY->value)
+                            Select::make(CompanySettingsEnum::FINANCE_CURRENCY->value)
                                 ->translateLabel()
                                 ->helperText(__('Set the default currency for the company.'))
                                 ->default('USD')
@@ -156,10 +163,10 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ]),
                         ]),
 
-                    Forms\Components\Tabs\Tab::make('Invoices')
+                    Tab::make('Invoices')
                         ->translateLabel()
                         ->schema([
-                            Forms\Components\TextInput::make(CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value)
+                            TextInput::make(CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value)
                                 ->translateLabel()
                                 ->default(fn () => 'ym000')
                                 ->live()
@@ -202,9 +209,9 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                         ->modalSubmitAction(false)
                                         ->modalCancelActionLabel(__('Close'))
                                 ),
-                            Forms\Components\Placeholder::make('format_preview')
+                            Placeholder::make('format_preview')
                                 ->label(__('Preview'))
-                                ->content(function (Forms\Get $get): string {
+                                ->content(function (Get $get): string {
                                     $format = $get(CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value);
                                     if (empty($format)) {
                                         return '—';

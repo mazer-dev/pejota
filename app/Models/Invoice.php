@@ -14,23 +14,14 @@ use Spatie\Tags\HasTags;
 
 class Invoice extends Model
 {
-    use HasFactory, BelongsToTenants, HasTags;
+    use BelongsToTenants, HasFactory, HasTags;
 
     protected $guarded = ['id'];
-
-    protected $casts = [
-        'due_date' => 'date:Y-m-d',
-        'payment_date' => 'date:Y-m-d',
-        'total' => MoneyCast::class,
-        'discount' => MoneyCast::class,
-        'status' => InvoiceStatusEnum::class,
-    ];
 
     protected function isOverdue(): Attribute
     {
         return Attribute::make(
-            get: fn() =>
-                $this->due_date->isPast() && $this->status != InvoiceStatusEnum::PAID,
+            get: fn () => $this->due_date->isPast() && $this->status != InvoiceStatusEnum::PAID,
         );
     }
 
@@ -38,6 +29,7 @@ class Invoice extends Model
     {
         return $this->belongsTo(Company::class);
     }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
@@ -56,5 +48,16 @@ class Invoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'due_date' => 'date:Y-m-d',
+            'payment_date' => 'date:Y-m-d',
+            'total' => MoneyCast::class,
+            'discount' => MoneyCast::class,
+            'status' => InvoiceStatusEnum::class,
+        ];
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Filament\App\Resources\WorkSessionResource\Pages;
 
 use App\Filament\App\Resources\WorkSessionResource;
-use Filament\Actions;
+use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -14,7 +14,7 @@ class ViewWorkSession extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            EditAction::make(),
         ];
     }
 

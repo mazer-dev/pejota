@@ -4,7 +4,7 @@ namespace App\Filament\App\Resources\TaskResource\Pages;
 
 use App\Filament\App\Resources\TaskResource;
 use App\Models\Task;
-use Filament\Actions;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Colors\Color;
@@ -18,7 +18,7 @@ class ListTasks extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 

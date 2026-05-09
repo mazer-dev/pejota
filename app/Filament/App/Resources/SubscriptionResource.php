@@ -5,18 +5,31 @@ namespace App\Filament\App\Resources;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\SubscriptionBillingPeriodEnum;
 use App\Enums\SubscriptionStatusEnum;
-use App\Filament\App\Resources\SubscriptionResource\Pages;
-use App\Filament\App\Resources\SubscriptionResource\RelationManagers;
+use App\Filament\App\Resources\SubscriptionResource\Pages\CreateSubscription;
+use App\Filament\App\Resources\SubscriptionResource\Pages\EditSubscription;
+use App\Filament\App\Resources\SubscriptionResource\Pages\ListSubscriptions;
+use App\Filament\App\Resources\SubscriptionResource\Pages\ViewSubscription;
 use App\Helpers\PejotaHelper;
 use App\Models\Subscription;
-use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\Summarizers\Summarizer;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Query\Builder;
 
 class SubscriptionResource extends Resource
 {
@@ -38,46 +51,46 @@ class SubscriptionResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Grid::make([
+                Grid::make([
                     'default' => 2,
                 ])->schema([
-                    Forms\Components\TextInput::make('service')
+                    TextInput::make('service')
                         ->columnSpan(2)
                         ->translateLabel()
                         ->required(),
-                    Forms\Components\TextInput::make('price')
+                    TextInput::make('price')
                         ->translateLabel()
                         ->required()
                         ->numeric()
                         ->prefix('$'),
-                    Forms\Components\TextInput::make('currency')
+                    TextInput::make('currency')
                         ->translateLabel()
                         ->required(),
-                    Forms\Components\TextInput::make('payment_method')
+                    TextInput::make('payment_method')
                         ->translateLabel()
                         ->required(),
-                    Forms\Components\TextInput::make('payment_info')
+                    TextInput::make('payment_info')
                         ->label('Payment extra-info')
                         ->translateLabel(),
-                    Forms\Components\Select::make('status')
+                    Select::make('status')
                         ->options(SubscriptionStatusEnum::class)
                         ->translateLabel()
                         ->required(),
-                    Forms\Components\Select::make('billing_period')
+                    Select::make('billing_period')
                         ->options(SubscriptionBillingPeriodEnum::class)
                         ->translateLabel()
                         ->required(),
-                    Forms\Components\DatePicker::make('trial_ends_at')
+                    DatePicker::make('trial_ends_at')
                         ->translateLabel()
-                        ->required(fn(Forms\Get $get) => $get('status') == SubscriptionStatusEnum::TRIAL->value),
-                    Forms\Components\DatePicker::make('canceled_at')
+                        ->required(fn (Get $get) => $get('status') == SubscriptionStatusEnum::TRIAL->value),
+                    DatePicker::make('canceled_at')
                         ->translateLabel()
-                        ->required(fn(Forms\Get $get) => $get('status') == SubscriptionStatusEnum::CANCELED->value),
-                    Forms\Components\Textarea::make('obs')
+                        ->required(fn (Get $get) => $get('status') == SubscriptionStatusEnum::CANCELED->value),
+                    Textarea::make('obs')
                         ->translateLabel()
                         ->columnSpanFull()
                         ->rows(6),
-                ])
+                ]),
             ]);
     }
 
@@ -86,58 +99,58 @@ class SubscriptionResource extends Resource
         return $table
             ->striped()
             ->columns([
-                Tables\Columns\TextColumn::make('service')
+                TextColumn::make('service')
                     ->translateLabel()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->translateLabel()
                     ->searchable()
-                    ->icon(fn($state) => SubscriptionStatusEnum::from($state)->getIcon())
-                    ->color(fn($state) => SubscriptionStatusEnum::from($state)->getColor())
-                    ->tooltip(fn($state) => SubscriptionStatusEnum::from($state)->getLabel()),
-                Tables\Columns\TextColumn::make('price')
+                    ->icon(fn ($state) => SubscriptionStatusEnum::from($state)->getIcon())
+                    ->color(fn ($state) => SubscriptionStatusEnum::from($state)->getColor())
+                    ->tooltip(fn ($state) => SubscriptionStatusEnum::from($state)->getLabel()),
+                TextColumn::make('price')
                     ->translateLabel()
                     ->money()
                     ->sortable()
                     ->summarize([
-                        Tables\Columns\Summarizers\Summarizer::make()
-                            ->using(fn(\Illuminate\Database\Query\Builder $query) => $query->sum('price') / 100)
+                        Summarizer::make()
+                            ->using(fn (Builder $query) => $query->sum('price') / 100)
                             ->money(),
                     ]),
-                Tables\Columns\TextColumn::make('currency')
+                TextColumn::make('currency')
                     ->translateLabel()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('payment_method')
+                TextColumn::make('payment_method')
                     ->translateLabel()
                     ->wrapHeader()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('payment_info')
+                TextColumn::make('payment_info')
                     ->label('Payment extra-info')
                     ->translateLabel()
                     ->wrapHeader()
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('billing_period')
+                TextColumn::make('billing_period')
                     ->translateLabel()
                     ->wrapHeader()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('trial_ends_at')
+                TextColumn::make('trial_ends_at')
                     ->translateLabel()
                     ->wrapHeader()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('canceled_at')
+                TextColumn::make('canceled_at')
                     ->translateLabel()
                     ->wrapHeader()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -146,21 +159,21 @@ class SubscriptionResource extends Resource
                 //
             ])
             ->defaultGroup(
-                Tables\Grouping\Group::make('billing_period')
+                Group::make('billing_period')
                     ->label(__('Billing period'))
                     ->getTitleFromRecordUsing(
-                        fn(Model $record) => SubscriptionBillingPeriodEnum::from($record->billing_period)->getLabel()
+                        fn (Model $record) => SubscriptionBillingPeriodEnum::from($record->billing_period)->getLabel()
                     )
             )
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -175,10 +188,10 @@ class SubscriptionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSubscriptions::route('/'),
-            'create' => Pages\CreateSubscription::route('/create'),
-            'view' => Pages\ViewSubscription::route('/{record}'),
-            'edit' => Pages\EditSubscription::route('/{record}/edit'),
+            'index' => ListSubscriptions::route('/'),
+            'create' => CreateSubscription::route('/create'),
+            'view' => ViewSubscription::route('/{record}'),
+            'edit' => EditSubscription::route('/{record}/edit'),
         ];
     }
 }

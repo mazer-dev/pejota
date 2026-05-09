@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+use DateTime;
+use DateTimeZone;
+use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -41,23 +44,23 @@ enum CompanySettingsEnum: string
     public static function getTimezones(): array
     {
         $regions = [
-            'Africa' => \DateTimeZone::AFRICA,
-            'America' => \DateTimeZone::AMERICA,
-            'Antarctica' => \DateTimeZone::ANTARCTICA,
-            'Aisa' => \DateTimeZone::ASIA,
-            'Atlantic' => \DateTimeZone::ATLANTIC,
-            'Europe' => \DateTimeZone::EUROPE,
-            'Indian' => \DateTimeZone::INDIAN,
-            'Pacific' => \DateTimeZone::PACIFIC,
+            'Africa' => DateTimeZone::AFRICA,
+            'America' => DateTimeZone::AMERICA,
+            'Antarctica' => DateTimeZone::ANTARCTICA,
+            'Aisa' => DateTimeZone::ASIA,
+            'Atlantic' => DateTimeZone::ATLANTIC,
+            'Europe' => DateTimeZone::EUROPE,
+            'Indian' => DateTimeZone::INDIAN,
+            'Pacific' => DateTimeZone::PACIFIC,
         ];
 
         $timezones = [];
         foreach ($regions as $name => $mask) {
-            $zones = \DateTimeZone::listIdentifiers($mask);
+            $zones = DateTimeZone::listIdentifiers($mask);
             foreach ($zones as $timezone) {
                 // Lets sample the time there right now
-                $time = new \DateTime(null, new \DateTimeZone($timezone));
-                $utcTime = new \DateTime(null, new \DateTimeZone('UTC'));
+                $time = new DateTime(null, new DateTimeZone($timezone));
+                $utcTime = new DateTime(null, new DateTimeZone('UTC'));
 
                 // Us Americans can't handle millitary time
                 $ampm = $time->format('H') > 12 ? ' ('.$time->format('g:i a').')' : '';
@@ -132,7 +135,7 @@ enum CompanySettingsEnum: string
         ];
 
         if (in_array($this, $allowed) === false) {
-            throw new \Exception($this.' setting is not allowed to get the next number');
+            throw new Exception($this.' setting is not allowed to get the next number');
         }
 
         $company = auth()->user()->company;

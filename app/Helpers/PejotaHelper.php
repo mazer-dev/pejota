@@ -3,7 +3,9 @@
 namespace App\Helpers;
 
 use App\Enums\CompanySettingsEnum;
+use DateTime;
 use Detection\MobileDetect;
+use Exception;
 
 class PejotaHelper
 {
@@ -77,14 +79,14 @@ class PejotaHelper
 
             if ($timestamp) {
                 // Convert "YYYY-MM-DD HH:MM:SS" to "YYMMDD.hhmm"
-                $dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', substr($timestamp, 0, 19));
+                $dateTime = DateTime::createFromFormat('Y-m-d H:i:s', substr($timestamp, 0, 19));
                 if ($dateTime) {
                     return $version.' ('.($dateTime->format('ymd').'.'.($dateTime->format('Hi'))).')';
                 }
             }
 
             return $version;
-        } catch (\Exception) {
+        } catch (Exception) {
             return 'unknown';
         }
     }

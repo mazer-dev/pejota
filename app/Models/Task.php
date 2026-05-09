@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\StatusPhaseEnum;
 use App\Helpers\PejotaHelper;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use NunoMazer\Samehouse\BelongsToTenants;
 use Parallax\FilamentComments\Models\Traits\HasFilamentComments;
 use Spatie\Activitylog\LogOptions;
@@ -25,14 +27,14 @@ use Spatie\Tags\HasTags;
  * @property int|null $project_id
  * @property int $status_id
  * @property int|null $parent_id
- * @property \Illuminate\Support\Carbon|null $planned_start
- * @property \Illuminate\Support\Carbon|null $planned_end
- * @property \Illuminate\Support\Carbon|null $actual_start
- * @property \Illuminate\Support\Carbon|null $actual_end
- * @property \Illuminate\Support\Carbon|null $due_date
+ * @property Carbon|null $planned_start
+ * @property Carbon|null $planned_end
+ * @property Carbon|null $actual_start
+ * @property Carbon|null $actual_end
+ * @property Carbon|null $due_date
  * @property array|null $checklist
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class Task extends Model
 {
@@ -47,15 +49,6 @@ class Task extends Model
     public const LOG_EVENT_STATUS_CHANGED = 'status_changed';
 
     protected $guarded = ['id'];
-
-    protected $casts = [
-        'planned_start' => 'date',
-        'planned_end' => 'date',
-        'actual_start' => 'date',
-        'actual_end' => 'date',
-        'due_date' => 'date',
-        'checklist' => 'array',
-    ];
 
     protected static function boot()
     {
@@ -131,14 +124,16 @@ class Task extends Model
             ->logOnlyDirty();
     }
 
-    public function scopeByProject(Builder $query, Project|int|null $project)
+    #[Scope]
+    protected function byProject(Builder $query, Project|int|null $project)
     {
         if ($project) {
             $query->where('project_id', $project);
         }
     }
 
-    public function scopeOpened(Builder $query)
+    #[Scope]
+    protected function opened(Builder $query)
     {
         $query->whereHas('status', function (Builder $query) {
             $query->whereIn('phase', [
@@ -148,7 +143,8 @@ class Task extends Model
         });
     }
 
-    public function scopeClosed(Builder $query)
+    #[Scope]
+    protected function closed(Builder $query)
     {
         $query->whereHas('status', function (Builder $query) {
             $query->whereIn('phase', [
@@ -160,11 +156,9 @@ class Task extends Model
     /**
      * Postpones the specified field by the given interval.
      *
-     * @param string $field The name of the field to be postponed.
-     * @param string $interval The interval by which the field should be postponed.
-     * @param bool $fromNow Whether to postpone from now or from the current value of the field.
-     *
-     * @return void
+     * @param  string  $field  The name of the field to be postponed.
+     * @param  string  $interval  The interval by which the field should be postponed.
+     * @param  bool  $fromNow  Whether to postpone from now or from the current value of the field.
      */
     public function postpone(string $field, string $interval, bool $fromNow = true): void
     {
@@ -174,7 +168,7 @@ class Task extends Model
                 $this->{$field} = $now->format('Y-m-d');
             } else {
                 if (in_array($field, ['planned_end', 'due_date'])) {
-                    if (!$this->{$field} || $this->{$field}->startOfDay()->lte($now->startOfDay())) {
+                    if (! $this->{$field} || $this->{$field}->startOfDay()->lte($now->startOfDay())) {
                         $nextDate = $now->copy()->add($interval);
                     } else {
                         $nextDate = $this->{$field}->copy()->add($interval);
@@ -187,5 +181,17 @@ class Task extends Model
             }
             $this->save();
         }
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'planned_start' => 'date',
+            'planned_end' => 'date',
+            'actual_start' => 'date',
+            'actual_end' => 'date',
+            'due_date' => 'date',
+            'checklist' => 'array',
+        ];
     }
 }

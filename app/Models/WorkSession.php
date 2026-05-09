@@ -15,13 +15,6 @@ class WorkSession extends Model
 
     protected $guarded = ['id'];
 
-    protected $casts = [
-        'start' => 'datetime',
-        'end' => 'datetime',
-        'rate' => MoneyCast::class,
-        'is_running' => 'boolean',
-    ];
-
     protected static function boot()
     {
         parent::boot();
@@ -55,8 +48,6 @@ class WorkSession extends Model
 
     /**
      * Finish the WorkSession that is running
-     *
-     * @return bool
      */
     public function finish(): bool
     {
@@ -72,5 +63,15 @@ class WorkSession extends Model
         }
 
         return false;
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'start' => 'datetime',
+            'end' => 'datetime',
+            'rate' => MoneyCast::class,
+            'is_running' => 'boolean',
+        ];
     }
 }

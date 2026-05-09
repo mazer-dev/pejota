@@ -4,10 +4,11 @@ namespace App\Filament\App\Resources\TagResource\RelationManagers;
 
 use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Models\Project;
-use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,7 +20,7 @@ class ProjectsRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->translateLabel()
                     ->required()
                     ->maxLength(255),
@@ -31,7 +32,7 @@ class ProjectsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('name')
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->translateLabel()
                     ->searchable()
                     ->sortable(),
@@ -41,7 +42,7 @@ class ProjectsRelationManager extends RelationManager
             ])
             ->headerActions([])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->url(fn (Project $record) => ViewProject::getUrl([$record])),
             ])
             ->bulkActions([]);

@@ -3,13 +3,24 @@
 namespace App\Filament\App\Resources;
 
 use App\Enums\StatusPhaseEnum;
-use App\Filament\App\Resources\StatusResource\Pages;
+use App\Filament\App\Resources\StatusResource\Pages\CreateStatus;
+use App\Filament\App\Resources\StatusResource\Pages\EditStatus;
+use App\Filament\App\Resources\StatusResource\Pages\ListStatuses;
 use App\Helpers\PejotaHelper;
 use App\Models\Status;
-use Filament\Forms;
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Columns\ColorColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class StatusResource extends Resource
@@ -27,28 +38,28 @@ class StatusResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->translateLabel()
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('description')
+                TextInput::make('description')
                     ->translateLabel()
                     ->columnSpanFull(),
-                Forms\Components\Grid::make(4)->schema([
-                    Forms\Components\ColorPicker::make('color')
+                Grid::make(4)->schema([
+                    ColorPicker::make('color')
                         ->translateLabel()
                         ->default('#6abeed')
                         ->required(),
-                    Forms\Components\TextInput::make('sort_order')
+                    TextInput::make('sort_order')
                         ->translateLabel()
                         ->required()
                         ->numeric()
                         ->default(0),
-                    Forms\Components\Select::make('phase')
+                    Select::make('phase')
                         ->translateLabel()
                         ->options(StatusPhaseEnum::class)
                         ->required(),
-                    Forms\Components\Toggle::make('active')
+                    Toggle::make('active')
                         ->translateLabel()
                         ->required()
                         ->default(true),
@@ -61,29 +72,29 @@ class StatusResource extends Resource
         return $table
             ->striped()
             ->columns([
-                Tables\Columns\TextColumn::make('sort_order')
+                TextColumn::make('sort_order')
                     ->label('Order')
                     ->translateLabel()
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->translateLabel()
                     ->searchable(),
-                Tables\Columns\ColorColumn::make('color')
+                ColorColumn::make('color')
                     ->translateLabel(),
-                Tables\Columns\TextColumn::make('phase')
+                TextColumn::make('phase')
                     ->translateLabel()
                     ->searchable(),
-                Tables\Columns\IconColumn::make('active')
+                IconColumn::make('active')
                     ->translateLabel()
                     ->boolean(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
@@ -94,11 +105,11 @@ class StatusResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -113,9 +124,9 @@ class StatusResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListStatuses::route('/'),
-            'create' => Pages\CreateStatus::route('/create'),
-            'edit' => Pages\EditStatus::route('/{record}/edit'),
+            'index' => ListStatuses::route('/'),
+            'create' => CreateStatus::route('/create'),
+            'edit' => EditStatus::route('/{record}/edit'),
         ];
     }
 }

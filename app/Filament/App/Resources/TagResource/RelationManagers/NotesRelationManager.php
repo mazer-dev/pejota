@@ -3,10 +3,11 @@
 namespace App\Filament\App\Resources\TagResource\RelationManagers;
 
 use App\Filament\App\Resources\NoteResource;
+use App\Filament\App\Resources\NoteResource\Pages\ViewNote;
 use App\Models\Note;
 use Filament\Infolists\Infolist;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,10 +25,10 @@ class NotesRelationManager extends RelationManager
         $table = NoteResource::table($table);
 
         $table->getColumn('title')
-            ->url(fn (Note $record) => NoteResource\Pages\ViewNote::getUrl([$record]));
+            ->url(fn (Note $record) => ViewNote::getUrl([$record]));
 
         $table->actions([
-            Tables\Actions\ViewAction::make()->url(fn (Note $record) => NoteResource\Pages\ViewNote::getUrl([$record])),
+            ViewAction::make()->url(fn (Note $record) => ViewNote::getUrl([$record])),
         ]);
 
         return $table;

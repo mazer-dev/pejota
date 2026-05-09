@@ -4,10 +4,11 @@ namespace App\Filament\App\Resources\TagResource\RelationManagers;
 
 use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
 use App\Models\Task;
-use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,7 +20,7 @@ class TasksRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title')
+                TextInput::make('title')
                     ->required()
                     ->maxLength(255),
             ]);
@@ -30,12 +31,12 @@ class TasksRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('title')
             ->columns([
-                Tables\Columns\TextColumn::make('title')
+                TextColumn::make('title')
                     ->translateLabel()
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('status.name'),
+                TextColumn::make('status.name'),
             ])
             ->filters([
                 //
@@ -44,7 +45,7 @@ class TasksRelationManager extends RelationManager
                 //                Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->url(fn (Task $record) => ViewTask::getUrl([$record])),
             ])
             ->bulkActions([

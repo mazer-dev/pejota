@@ -3,7 +3,9 @@
 namespace App\Livewire;
 
 use App\Filament\App\Resources\NoteResource;
+use App\Filament\App\Resources\NoteResource\Pages\CreateNote;
 use App\Filament\App\Resources\TaskResource;
+use App\Filament\App\Resources\TaskResource\Pages\CreateTask;
 use App\Filament\App\Resources\WorkSessionResource;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use Filament\Actions\Action;
@@ -37,7 +39,7 @@ class TopNavigateAction extends Component implements HasActions
             ->label(__('Create Task'))
             ->icon(TaskResource::getNavigationIcon())
             ->url(
-                TaskResource\Pages\CreateTask::getUrl(panel: 'create')
+                CreateTask::getUrl(panel: 'create')
             );
     }
 
@@ -65,7 +67,7 @@ class TopNavigateAction extends Component implements HasActions
             ->icon(NoteResource::getNavigationIcon())
             ->color(Color::Cyan)
             ->url(
-                NoteResource\Pages\CreateNote::getUrl(panel: 'create')
+                CreateNote::getUrl(panel: 'create')
             );
     }
 

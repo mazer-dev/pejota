@@ -2,16 +2,21 @@
 
 namespace App\Filament\App\Resources;
 
-use App\Filament\App\Resources\UnitResource\Pages;
-use App\Filament\App\Resources\UnitResource\RelationManagers;
+use App\Filament\App\Resources\UnitResource\Pages\CreateUnit;
+use App\Filament\App\Resources\UnitResource\Pages\EditUnit;
+use App\Filament\App\Resources\UnitResource\Pages\ListUnits;
+use App\Filament\App\Resources\UnitResource\Pages\ViewUnit;
 use App\Models\Unit;
-use Filament\Forms;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UnitResource extends Resource
 {
@@ -33,14 +38,14 @@ class UnitResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->translateLabel()
                     ->required(),
-                Forms\Components\TextInput::make('symbol')
+                TextInput::make('symbol')
                     ->translateLabel()
                     ->required(),
 
-                Forms\Components\Textarea::make('description')
+                Textarea::make('description')
                     ->translateLabel()
                     ->rows(5)
                     ->columnSpanFull(),
@@ -52,15 +57,15 @@ class UnitResource extends Resource
         return $table
             ->striped()
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->translateLabel()
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('symbol')
+                TextColumn::make('symbol')
                     ->translateLabel()
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('description')
+                TextColumn::make('description')
                     ->translateLabel(),
             ])
             ->defaultSort('name')
@@ -68,12 +73,12 @@ class UnitResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -88,10 +93,10 @@ class UnitResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUnits::route('/'),
-            'create' => Pages\CreateUnit::route('/create'),
-            'view' => Pages\ViewUnit::route('/{record}'),
-            'edit' => Pages\EditUnit::route('/{record}/edit'),
+            'index' => ListUnits::route('/'),
+            'create' => CreateUnit::route('/create'),
+            'view' => ViewUnit::route('/{record}'),
+            'edit' => EditUnit::route('/{record}/edit'),
         ];
     }
 }

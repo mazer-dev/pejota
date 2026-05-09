@@ -4,10 +4,13 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
-use App\Filament\App\Resources\ClientResource\Pages;
+use App\Filament\App\Resources\ClientResource\Pages\CreateClient;
+use App\Filament\App\Resources\ClientResource\Pages\EditClient;
+use App\Filament\App\Resources\ClientResource\Pages\ListClients;
+use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
-use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
@@ -15,11 +18,16 @@ use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
@@ -58,26 +66,26 @@ class ClientResource extends Resource
             ->striped(true)
             ->defaultSort('name', 'asc')
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label(__('Name'))
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('tradename')
+                TextColumn::make('tradename')
                     ->label(__('Tradename'))
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('phone')
+                TextColumn::make('phone')
                     ->label(__('Phone'))
                     ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label(__('Created at'))
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->label(__('Updated at'))
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
@@ -88,15 +96,15 @@ class ClientResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->iconButton(),
                 CommentsAction::make()
                     ->iconButton(),
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -110,12 +118,12 @@ class ClientResource extends Resource
                         ->schema([
                             Section::make([
                                 TextEntry::make('name')
-                                    ->size(TextEntry\TextEntrySize::Large)
+                                    ->size(TextEntrySize::Large)
                                     ->weight(FontWeight::Bold)
                                     ->hiddenLabel(),
 
                                 TextEntry::make('tradename')
-                                    ->size(TextEntry\TextEntrySize::Large)
+                                    ->size(TextEntrySize::Large)
                                     ->hiddenLabel()
                                     ->icon('heroicon-o-bookmark-square'),
 
@@ -151,14 +159,14 @@ class ClientResource extends Resource
                             Action::make('edit')
                                 ->translateLabel()
                                 ->url(
-                                    fn(Model $record) => "{$record->id}/edit"
+                                    fn (Model $record) => "{$record->id}/edit"
                                 )
                                 ->icon('heroicon-o-pencil'),
 
                             Action::make('back')
                                 ->translateLabel()
                                 ->url(
-                                    fn(Model $record) => './.'
+                                    fn (Model $record) => './.'
                                 )
                                 ->icon('heroicon-o-chevron-left')
                                 ->color(Color::Neutral),
@@ -182,25 +190,25 @@ class ClientResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListClients::route('/'),
-            'create' => Pages\CreateClient::route('/create'),
-            'view' => Pages\ViewClient::route('/{record}'),
-            'edit' => Pages\EditClient::route('/{record}/edit'),
+            'index' => ListClients::route('/'),
+            'create' => CreateClient::route('/create'),
+            'view' => ViewClient::route('/{record}'),
+            'edit' => EditClient::route('/{record}/edit'),
         ];
     }
 
     public static function getSchema()
     {
         return [
-            Forms\Components\TextInput::make('name')
+            TextInput::make('name')
                 ->label(__('Name'))
                 ->required(),
-            Forms\Components\TextInput::make('tradename')
+            TextInput::make('tradename')
                 ->label(__('Tradename')),
-            Forms\Components\TextInput::make('email')
+            TextInput::make('email')
                 ->label(__('Email'))
                 ->email(),
-            Forms\Components\TextInput::make('phone')
+            TextInput::make('phone')
                 ->label(__('Phone'))
                 ->tel(),
         ];

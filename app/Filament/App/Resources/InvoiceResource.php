@@ -5,17 +5,34 @@ namespace App\Filament\App\Resources;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\MenuGroupsEnum;
-use App\Filament\App\Resources\InvoiceResource\Pages;
-use App\Filament\App\Resources\InvoiceResource\RelationManagers;
+use App\Filament\App\Resources\InvoiceResource\Pages\CreateInvoice;
+use App\Filament\App\Resources\InvoiceResource\Pages\EditInvoice;
+use App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices;
+use App\Filament\App\Resources\InvoiceResource\Pages\ViewInvoice;
 use App\Helpers\PejotaHelper;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Services\InvoiceService;
-use Filament\Forms;
+use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -41,71 +58,71 @@ class InvoiceResource extends Resource
         return $form
 //            ->columns(4)
             ->schema([
-                Forms\Components\Grid::make([
+                Grid::make([
                     'default' => 2,
                     'md' => 4,
                 ])->schema([
-                    Forms\Components\TextInput::make('number')
+                    TextInput::make('number')
                         ->translateLabel()
                         ->required()
                         ->default(fn () => CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumberFormated())
                         ->unique(ignorable: fn ($record) => $record?->isDirty('number') ? null : $record),
-                    Forms\Components\Select::make('status')
+                    Select::make('status')
                         ->options(InvoiceStatusEnum::class)
                         ->default(fn () => InvoiceStatusEnum::DRAFT)
                         ->required()
                         ->live()
                         ->afterStateUpdated(
-                            fn (Forms\Set $set, $state) => $state == InvoiceStatusEnum::PAID->value ? $set(
+                            fn (Set $set, $state) => $state == InvoiceStatusEnum::PAID->value ? $set(
                                 'payment_date',
                                 now()->format(PejotaHelper::getUserDateFormat())
                             ) : null
                         ),
-                    Forms\Components\DatePicker::make('due_date')
+                    DatePicker::make('due_date')
                         ->translateLabel()
                         ->date(),
-                    Forms\Components\DatePicker::make('payment_date')
+                    DatePicker::make('payment_date')
                         ->translateLabel()
                         ->date()
                         ->live()
-                        ->required(fn (Forms\Get $get) => $get('status') == InvoiceStatusEnum::PAID->value),
-                    Forms\Components\Select::make('client_id')
+                        ->required(fn (Get $get) => $get('status') == InvoiceStatusEnum::PAID->value),
+                    Select::make('client_id')
                         ->translateLabel()
                         ->required()
                         ->relationship('client', 'name')
                         ->searchable(),
-                    Forms\Components\Select::make('project_id')
+                    Select::make('project_id')
                         ->translateLabel()
                         ->relationship('project', 'name')
                         ->searchable(),
-                    Forms\Components\Select::make('contract_id')
+                    Select::make('contract_id')
                         ->translateLabel()
                         ->relationship('contract', 'title')
                         ->searchable(),
-                    Forms\Components\TextInput::make('title')
+                    TextInput::make('title')
                         ->translateLabel()
                         ->required()
                         ->columnSpan(2),
-                    Forms\Components\TextInput::make('discount')
+                    TextInput::make('discount')
                         ->translateLabel()
                         ->numeric()
                         ->live()
-                        ->afterStateUpdated(fn (Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)),
-                    Forms\Components\TextInput::make('total')
+                        ->afterStateUpdated(fn (Set $set, Get $get) => self::calcItemTotal($get, $set)),
+                    TextInput::make('total')
                         ->required()
                         ->numeric()
                         ->readOnly(),
-                    Forms\Components\Textarea::make('extra_info')
+                    Textarea::make('extra_info')
                         ->translateLabel()
                         ->columnSpan(2)
                         ->rows(3),
-                    Forms\Components\Textarea::make('obs_internal')
+                    Textarea::make('obs_internal')
                         ->label('Internal observations')
                         ->translateLabel()
                         ->columnSpan(2)
                         ->rows(3),
 
-                    Forms\Components\Repeater::make('items')
+                    Repeater::make('items')
                         ->relationship()
                         ->columnSpanFull()
                         ->columns([
@@ -113,7 +130,7 @@ class InvoiceResource extends Resource
                             'md' => 5,
                         ])
                         ->schema([
-                            Forms\Components\Select::make('product_id')
+                            Select::make('product_id')
                                 ->label('Reference product')
                                 ->translateLabel()
                                 ->relationship('product', 'name')
@@ -134,54 +151,54 @@ class InvoiceResource extends Resource
                                         }
                                     }
                                 }),
-                            Forms\Components\TextInput::make('name')
+                            TextInput::make('name')
                                 ->label('Description at invoice')
                                 ->translateLabel()
                                 ->columnSpan(3)
                                 ->required(),
-                            Forms\Components\Select::make('unit_id')
+                            Select::make('unit_id')
                                 ->translateLabel()
                                 ->relationship('unit', 'name')
                                 ->placeholder('Select')
                                 ->required()
                                 ->preload()
                                 ->searchable(),
-                            Forms\Components\TextInput::make('quantity')
+                            TextInput::make('quantity')
                                 ->translateLabel()
                                 ->required()
                                 ->numeric()
                                 ->live()
                                 ->afterStateUpdated(
-                                    fn (Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)
+                                    fn (Set $set, Get $get) => self::calcItemTotal($get, $set)
                                 ),
-                            Forms\Components\TextInput::make('price')
+                            TextInput::make('price')
                                 ->translateLabel()
                                 ->required()
                                 ->numeric()
                                 ->live()
                                 ->afterStateUpdated(
-                                    fn (Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)
+                                    fn (Set $set, Get $get) => self::calcItemTotal($get, $set)
                                 ),
-                            Forms\Components\TextInput::make('discount')
+                            TextInput::make('discount')
                                 ->translateLabel()
                                 ->numeric()
                                 ->live()
                                 ->afterStateUpdated(
-                                    fn (Forms\Set $set, Forms\Get $get) => self::calcItemTotal($get, $set)
+                                    fn (Set $set, Get $get) => self::calcItemTotal($get, $set)
                                 ),
-                            Forms\Components\TextInput::make('total')
+                            TextInput::make('total')
                                 ->translateLabel()
                                 ->required()
                                 ->numeric()
                                 ->readOnly(),
-                            Forms\Components\Textarea::make('obs')
+                            Textarea::make('obs')
                                 ->translateLabel()
                                 ->columnSpanFull(),
                         ])
-                        ->deleteAction(function (Forms\Components\Actions\Action $action) {
+                        ->deleteAction(function (Action $action) {
                             // call cal total after delete a row item of the repeater
                             return $action->after(
-                                fn (Forms\Set $set, Forms\Get $get) => self::calcInvoiceTotal($get, $set)
+                                fn (Set $set, Get $get) => self::calcInvoiceTotal($get, $set)
                             );
                         }),
                 ]),
@@ -194,11 +211,11 @@ class InvoiceResource extends Resource
             ->defaultSort('due_date')
             ->striped()
             ->columns([
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->translateLabel()
                     ->badge()
                     ->searchable(),
-                Tables\Columns\IconColumn::make('overdue_status')
+                IconColumn::make('overdue_status')
                     ->label('')
                     ->translateLabel()
                     ->wrapHeader()
@@ -213,49 +230,49 @@ class InvoiceResource extends Resource
                         default => null,
                     })
                     ->getStateUsing(fn ($record) => $record->is_overdue),
-                Tables\Columns\TextColumn::make('number')
+                TextColumn::make('number')
                     ->translateLabel()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('title')
+                TextColumn::make('title')
                     ->translateLabel()
                     ->wrap()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('client.name')
+                TextColumn::make('client.name')
                     ->translateLabel()
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('due_date')
+                TextColumn::make('due_date')
                     ->translateLabel()
                     ->wrapHeader()
                     ->alignCenter()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable(),
-                Tables\Columns\TextColumn::make('payment_date')
+                TextColumn::make('payment_date')
                     ->translateLabel()
                     ->wrapHeader()
                     ->alignCenter()
                     ->date(PejotaHelper::getUserDateFormat())
                     ->sortable(),
-                Tables\Columns\TextColumn::make('discount')
+                TextColumn::make('discount')
                     ->translateLabel()
                     ->numeric()
                     ->money()
                     ->alignEnd()
                     ->sortable()
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('total')
+                TextColumn::make('total')
                     ->translateLabel()
                     ->weight(FontWeight::Bold)
                     ->numeric()
                     ->money()
                     ->alignEnd()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->translateLabel()
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->translateLabel()
                     ->dateTime()
                     ->sortable()
@@ -265,9 +282,9 @@ class InvoiceResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
                     Tables\Actions\Action::make('pdf')
                         ->label('PDF')
                         ->color('info')
@@ -281,8 +298,8 @@ class InvoiceResource extends Resource
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -297,14 +314,14 @@ class InvoiceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListInvoices::route('/'),
-            'create' => Pages\CreateInvoice::route('/create'),
-            'view' => Pages\ViewInvoice::route('/{record}'),
-            'edit' => Pages\EditInvoice::route('/{record}/edit'),
+            'index' => ListInvoices::route('/'),
+            'create' => CreateInvoice::route('/create'),
+            'view' => ViewInvoice::route('/{record}'),
+            'edit' => EditInvoice::route('/{record}/edit'),
         ];
     }
 
-    public static function calcItemTotal(Forms\Get $get, Forms\Set $set)
+    public static function calcItemTotal(Get $get, Set $set)
     {
         $price = (float) str_replace(',', '.', $get('price'));
         $qty = (float) $get('quantity');
@@ -323,7 +340,7 @@ class InvoiceResource extends Resource
         self::calcInvoiceTotal($get, $set);
     }
 
-    public static function calcInvoiceTotal(Forms\Get $get, Forms\Set $set)
+    public static function calcInvoiceTotal(Get $get, Set $set)
     {
         $items = $get('../../items');
         $totalComponent = '../../total';

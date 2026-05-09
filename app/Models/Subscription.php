@@ -10,13 +10,16 @@ use Spatie\Tags\HasTags;
 
 class Subscription extends Model
 {
-    use HasFactory, BelongsToTenants, HasTags;
+    use BelongsToTenants, HasFactory, HasTags;
 
     protected $guarded = ['id'];
 
-    protected $casts = [
-        'trial_ends_at' => 'date',
-        'canceled_at' => 'date',
-        'price' => MoneyCast::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'trial_ends_at' => 'date',
+            'canceled_at' => 'date',
+            'price' => MoneyCast::class,
+        ];
+    }
 }

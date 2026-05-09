@@ -6,9 +6,6 @@ use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Models\Company;
 use Filament\Actions\Action;
-use Filament\Actions\Concerns\InteractsWithActions;
-use Filament\Actions\Contracts\HasActions;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -16,14 +13,15 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
+use Filament\Pages\Dashboard;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Js;
 
 class MyCompany extends Page implements HasForms
 {
-    use InteractsWithForms,
-        InteractsWithFormActions;
+    use InteractsWithFormActions,
+        InteractsWithForms;
 
     public ?array $data = [];
 
@@ -84,7 +82,7 @@ class MyCompany extends Page implements HasForms
                         '16:9',
                         '4:3',
                         '1:1',
-                    ])
+                    ]),
             ])
             ->statePath('data')
             ->model($this->company);
@@ -125,7 +123,7 @@ class MyCompany extends Page implements HasForms
     {
         return Action::make('cancel')
             ->label(__('filament-panels::resources/pages/edit-record.form.actions.cancel.label'))
-            ->alpineClickHandler('document.referrer ? window.history.back() : (window.location.href = ' . Js::from($this->previousUrl ?? \Filament\Pages\Dashboard::getUrl()) . ')')
+            ->alpineClickHandler('document.referrer ? window.history.back() : (window.location.href = '.Js::from($this->previousUrl ?? Dashboard::getUrl()).')')
             ->color('gray');
     }
 }

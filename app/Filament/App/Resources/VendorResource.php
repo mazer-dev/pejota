@@ -4,11 +4,13 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
-use App\Filament\App\Resources\VendorResource\Pages;
-use App\Filament\App\Resources\VendorResource\RelationManagers;
+use App\Filament\App\Resources\VendorResource\Pages\CreateVendor;
+use App\Filament\App\Resources\VendorResource\Pages\EditVendor;
+use App\Filament\App\Resources\VendorResource\Pages\ListVendors;
+use App\Filament\App\Resources\VendorResource\Pages\ViewVendor;
 use App\Helpers\PejotaHelper;
 use App\Models\Vendor;
-use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
@@ -16,15 +18,18 @@ use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 use Parallax\FilamentComments\Tables\Actions\CommentsAction;
 
@@ -51,15 +56,15 @@ class VendorResource extends Resource
         return $form
             ->columns(1)
             ->schema([
-                Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->label(__('Name'))
                     ->required(),
-                Forms\Components\TextInput::make('tradename')
+                TextInput::make('tradename')
                     ->label(__('Tradename')),
-                Forms\Components\TextInput::make('email')
+                TextInput::make('email')
                     ->label(__('Email'))
                     ->email(),
-                Forms\Components\TextInput::make('phone')
+                TextInput::make('phone')
                     ->label(__('Phone'))
                     ->tel(),
             ]);
@@ -70,24 +75,24 @@ class VendorResource extends Resource
         return $table
             ->striped(true)
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label(__('Name'))
                     ->searchable(),
-                Tables\Columns\TextColumn::make('tradename')
+                TextColumn::make('tradename')
                     ->label(__('Tradename'))
                     ->searchable(),
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('phone')
+                TextColumn::make('phone')
                     ->label(__('Phone'))
                     ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label(__('Created at'))
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->label(__('Updated at'))
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
@@ -98,20 +103,20 @@ class VendorResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->iconButton(),
                 CommentsAction::make()
                     ->iconButton(),
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
-        public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
             ->schema([
@@ -120,12 +125,12 @@ class VendorResource extends Resource
                         ->schema([
                             Section::make([
                                 TextEntry::make('name')
-                                    ->size(TextEntry\TextEntrySize::Large)
+                                    ->size(TextEntrySize::Large)
                                     ->weight(FontWeight::Bold)
                                     ->hiddenLabel(),
 
                                 TextEntry::make('tradename')
-                                    ->size(TextEntry\TextEntrySize::Large)
+                                    ->size(TextEntrySize::Large)
                                     ->hiddenLabel()
                                     ->icon('heroicon-o-bookmark-square'),
 
@@ -192,10 +197,10 @@ class VendorResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListVendors::route('/'),
-            'create' => Pages\CreateVendor::route('/create'),
-            'view' => Pages\ViewVendor::route('/{record}'),
-            'edit' => Pages\EditVendor::route('/{record}/edit'),
+            'index' => ListVendors::route('/'),
+            'create' => CreateVendor::route('/create'),
+            'view' => ViewVendor::route('/{record}'),
+            'edit' => EditVendor::route('/{record}/edit'),
         ];
     }
 }

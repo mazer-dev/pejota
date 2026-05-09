@@ -3,7 +3,7 @@
 namespace App\Filament\App\Resources\ClientResource\Pages;
 
 use App\Filament\App\Resources\ClientResource;
-use Filament\Actions;
+use Filament\Actions\DeleteAction;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\EditRecord;
 use Parallax\FilamentComments\Actions\CommentsAction;
@@ -17,7 +17,7 @@ class EditClient extends EditRecord
     {
         return [
             CommentsAction::make(),
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

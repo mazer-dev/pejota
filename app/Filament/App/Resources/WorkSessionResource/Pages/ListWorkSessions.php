@@ -3,9 +3,8 @@
 namespace App\Filament\App\Resources\WorkSessionResource\Pages;
 
 use App\Filament\App\Resources\WorkSessionResource;
-use App\Models\Task;
 use App\Models\WorkSession;
-use Filament\Actions;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Colors\Color;
@@ -18,7 +17,7 @@ class ListWorkSessions extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 
@@ -27,12 +26,11 @@ class ListWorkSessions extends ListRecords
         return [
             'running' => Tab::make()
                 ->label(__('Running'))
-                ->modifyQueryUsing(fn(Builder $query): Builder => $query->where('is_running', true))
-                ->badge(fn(WorkSession $record): int => $record->where('is_running', true)->count())
+                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('is_running', true))
+                ->badge(fn (WorkSession $record): int => $record->where('is_running', true)->count())
                 ->badgeColor(Color::Green),
             'all' => Tab::make()
                 ->label(__('All')),
         ];
     }
-
 }

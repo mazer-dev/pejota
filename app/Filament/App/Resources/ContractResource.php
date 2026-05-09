@@ -4,26 +4,32 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
-use App\Filament\App\Resources\ContractResource\Pages;
-use App\Filament\App\Resources\ContractResource\RelationManagers;
+use App\Filament\App\Resources\ContractResource\Pages\CreateContract;
+use App\Filament\App\Resources\ContractResource\Pages\EditContract;
+use App\Filament\App\Resources\ContractResource\Pages\ListContracts;
 use App\Helpers\PejotaHelper;
 use App\Models\Contract;
-use Carbon\Carbon;
-use Faker\Provider\Text;
-use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 
 class ContractResource extends Resource
 {
@@ -70,22 +76,22 @@ class ContractResource extends Resource
                         ->relationship('client', 'name')
                         ->preload()
                         ->searchable()
-                        ->visible(fn($get) => $get('with') === 'client')
-                        ->required(fn($get) => $get('with') === 'client'),
+                        ->visible(fn ($get) => $get('with') === 'client')
+                        ->required(fn ($get) => $get('with') === 'client'),
                     Select::make('vendor_id')
                         ->translateLabel()
                         ->relationship('vendor', 'name')
                         ->preload()
                         ->searchable()
-                        ->visible(fn($get) => $get('with') === 'vendor')
-                        ->required(fn($get) => $get('with') === 'vendor'),
+                        ->visible(fn ($get) => $get('with') === 'vendor')
+                        ->required(fn ($get) => $get('with') === 'vendor'),
                     Select::make('project_id')
                         ->label('Project')
                         ->translateLabel()
                         ->relationship(
                             'project',
                             'name',
-                            fn(Builder $query, Forms\Get $get) => $query->byClient($get('client'))->orderBy('name')
+                            fn (Builder $query, Get $get) => $query->byClient($get('client'))->orderBy('name')
                         )
                         ->searchable()
                         ->preload()
@@ -126,12 +132,12 @@ class ContractResource extends Resource
                             ->required(),
                         DatePicker::make('date')
                             ->translateLabel()
-                            ->required()
+                            ->required(),
                     ])
                     ->addActionLabel(__('Add item'))
                     ->defaultItems(0)
                     ->colStyles([
-                        'item' => 'width:70%'
+                        'item' => 'width:70%',
                     ]),
             ]);
     }
@@ -151,11 +157,11 @@ class ContractResource extends Resource
                     ->searchable(),
                 TextColumn::make('with')
                     ->translateLabel()
-                    ->getStateUsing((fn(Contract $record): string => $record->client_id ? __('Client') : __('Vendor'))),
+                    ->getStateUsing((fn (Contract $record): string => $record->client_id ? __('Client') : __('Vendor'))),
                 TextColumn::make('who')
                     ->translateLabel()
                     ->getStateUsing(
-                        (fn(Contract $record
+                        (fn (Contract $record
                         ): string => $record->client_id ? $record->client->name : $record->vendor->name)
                     ),
                 TextColumn::make('project.name')
@@ -171,23 +177,23 @@ class ContractResource extends Resource
                     ->money(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('client')
+                SelectFilter::make('client')
                     ->translateLabel()
                     ->relationship('client', 'name'),
-                Tables\Filters\SelectFilter::make('vendor')
+                SelectFilter::make('vendor')
                     ->translateLabel()
                     ->relationship('vendor', 'name'),
-                Tables\Filters\Filter::make('end_at_not_empty')
+                Filter::make('end_at_not_empty')
                     ->translateLabel()
                     ->form([
-                        Forms\Components\Grid::make(2)->schema([
-                            Forms\Components\ToggleButtons::make('end_at')
+                        Grid::make(2)->schema([
+                            ToggleButtons::make('end_at')
                                 ->translateLabel()
                                 ->options([
                                     'not_empty' => __('Has end date'),
                                     'empty' => __('No end date'),
                                 ]),
-                        ])
+                        ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         if ($data['end_at'] == 'not_empty') {
@@ -197,36 +203,37 @@ class ContractResource extends Resource
                                 return $query->whereNull('end_at');
                             }
                         }
+
                         return $query;
                     }),
-                Tables\Filters\Filter::make('end_at')
+                Filter::make('end_at')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
+                        DatePicker::make('from')
                             ->translateLabel(),
-                        Forms\Components\DatePicker::make('to')
+                        DatePicker::make('to')
                             ->translateLabel(),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['from'],
-                                fn(Builder $query, $date): Builder => $query->where('start_at', '>=', $data['from'])
+                                fn (Builder $query, $date): Builder => $query->where('start_at', '>=', $data['from'])
                             )
                             ->when(
                                 $data['to'],
-                                fn(Builder $query, $date): Builder => $query->where('start_at', '<=', $data['to'])
+                                fn (Builder $query, $date): Builder => $query->where('start_at', '<=', $data['to'])
                             );
                     }),
-            ], layout: Tables\Enums\FiltersLayout::Modal)
+            ], layout: FiltersLayout::Modal)
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
                 ]),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->persistFiltersInSession();
@@ -242,9 +249,9 @@ class ContractResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListContracts::route('/'),
-            'create' => Pages\CreateContract::route('/create'),
-            'edit' => Pages\EditContract::route('/{record}/edit'),
+            'index' => ListContracts::route('/'),
+            'create' => CreateContract::route('/create'),
+            'edit' => EditContract::route('/{record}/edit'),
         ];
     }
 }

@@ -4,11 +4,18 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
-use App\Filament\App\Resources\ProjectResource\Pages;
+use App\Filament\App\Resources\ProjectResource\Pages\CreateProject;
+use App\Filament\App\Resources\ProjectResource\Pages\EditProject;
+use App\Filament\App\Resources\ProjectResource\Pages\ListProjects;
+use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Helpers\PejotaHelper;
 use App\Livewire\Projects\ListTasks;
 use App\Models\Project;
-use Filament\Forms;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieTagsInput;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
@@ -17,11 +24,21 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\SpatieTagsEntry;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\SpatieTagsColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
@@ -38,7 +55,6 @@ class ProjectResource extends Resource
     {
         return __(MenuGroupsEnum::ADMINISTRATION->value);
     }
-
 
     public static function getModelLabel(): string
     {
@@ -59,27 +75,27 @@ class ProjectResource extends Resource
         return $table
             ->striped()
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->translateLabel()
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('client.name')
+                TextColumn::make('client.name')
                     ->translateLabel()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\ToggleColumn::make('active')
+                ToggleColumn::make('active')
                     ->translateLabel(),
 
-                Tables\Columns\SpatieTagsColumn::make('tags'),
+                SpatieTagsColumn::make('tags'),
 
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->translateLabel()
                     ->dateTime()
                     ->timezone(PejotaHelper::getUserTimeZone())
@@ -87,20 +103,20 @@ class ProjectResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('client')
+                SelectFilter::make('client')
                     ->relationship('client', 'name'),
-                Tables\Filters\TernaryFilter::make('active'),
+                TernaryFilter::make('active'),
             ])
             ->groups([
-                Tables\Grouping\Group::make('client.name'),
+                Group::make('client.name'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('name', 'asc')
@@ -115,7 +131,7 @@ class ProjectResource extends Resource
                     Section::make([
                         TextEntry::make('name')
                             ->translateLabel()
-                            ->size(TextEntry\TextEntrySize::Large)
+                            ->size(TextEntrySize::Large)
                             ->weight(FontWeight::Bold)
                             ->label(''),
 
@@ -129,7 +145,7 @@ class ProjectResource extends Resource
 
                         TextEntry::make('description')
                             ->translateLabel()
-                            ->formatStateUsing(fn(string $state): HtmlString => new HtmlString($state))
+                            ->formatStateUsing(fn (string $state): HtmlString => new HtmlString($state))
                             ->label('')
                             ->icon('heroicon-o-document-text'),
 
@@ -138,7 +154,7 @@ class ProjectResource extends Resource
                     Section::make([
                         TextEntry::make('active')
                             ->translateLabel()
-                            ->formatStateUsing(fn(string $state): string => $state ? __('Yes') : __('No')),
+                            ->formatStateUsing(fn (string $state): string => $state ? __('Yes') : __('No')),
 
                         TextEntry::make('created_at')
                             ->translateLabel()
@@ -152,14 +168,14 @@ class ProjectResource extends Resource
                             Action::make('edit')
                                 ->translateLabel()
                                 ->url(
-                                    fn(Model $record) => "{$record->id}/edit"
+                                    fn (Model $record) => "{$record->id}/edit"
                                 )
                                 ->icon('heroicon-o-pencil'),
 
                             Action::make('back')
                                 ->translateLabel()
                                 ->url(
-                                    fn(Model $record) => './.'
+                                    fn (Model $record) => './.'
                                 )
                                 ->icon('heroicon-o-chevron-left')
                                 ->color(Color::Neutral),
@@ -175,7 +191,7 @@ class ProjectResource extends Resource
                     ->schema([
                         Livewire::make(
                             ListTasks::class,
-                            fn(Model $record) => ['project' => $record]
+                            fn (Model $record) => ['project' => $record]
                         ),
                     ]),
             ]);
@@ -191,31 +207,31 @@ class ProjectResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListProjects::route('/'),
-            'create' => Pages\CreateProject::route('/create'),
-            'view' => Pages\ViewProject::route('/{record}'),
-            'edit' => Pages\EditProject::route('/{record}/edit'),
+            'index' => ListProjects::route('/'),
+            'create' => CreateProject::route('/create'),
+            'view' => ViewProject::route('/{record}'),
+            'edit' => EditProject::route('/{record}/edit'),
         ];
     }
 
     public static function getFormComponents(): array
     {
         return [
-            Forms\Components\Select::make('client')
+            Select::make('client')
                 ->translateLabel()
                 ->relationship('client', 'name')
                 ->preload(),
-            Forms\Components\TextInput::make('name')
+            TextInput::make('name')
                 ->translateLabel()
                 ->required(),
-            Forms\Components\RichEditor::make('description')
+            RichEditor::make('description')
                 ->translateLabel()
                 ->columnSpanFull()
                 ->fileAttachmentsDisk('projects')
                 ->fileAttachmentsDirectory(auth()->user()->company->id)
                 ->fileAttachmentsVisibility('private'),
-            Forms\Components\SpatieTagsInput::make('tags'),
-            Forms\Components\Toggle::make('active')
+            SpatieTagsInput::make('tags'),
+            Toggle::make('active')
                 ->translateLabel()
                 ->required()
                 ->default(true),

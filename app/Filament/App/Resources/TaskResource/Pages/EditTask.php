@@ -4,11 +4,11 @@ namespace App\Filament\App\Resources\TaskResource\Pages;
 
 use App\Filament\App\Resources\TaskResource;
 use App\Models\Task;
-use Filament\Actions;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Colors\Color;
-use Illuminate\Database\Eloquent\Model;
 use Parallax\FilamentComments\Actions\CommentsAction;
 
 class EditTask extends EditRecord
@@ -19,7 +19,7 @@ class EditTask extends EditRecord
     {
         return [
             CommentsAction::make(),
-            Actions\DeleteAction::make()->before(function (Actions\DeleteAction $action, Task $record) {
+            DeleteAction::make()->before(function (DeleteAction $action, Task $record) {
                 if ($record->workSessions->count() > 0) {
                     Notification::make()
                         ->danger()
@@ -39,7 +39,7 @@ class EditTask extends EditRecord
     {
         $actions = parent::getFormActions();
 
-        $actions[] = Actions\Action::make('list')
+        $actions[] = Action::make('list')
             ->translateLabel()
             ->url(ListTasks::getUrl())
             ->icon('heroicon-o-chevron-left')

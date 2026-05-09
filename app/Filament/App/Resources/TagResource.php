@@ -3,17 +3,23 @@
 namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
-use App\Filament\App\Resources\TagResource\Pages;
-use App\Filament\App\Resources\TagResource\RelationManagers;
+use App\Filament\App\Resources\TagResource\Pages\ListTags;
+use App\Filament\App\Resources\TagResource\Pages\ViewTag;
+use App\Filament\App\Resources\TagResource\RelationManagers\NotesRelationManager;
+use App\Filament\App\Resources\TagResource\RelationManagers\ProjectsRelationManager;
+use App\Filament\App\Resources\TagResource\RelationManagers\TasksRelationManager;
 use App\Models\Tag;
-use App\Providers\Filament\AppPanelProvider;
-use Filament\Forms;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class TagResource extends Resource
@@ -31,16 +37,16 @@ class TagResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Textarea::make('name')
+                Textarea::make('name')
                     ->translateLabel()
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\Textarea::make('slug')
+                Textarea::make('slug')
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('type')
+                TextInput::make('type')
                     ->translateLabel(),
-                Forms\Components\TextInput::make('order_column')
+                TextInput::make('order_column')
                     ->translateLabel()
                     ->numeric(),
             ]);
@@ -51,26 +57,26 @@ class TagResource extends Resource
         return $table
             ->striped()
             ->columns([
-                Tables\Columns\TextColumn::make('order_column')
+                TextColumn::make('order_column')
                     ->label('Order')
                     ->translateLabel()
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->translateLabel()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('slug')
+                TextColumn::make('slug')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('type')
+                TextColumn::make('type')
                     ->translateLabel()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->translateLabel()
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->translateLabel()
                     ->dateTime()
                     ->sortable()
@@ -81,12 +87,12 @@ class TagResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                ViewAction::make(),
                 //                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -114,18 +120,18 @@ class TagResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\TasksRelationManager::class,
-            RelationManagers\ProjectsRelationManager::class,
-            RelationManagers\NotesRelationManager::class,
+            TasksRelationManager::class,
+            ProjectsRelationManager::class,
+            NotesRelationManager::class,
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTags::route('/'),
+            'index' => ListTags::route('/'),
             //            'create' => Pages\CreateTag::route('/create'),
-            'view' => Pages\ViewTag::route('/{record}'),
+            'view' => ViewTag::route('/{record}'),
             //            'edit' => Pages\EditTag::route('/{record}/edit'),
         ];
     }

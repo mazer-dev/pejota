@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\User;
+use Parallax\FilamentComments\Policies\FilamentCommentPolicy;
+
 return [
     /*
      * Whether or not user avatars should be displayed next to comments.
@@ -18,7 +21,7 @@ return [
     /*
      * The policy that will be used to authorize actions against comments.
      */
-    'model_policy' => \Parallax\FilamentComments\Policies\FilamentCommentPolicy::class,
+    'model_policy' => FilamentCommentPolicy::class,
 
     /*
      * The number of days after which soft-deleted comments should be deleted.
@@ -52,7 +55,7 @@ return [
     /*
      * Authenticatable model class
      */
-    'authenticatable' => \App\Models\User::class,
+    'authenticatable' => User::class,
 
     /*
      * The name of the table where the comments are stored.

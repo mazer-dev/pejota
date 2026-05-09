@@ -4,17 +4,22 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
-use App\Filament\App\Resources\AccountResource\Pages;
-use App\Filament\App\Resources\AccountResource\RelationManagers;
+use App\Filament\App\Resources\AccountResource\Pages\CreateAccount;
+use App\Filament\App\Resources\AccountResource\Pages\EditAccount;
+use App\Filament\App\Resources\AccountResource\Pages\ListAccounts;
+use App\Filament\App\Resources\AccountResource\Pages\ViewAccount;
 use App\Helpers\PejotaHelper;
 use App\Models\Account;
-use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AccountResource extends Resource
 {
@@ -38,19 +43,19 @@ class AccountResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->translateLabel()
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('description')
+                TextInput::make('description')
                     ->translateLabel()
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('initial_balance')
+                TextInput::make('initial_balance')
                     ->translateLabel()
                     ->required()
                     ->numeric()
                     ->default(0),
-                Forms\Components\DatePicker::make('initial_balance_at')
+                DatePicker::make('initial_balance_at')
                     ->translateLabel()
                     ->default(now()),
             ]);
@@ -60,28 +65,28 @@ class AccountResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->translateLabel()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('description')
+                TextColumn::make('description')
                     ->translateLabel()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('initial_balance')
+                TextColumn::make('initial_balance')
                     ->translateLabel()
                     ->money()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('initial_balance_at')
+                TextColumn::make('initial_balance_at')
                     ->translateLabel()
                     ->date(
                         PejotaHelper::getUserDateFormat()
                     )
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->translateLabel()
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->translateLabel()
                     ->dateTime()
                     ->sortable()
@@ -91,12 +96,12 @@ class AccountResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -111,10 +116,10 @@ class AccountResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAccounts::route('/'),
-            'create' => Pages\CreateAccount::route('/create'),
-            'view' => Pages\ViewAccount::route('/{record}'),
-            'edit' => Pages\EditAccount::route('/{record}/edit'),
+            'index' => ListAccounts::route('/'),
+            'create' => CreateAccount::route('/create'),
+            'view' => ViewAccount::route('/{record}'),
+            'edit' => EditAccount::route('/{record}/edit'),
         ];
     }
 }

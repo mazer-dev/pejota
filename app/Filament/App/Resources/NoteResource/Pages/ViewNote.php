@@ -3,7 +3,7 @@
 namespace App\Filament\App\Resources\NoteResource\Pages;
 
 use App\Filament\App\Resources\NoteResource;
-use Filament\Actions;
+use Filament\Actions\EditAction;
 use Filament\Infolists\Components\SpatieTagsEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -16,7 +16,7 @@ class ViewNote extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            EditAction::make(),
         ];
     }
 

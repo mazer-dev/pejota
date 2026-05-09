@@ -4,23 +4,31 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
-use App\Filament\App\Resources\ProductResource\Pages;
-use App\Filament\App\Resources\ProductResource\RelationManagers;
+use App\Filament\App\Resources\ProductResource\Pages\CreateProduct;
+use App\Filament\App\Resources\ProductResource\Pages\EditProduct;
+use App\Filament\App\Resources\ProductResource\Pages\ListProducts;
+use App\Filament\App\Resources\ProductResource\Pages\ViewProduct;
 use App\Models\Product;
-use Filament\Forms;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-inbox';
+
     protected static ?int $navigationSort = MenuSortEnum::PRODUCTS->value;
 
     public static function getModelLabel(): string
@@ -40,10 +48,10 @@ class ProductResource extends Resource
                 TextInput::make('name')
                     ->required()
                     ->translateLabel(),
-                Forms\Components\Select::make('unit_id')
+                Select::make('unit_id')
                     ->translateLabel()
                     ->relationship('unit', 'name'),
-                Forms\Components\Textarea::make('description')
+                Textarea::make('description')
                     ->translateLabel()
                     ->rows(6)
                     ->columnSpanFull(),
@@ -57,9 +65,9 @@ class ProductResource extends Resource
                     ->prefixIcon('heroicon-o-currency-dollar')
                     ->required()
                     ->numeric(),
-                Forms\Components\Checkbox::make('service')
+                Checkbox::make('service')
                     ->translateLabel(),
-                Forms\Components\Checkbox::make('digital')
+                Checkbox::make('digital')
                     ->translateLabel(),
 
             ]);
@@ -70,29 +78,29 @@ class ProductResource extends Resource
         return $table
             ->striped()
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->translateLabel()
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('service')
+                IconColumn::make('service')
                     ->translateLabel()
                     ->boolean(),
-                Tables\Columns\TextColumn::make('unit.name')
+                TextColumn::make('unit.name')
                     ->translateLabel(),
-                Tables\Columns\TextColumn::make('price')
+                TextColumn::make('price')
                     ->translateLabel()
-                    ->money()
+                    ->money(),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                ViewAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -107,10 +115,10 @@ class ProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListProducts::route('/'),
-            'create' => Pages\CreateProduct::route('/create'),
-            'view' => Pages\ViewProduct::route('/{record}'),
-            'edit' => Pages\EditProduct::route('/{record}/edit'),
+            'index' => ListProducts::route('/'),
+            'create' => CreateProduct::route('/create'),
+            'view' => ViewProduct::route('/{record}'),
+            'edit' => EditProduct::route('/{record}/edit'),
         ];
     }
 }

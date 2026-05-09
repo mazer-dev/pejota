@@ -3,7 +3,7 @@
 namespace App\Filament\App\Resources\UnitResource\Pages;
 
 use App\Filament\App\Resources\UnitResource;
-use Filament\Actions;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListUnits extends ListRecords
@@ -13,7 +13,7 @@ class ListUnits extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 }
