@@ -10,6 +10,20 @@ that allow a quick high quality monolith to be created.
 
 **PLEASE READ THE UPGRADE SECTION IF YOU ALREADY HAS PEJOTA INSTALLED**
 
+## 📚 Documentation
+
+### Accounts Receivable System
+Complete planning and documentation for the Accounts Receivable module:
+
+- **[📋 Main Documentation Index](./docs/README.md)** - Start here for complete overview
+- **[Complete Plan](./PLANO_CONTAS_RECEBER.md)** - Detailed planning in Portuguese
+- **[Code Examples](./docs/CONTAS_RECEBER_EXEMPLOS.md)** - Practical implementations
+- **[Technical Architecture](./docs/CONTAS_RECEBER_ARQUITETURA.md)** - Design decisions
+- **[Implementation Checklist](./docs/CONTAS_RECEBER_CHECKLIST.md)** - Step-by-step guide
+- **[Executive Summary](./docs/CONTAS_RECEBER_RESUMO.md)** - High-level overview
+
+> 🎯 **Status**: Fully planned and ready for implementation
+
 ## Installation
 
 - Clone the repository
