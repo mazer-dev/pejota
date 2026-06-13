@@ -4,6 +4,11 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\InvoiceStatusEnum;
+use App\Helpers\PejotaHelper;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +26,8 @@ class Invoice extends Model
     protected function isOverdue(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->due_date->isPast() && $this->status != InvoiceStatusEnum::PAID,
+            get: fn () => $this->due_date?->isPast()
+                && in_array($this->status, [InvoiceStatusEnum::SENT, InvoiceStatusEnum::PARTIALLY_PAID], true),
         );
     }
 
@@ -48,6 +54,52 @@ class Invoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
+    }
+
+    #[Scope]
+    protected function pending(Builder $query): void
+    {
+        $query->whereIn('status', [
+            InvoiceStatusEnum::SENT->value,
+            InvoiceStatusEnum::PARTIALLY_PAID->value,
+        ]);
+    }
+
+    #[Scope]
+    protected function overdue(Builder $query): void
+    {
+        $query->pending()
+            ->whereDate('due_date', '<', static::currentDay()->toDateString());
+    }
+
+    #[Scope]
+    protected function dueWithin(Builder $query, int $days): void
+    {
+        $today = static::currentDay();
+
+        $query->pending()
+            ->whereBetween('due_date', [
+                $today->toDateString(),
+                $today->addDays($days)->toDateString(),
+            ]);
+    }
+
+    #[Scope]
+    protected function delinquent(Builder $query): void
+    {
+        $query->where('status', InvoiceStatusEnum::UNPAID->value);
+    }
+
+    #[Scope]
+    protected function receivedBetween(Builder $query, CarbonInterface $from, CarbonInterface $to): void
+    {
+        $query->where('status', InvoiceStatusEnum::PAID->value)
+            ->whereBetween('payment_date', [$from->toDateString(), $to->toDateString()]);
+    }
+
+    private static function currentDay(): CarbonImmutable
+    {
+        return CarbonImmutable::now(PejotaHelper::getUserTimeZone())->startOfDay();
     }
 
     protected function casts(): array

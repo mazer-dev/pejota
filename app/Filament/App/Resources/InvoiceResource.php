@@ -9,6 +9,7 @@ use App\Filament\App\Resources\InvoiceResource\Pages\CreateInvoice;
 use App\Filament\App\Resources\InvoiceResource\Pages\EditInvoice;
 use App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices;
 use App\Filament\App\Resources\InvoiceResource\Pages\ViewInvoice;
+use App\Filament\App\Widgets\InvoicesOverview;
 use App\Helpers\PejotaHelper;
 use App\Models\Invoice;
 use App\Models\Product;
@@ -32,8 +33,12 @@ use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -209,6 +214,15 @@ class InvoiceResource extends Resource
     {
         return $table
             ->defaultSort('due_date')
+            ->groups([
+                Group::make('due_date')
+                    ->label(__('Due month'))
+                    ->getKeyFromRecordUsing(fn (Invoice $record): string => $record->due_date?->format('Y-m') ?? '')
+                    ->getTitleFromRecordUsing(fn (Invoice $record): string => $record->due_date?->translatedFormat('F Y') ?? __('No due date'))
+                    ->groupQueryUsing(fn (QueryBuilder $query): QueryBuilder => $query->groupByRaw(
+                        self::monthYearGroupExpression($query->getConnection()->getDriverName(), 'due_date')
+                    )),
+            ])
             ->striped()
             ->columns([
                 TextColumn::make('status')
@@ -266,7 +280,10 @@ class InvoiceResource extends Resource
                     ->numeric()
                     ->money()
                     ->alignEnd()
-                    ->sortable(),
+                    ->sortable()
+                    ->summarize(
+                        Sum::make()->money(PejotaHelper::getUserCurrency(), 100, PejotaHelper::getUserLocate())
+                    ),
                 TextColumn::make('created_at')
                     ->translateLabel()
                     ->dateTime()
@@ -279,7 +296,15 @@ class InvoiceResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('client')
+                    ->translateLabel()
+                    ->relationship('client', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('status')
+                    ->translateLabel()
+                    ->options(InvoiceStatusEnum::class)
+                    ->multiple(),
             ])
             ->actions([
                 ActionGroup::make([
@@ -311,6 +336,13 @@ class InvoiceResource extends Resource
         ];
     }
 
+    public static function getWidgets(): array
+    {
+        return [
+            InvoicesOverview::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [
@@ -319,6 +351,15 @@ class InvoiceResource extends Resource
             'view' => ViewInvoice::route('/{record}'),
             'edit' => EditInvoice::route('/{record}/edit'),
         ];
+    }
+
+    public static function monthYearGroupExpression(string $driver, string $column): string
+    {
+        return match ($driver) {
+            'sqlite' => "strftime('%Y-%m', {$column})",
+            'pgsql' => "to_char({$column}, 'YYYY-MM')",
+            default => "DATE_FORMAT({$column}, '%Y-%m')",
+        };
     }
 
     public static function calcItemTotal(Get $get, Set $set)

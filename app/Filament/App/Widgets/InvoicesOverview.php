@@ -2,7 +2,6 @@
 
 namespace App\Filament\App\Widgets;
 
-use App\Enums\InvoiceStatusEnum;
 use App\Helpers\PejotaHelper;
 use App\Models\Invoice;
 use Carbon\CarbonImmutable;
@@ -17,39 +16,33 @@ class InvoicesOverview extends BaseWidget
     {
         $today = CarbonImmutable::now(PejotaHelper::getUserTimeZone())->startOfDay();
 
-        // TODO improve and centralize the money handling
-        $totalOpened = Invoice::where('status', InvoiceStatusEnum::SENT->value)
-            ->sum('total') / 100;
+        $totalPending = Invoice::pending()->sum('total') / 100;
+        $totalOverdue = Invoice::overdue()->sum('total') / 100;
+        $totalDueSoon = Invoice::dueWithin(30)->sum('total') / 100;
+        $totalReceived = Invoice::receivedBetween($today->subDays(30), $today)->sum('total') / 100;
 
-        $totalOverdue = Invoice::where('status', InvoiceStatusEnum::SENT->value)
-            ->where('due_date', '<', $today)
-            ->sum('total') / 100;
-
-        $totalPaid = Invoice::where('status', InvoiceStatusEnum::PAID->value)
-            ->where('payment_date', '>=', $today->startOfMonth())
-            ->sum('total') / 100;
         $fmt = NumberFormatter::create(PejotaHelper::getUserLocate(), NumberFormatter::CURRENCY);
+        $currency = PejotaHelper::getUserCurrency();
 
         return [
-            Stat::make(__('Invoices opened'),
-                $fmt->formatCurrency($totalOpened, PejotaHelper::getUserCurrency())
-            )
-                ->description(__('Invoices with status SENT'))
+            Stat::make(__('Total pending'), $fmt->formatCurrency($totalPending, $currency))
+                ->description(__('Pending invoices (sent + partially paid)'))
                 ->icon('heroicon-o-currency-dollar')
                 ->color(Color::hex('#dadada')),
 
-            Stat::make(__('Invoices overdue'),
-                $fmt->formatCurrency($totalOverdue, PejotaHelper::getUserCurrency())
-            )
-                ->description(__('Invoices SENT and overdue'))
-                ->icon('heroicon-o-currency-dollar')
+            Stat::make(__('Pending overdue'), $fmt->formatCurrency($totalOverdue, $currency))
+                ->description(__('Pending and overdue'))
+                ->icon('heroicon-o-exclamation-circle')
                 ->color(Color::hex('#fadada')),
 
-            Stat::make(__('Received this month'),
-                $fmt->formatCurrency($totalPaid, PejotaHelper::getUserCurrency())
-            )
-                ->description(__('Invoices PAID this month'))
-                ->icon('heroicon-o-currency-dollar')
+            Stat::make(__('Due within 30 days'), $fmt->formatCurrency($totalDueSoon, $currency))
+                ->description(__('Pending due in the next 30 days'))
+                ->icon('heroicon-o-clock')
+                ->color(Color::hex('#fdf6da')),
+
+            Stat::make(__('Received last 30 days'), $fmt->formatCurrency($totalReceived, $currency))
+                ->description(__('Paid in the last 30 days'))
+                ->icon('heroicon-o-check')
                 ->color(Color::hex('#daFada')),
         ];
     }

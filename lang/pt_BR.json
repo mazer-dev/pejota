@@ -202,5 +202,17 @@
     "Work sessions": "Sessões de trabalho",
     "Work sessions report": "Relatório de Sessões de trabalho",
     "Yearly": "Anual",
-    "Yes": "Sim"
+    "Yes": "Sim",
+    "Total pending": "Total pendente",
+    "Pending invoices (sent + partially paid)": "Faturas pendentes (enviadas + parc. pagas)",
+    "Pending overdue": "Pendente vencido",
+    "Pending and overdue": "Pendente e vencido",
+    "Due within 30 days": "Vencendo em 30 dias",
+    "Pending due in the next 30 days": "Pendente vencendo nos próximos 30 dias",
+    "Received last 30 days": "Recebido nos últimos 30 dias",
+    "Paid in the last 30 days": "Pago nos últimos 30 dias",
+    "Pending": "Pendentes",
+    "Overdue": "Vencidas",
+    "Delinquent": "Inadimplentes",
+    "Due month": "Mês de vencimento"
 }
