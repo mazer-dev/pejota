@@ -17,6 +17,7 @@ use App\Services\InvoiceService;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -40,6 +41,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -320,22 +322,33 @@ class InvoiceResource extends Resource
                             'payment_date' => $record->payment_date?->format('Y-m-d'),
                         ])
                         ->form([
-                            Grid::make(2)->schema([
-                                ToggleButtons::make('status')
-                                    ->translateLabel()
-                                    ->options(InvoiceStatusEnum::class)
-                                    ->inline()
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
-                                        if ($state === InvoiceStatusEnum::PAID->value) {
-                                            if (blank($get('payment_date'))) {
-                                                $set('payment_date', self::defaultPaidDate($record));
-                                            }
-                                        } elseif (self::isUnpaidStatus($state)) {
-                                            $set('payment_date', null);
+                            ToggleButtons::make('status')
+                                ->translateLabel()
+                                ->options(InvoiceStatusEnum::class)
+                                ->inline()
+                                ->required()
+                                ->live()
+                                ->columnSpanFull()
+                                ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
+                                    if ($state === InvoiceStatusEnum::PAID->value) {
+                                        if (blank($get('payment_date'))) {
+                                            $set('payment_date', self::defaultPaidDate($record));
                                         }
-                                    }),
+                                    } elseif (self::isUnpaidStatus($state)) {
+                                        $set('payment_date', null);
+                                    }
+                                }),
+                            Grid::make(3)->schema([
+                                Placeholder::make('total_display')
+                                    ->label(__('Total'))
+                                    ->content(fn (Invoice $record): string => Number::currency(
+                                        $record->total ?? 0,
+                                        PejotaHelper::getUserCurrency(),
+                                        PejotaHelper::getUserLocate(),
+                                    )),
+                                Placeholder::make('due_date_display')
+                                    ->label(__('Due date'))
+                                    ->content(fn (Invoice $record): string => $record->due_date?->format(PejotaHelper::getUserDateFormat()) ?? '—'),
                                 DatePicker::make('payment_date')
                                     ->translateLabel()
                                     ->date()
