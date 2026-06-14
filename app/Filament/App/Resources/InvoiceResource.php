@@ -21,6 +21,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -319,25 +320,27 @@ class InvoiceResource extends Resource
                             'payment_date' => $record->payment_date?->format('Y-m-d'),
                         ])
                         ->form([
-                            Select::make('status')
-                                ->translateLabel()
-                                ->options(InvoiceStatusEnum::class)
-                                ->required()
-                                ->live()
-                                ->afterStateUpdated(function (Set $set, Get $get, $state): void {
-                                    if ($state === InvoiceStatusEnum::PAID->value) {
-                                        if (blank($get('payment_date'))) {
-                                            $set('payment_date', now()->format('Y-m-d'));
+                            Grid::make(2)->schema([
+                                ToggleButtons::make('status')
+                                    ->translateLabel()
+                                    ->options(InvoiceStatusEnum::class)
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
+                                        if ($state === InvoiceStatusEnum::PAID->value) {
+                                            if (blank($get('payment_date'))) {
+                                                $set('payment_date', self::defaultPaidDate($record));
+                                            }
+                                        } elseif (self::isUnpaidStatus($state)) {
+                                            $set('payment_date', null);
                                         }
-                                    } elseif (self::isUnpaidStatus($state)) {
-                                        $set('payment_date', null);
-                                    }
-                                }),
-                            DatePicker::make('payment_date')
-                                ->translateLabel()
-                                ->date()
-                                ->dehydrated()
-                                ->disabled(fn (Get $get): bool => self::isUnpaidStatus($get('status'))),
+                                    }),
+                                DatePicker::make('payment_date')
+                                    ->translateLabel()
+                                    ->date()
+                                    ->dehydrated()
+                                    ->disabled(fn (Get $get): bool => self::isUnpaidStatus($get('status'))),
+                            ]),
                         ])
                         ->action(function (Invoice $record, array $data): void {
                             $status = $data['status'];
@@ -346,7 +349,7 @@ class InvoiceResource extends Resource
                             if (self::isUnpaidStatus($status)) {
                                 $paymentDate = null;
                             } elseif ($status === InvoiceStatusEnum::PAID->value && blank($paymentDate)) {
-                                $paymentDate = $record->payment_date?->format('Y-m-d') ?? now()->format('Y-m-d');
+                                $paymentDate = $record->payment_date?->format('Y-m-d') ?? self::defaultPaidDate($record);
                             }
 
                             $record->update([
@@ -457,6 +460,11 @@ class InvoiceResource extends Resource
             InvoiceStatusEnum::UNPAID->value,
             InvoiceStatusEnum::CANCELED->value,
         ], true);
+    }
+
+    private static function defaultPaidDate(Invoice $invoice): string
+    {
+        return ($invoice->due_date ?? now())->format('Y-m-d');
     }
 
     public static function generatePdf(Invoice $invoice): StreamedResponse

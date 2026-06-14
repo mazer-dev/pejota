@@ -32,23 +32,24 @@ class InvoiceChangeStatusActionTest extends TestCase
         ]);
     }
 
-    private function makeInvoice(InvoiceStatusEnum $status, ?string $paymentDate = null): Invoice
+    private function makeInvoice(InvoiceStatusEnum $status, ?string $paymentDate = null, ?string $dueDate = null): Invoice
     {
         return Invoice::create([
             'number' => 'INV-'.fake()->unique()->numerify('####'),
             'title' => 'Invoice',
             'status' => $status,
             'client_id' => $this->client->id,
-            'due_date' => now()->toDateString(),
+            'due_date' => $dueDate ?? now()->toDateString(),
             'payment_date' => $paymentDate,
             'total' => 100.00,
             'company_id' => $this->user->company->id,
         ]);
     }
 
-    public function test_changing_status_to_paid_sets_payment_date_to_today_when_empty(): void
+    public function test_changing_status_to_paid_sets_payment_date_to_due_date_when_empty(): void
     {
-        $invoice = $this->makeInvoice(InvoiceStatusEnum::SENT);
+        $dueDate = now()->addDays(7)->toDateString();
+        $invoice = $this->makeInvoice(InvoiceStatusEnum::SENT, dueDate: $dueDate);
 
         Livewire::test(ListInvoices::class)
             ->set('activeTab', 'all')
@@ -60,7 +61,7 @@ class InvoiceChangeStatusActionTest extends TestCase
         $invoice->refresh();
 
         $this->assertSame(InvoiceStatusEnum::PAID, $invoice->status);
-        $this->assertSame(now()->toDateString(), $invoice->payment_date->toDateString());
+        $this->assertSame($dueDate, $invoice->payment_date->toDateString());
     }
 
     public function test_changing_status_to_paid_keeps_existing_payment_date(): void
