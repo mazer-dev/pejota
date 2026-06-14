@@ -310,6 +310,50 @@ class InvoiceResource extends Resource
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
+                    Tables\Actions\Action::make('change_status')
+                        ->label(__('Change status'))
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->fillForm(fn (Invoice $record): array => [
+                            'status' => $record->status->value,
+                            'payment_date' => $record->payment_date?->format('Y-m-d'),
+                        ])
+                        ->form([
+                            Select::make('status')
+                                ->translateLabel()
+                                ->options(InvoiceStatusEnum::class)
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function (Set $set, Get $get, $state): void {
+                                    if ($state === InvoiceStatusEnum::PAID->value) {
+                                        if (blank($get('payment_date'))) {
+                                            $set('payment_date', now()->format('Y-m-d'));
+                                        }
+                                    } elseif (self::isUnpaidStatus($state)) {
+                                        $set('payment_date', null);
+                                    }
+                                }),
+                            DatePicker::make('payment_date')
+                                ->translateLabel()
+                                ->date()
+                                ->dehydrated()
+                                ->disabled(fn (Get $get): bool => self::isUnpaidStatus($get('status'))),
+                        ])
+                        ->action(function (Invoice $record, array $data): void {
+                            $status = $data['status'];
+                            $paymentDate = $data['payment_date'] ?? null;
+
+                            if (self::isUnpaidStatus($status)) {
+                                $paymentDate = null;
+                            } elseif ($status === InvoiceStatusEnum::PAID->value && blank($paymentDate)) {
+                                $paymentDate = $record->payment_date?->format('Y-m-d') ?? now()->format('Y-m-d');
+                            }
+
+                            $record->update([
+                                'status' => $status,
+                                'payment_date' => $paymentDate,
+                            ]);
+                        }),
                     Tables\Actions\Action::make('pdf')
                         ->label('PDF')
                         ->color('info')
@@ -405,6 +449,14 @@ class InvoiceResource extends Resource
             $totalComponent,
             $invoiceValue
         );
+    }
+
+    private static function isUnpaidStatus(?string $status): bool
+    {
+        return in_array($status, [
+            InvoiceStatusEnum::UNPAID->value,
+            InvoiceStatusEnum::CANCELED->value,
+        ], true);
     }
 
     public static function generatePdf(Invoice $invoice): StreamedResponse
