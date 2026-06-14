@@ -65,6 +65,12 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'sentry' => [
+            'driver' => 'sentry',
+            'level' => env('SENTRY_LOG_LEVEL', 'warning'),
+            'bubble' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
