@@ -324,6 +324,7 @@ class InvoiceResource extends Resource
                                 ToggleButtons::make('status')
                                     ->translateLabel()
                                     ->options(InvoiceStatusEnum::class)
+                                    ->inline()
                                     ->required()
                                     ->live()
                                     ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
