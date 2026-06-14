@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\StatusPhaseEnum;
 use App\Helpers\PejotaHelper;
-use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -124,16 +123,14 @@ class Task extends Model
             ->logOnlyDirty();
     }
 
-    #[Scope]
-    protected function byProject(Builder $query, Project|int|null $project)
+    public function scopeByProject(Builder $query, Project|int|null $project): void
     {
         if ($project) {
             $query->where('project_id', $project);
         }
     }
 
-    #[Scope]
-    protected function opened(Builder $query)
+    public function scopeOpened(Builder $query): void
     {
         $query->whereHas('status', function (Builder $query) {
             $query->whereIn('phase', [
@@ -143,8 +140,7 @@ class Task extends Model
         });
     }
 
-    #[Scope]
-    protected function closed(Builder $query)
+    public function scopeClosed(Builder $query): void
     {
         $query->whereHas('status', function (Builder $query) {
             $query->whereIn('phase', [

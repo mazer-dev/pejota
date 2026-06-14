@@ -7,7 +7,6 @@ use App\Enums\InvoiceStatusEnum;
 use App\Helpers\PejotaHelper;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
-use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -56,8 +55,7 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
-    #[Scope]
-    protected function pending(Builder $query): void
+    public function scopePending(Builder $query): void
     {
         $query->whereIn('status', [
             InvoiceStatusEnum::SENT->value,
@@ -65,15 +63,13 @@ class Invoice extends Model
         ]);
     }
 
-    #[Scope]
-    protected function overdue(Builder $query): void
+    public function scopeOverdue(Builder $query): void
     {
         $query->pending()
             ->whereDate('due_date', '<', static::currentDay()->toDateString());
     }
 
-    #[Scope]
-    protected function dueWithin(Builder $query, int $days): void
+    public function scopeDueWithin(Builder $query, int $days): void
     {
         $today = static::currentDay();
 
@@ -84,14 +80,12 @@ class Invoice extends Model
             ]);
     }
 
-    #[Scope]
-    protected function delinquent(Builder $query): void
+    public function scopeDelinquent(Builder $query): void
     {
         $query->where('status', InvoiceStatusEnum::UNPAID->value);
     }
 
-    #[Scope]
-    protected function receivedBetween(Builder $query, CarbonInterface $from, CarbonInterface $to): void
+    public function scopeReceivedBetween(Builder $query, CarbonInterface $from, CarbonInterface $to): void
     {
         $query->where('status', InvoiceStatusEnum::PAID->value)
             ->whereBetween('payment_date', [$from->toDateString(), $to->toDateString()]);

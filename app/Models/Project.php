@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,8 +23,7 @@ class Project extends Model
         return $this->belongsTo(Client::class);
     }
 
-    #[Scope]
-    protected function byClient(Builder $query, Client|int|null $client)
+    public function scopeByClient(Builder $query, Client|int|null $client): void
     {
         if ($client) {
             $query->where('client_id', $client);
