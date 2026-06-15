@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Company;
 use App\Models\User;
+use Database\Seeders\CurrencySeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 
@@ -53,6 +54,13 @@ class Install extends Command
         ]);
 
         $this->info('Company created successfully');
+
+        $this->call('db:seed', [
+            '--class' => CurrencySeeder::class,
+            '--force' => true,
+        ]);
+
+        $this->info('Reference currencies seeded successfully');
 
         $this->info('Installation completed successfully');
     }

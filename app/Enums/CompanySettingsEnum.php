@@ -34,13 +34,6 @@ enum CompanySettingsEnum: string
         ];
     }
 
-    public static function getCurrencies(): array
-    {
-        return [
-
-        ];
-    }
-
     public static function getTimezones(): array
     {
         $regions = [

@@ -5,6 +5,8 @@ namespace App\Filament\App\Pages;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Filament\App\Resources\TaskResource;
+use App\Helpers\PejotaHelper;
+use App\Models\Currency;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Checkbox;
@@ -157,10 +159,9 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                             Select::make(CompanySettingsEnum::FINANCE_CURRENCY->value)
                                 ->translateLabel()
                                 ->helperText(__('Set the default currency for the company.'))
-                                ->default('USD')
-                                ->options([
-                                    'USD' => 'USD',
-                                ]),
+                                ->options(fn (): array => $this->baseCurrencyOptions())
+                                ->in(fn (): array => array_keys($this->baseCurrencyOptions()))
+                                ->default(fn (): string => PejotaHelper::getUserCurrency()),
                         ]),
 
                     Tab::make('Invoices')
@@ -224,5 +225,29 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                 ]),
 
             ]);
+    }
+
+    /**
+     * Base currency options: active currencies plus the currently saved value.
+     *
+     * @return array<string, string>
+     */
+    public function baseCurrencyOptions(): array
+    {
+        $options = Currency::active()
+            ->orderBy('code')
+            ->get()
+            ->mapWithKeys(fn (Currency $currency): array => [
+                $currency->code => $currency->code.' — '.__($currency->name),
+            ])
+            ->all();
+
+        $current = PejotaHelper::getUserCurrency();
+
+        if ($current && ! array_key_exists($current, $options)) {
+            $options[$current] = $current;
+        }
+
+        return $options;
     }
 }
