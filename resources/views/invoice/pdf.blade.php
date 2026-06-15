@@ -93,6 +93,11 @@
         $path_img = 'data:image/' . $media->getTypeFromMime() . ';base64,' . $img_base_64;
     }
 @endphp
+@php
+    $invoiceCurrency = $invoice->currency ?? \App\Helpers\PejotaHelper::getUserCurrency();
+    $invoiceLocale = \App\Helpers\PejotaHelper::getUserLocate();
+    $money = fn ($value) => \Illuminate\Support\Number::currency((float) $value, $invoiceCurrency, $invoiceLocale);
+@endphp
 
 <header>
     <div style="position:absolute; right:0;">
@@ -170,9 +175,9 @@
                 <td>{{ $item->name }}</td>
                 <td style="text-align: right">{{ $item->quantity }}</td>
                 <td>{{ $item->unit->name }}</td>
-                <td style="text-align: right">{{ $item->price }}</td>
-                <td style="text-align: right">{{ $invoice->discount }}</td>
-                <td style="text-align: right">{{ $item->total }}</td>
+                <td style="text-align: right">{{ $money($item->price) }}</td>
+                <td style="text-align: right">{{ $money($invoice->discount) }}</td>
+                <td style="text-align: right">{{ $money($item->total) }}</td>
             </tr>
         @endforeach
         </tbody>
@@ -200,7 +205,7 @@
                 @endif
                 <tr>
                     <td><b>TOTAL</b></td>
-                    <td style="text-align: right"><b>{{ $invoice->total }}</b></td>
+                    <td style="text-align: right"><b>{{ $money($invoice->total) }}</b></td>
                 </tr>
                 </tbody>
             </table>

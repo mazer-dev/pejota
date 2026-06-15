@@ -23,4 +23,27 @@ class Currency extends Model
     {
         $query->where('is_active', true);
     }
+
+    /**
+     * Select options for currency pickers: active currencies (ordered by code),
+     * ensuring $ensure is present even if inactive/unknown.
+     *
+     * @return array<string, string>
+     */
+    public static function selectOptions(?string $ensure = null): array
+    {
+        $options = self::active()
+            ->orderBy('code')
+            ->get()
+            ->mapWithKeys(fn (Currency $currency): array => [
+                $currency->code => $currency->code.' — '.__($currency->name),
+            ])
+            ->all();
+
+        if ($ensure && ! array_key_exists($ensure, $options)) {
+            $options[$ensure] = $ensure;
+        }
+
+        return $options;
+    }
 }

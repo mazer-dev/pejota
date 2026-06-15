@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\InvoiceStatusEnum;
+use App\Exceptions\MissingExchangeRateException;
 use App\Helpers\PejotaHelper;
+use App\Services\ExchangeRateService;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,6 +23,21 @@ class Invoice extends Model
     use BelongsToTenants, HasFactory, HasTags;
 
     protected $guarded = ['id'];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::saving(function (Invoice $invoice): void {
+            if ($invoice->status === InvoiceStatusEnum::PAID) {
+                if ($invoice->exchange_rate === null) {
+                    $invoice->exchange_rate = $invoice->resolveAutomaticRate();
+                }
+            } else {
+                $invoice->exchange_rate = null;
+            }
+        });
+    }
 
     protected function isOverdue(): Attribute
     {
@@ -89,6 +106,52 @@ class Invoice extends Model
     {
         $query->where('status', InvoiceStatusEnum::PAID->value)
             ->whereBetween('payment_date', [$from->toDateString(), $to->toDateString()]);
+    }
+
+    protected function baseTotal(): Attribute
+    {
+        return Attribute::make(
+            get: function (): float {
+                $base = PejotaHelper::getUserCurrency();
+                $currency = $this->currency ?? $base;
+
+                if ($this->exchange_rate !== null) {
+                    return (float) $this->total * (float) $this->exchange_rate;
+                }
+
+                if ($currency === $base) {
+                    return (float) $this->total;
+                }
+
+                return app(ExchangeRateService::class)->convert(
+                    (float) $this->total,
+                    $currency,
+                    $base,
+                    CarbonImmutable::now(PejotaHelper::getUserTimeZone()),
+                );
+            },
+        );
+    }
+
+    protected function resolveAutomaticRate(): ?float
+    {
+        $base = PejotaHelper::getUserCurrency();
+        $currency = $this->currency ?? $base;
+
+        if ($currency === $base) {
+            return 1.0;
+        }
+
+        try {
+            return app(ExchangeRateService::class)->convert(
+                1.0,
+                $currency,
+                $base,
+                $this->payment_date ?? CarbonImmutable::now(PejotaHelper::getUserTimeZone()),
+            );
+        } catch (MissingExchangeRateException) {
+            return null;
+        }
     }
 
     private static function currentDay(): CarbonImmutable

@@ -5,15 +5,20 @@ namespace App\Filament\App\Resources;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\MenuGroupsEnum;
+use App\Exceptions\MissingExchangeRateException;
 use App\Filament\App\Resources\InvoiceResource\Pages\CreateInvoice;
 use App\Filament\App\Resources\InvoiceResource\Pages\EditInvoice;
 use App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices;
 use App\Filament\App\Resources\InvoiceResource\Pages\ViewInvoice;
 use App\Filament\App\Widgets\InvoicesOverview;
 use App\Helpers\PejotaHelper;
+use App\Models\Client;
+use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\Product;
+use App\Services\ExchangeRateService;
 use App\Services\InvoiceService;
+use Carbon\CarbonImmutable;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
@@ -35,7 +40,6 @@ use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
@@ -98,7 +102,18 @@ class InvoiceResource extends Resource
                         ->translateLabel()
                         ->required()
                         ->relationship('client', 'name')
-                        ->searchable(),
+                        ->searchable()
+                        ->live()
+                        ->afterStateUpdated(function (Set $set, $state): void {
+                            $set('currency', Client::find($state)?->currency ?? PejotaHelper::getUserCurrency());
+                        }),
+                    Select::make('currency')
+                        ->translateLabel()
+                        ->required()
+                        ->options(fn (): array => Currency::selectOptions(PejotaHelper::getUserCurrency()))
+                        ->default(fn (): string => PejotaHelper::getUserCurrency())
+                        ->searchable()
+                        ->helperText(__('Item prices are entered in this currency; changing it does not convert values.')),
                     Select::make('project_id')
                         ->translateLabel()
                         ->relationship('project', 'name')
@@ -281,12 +296,25 @@ class InvoiceResource extends Resource
                     ->translateLabel()
                     ->weight(FontWeight::Bold)
                     ->numeric()
-                    ->money()
+                    ->money(fn (Invoice $record): string => $record->currency ?? PejotaHelper::getUserCurrency())
                     ->alignEnd()
-                    ->sortable()
-                    ->summarize(
-                        Sum::make()->money(PejotaHelper::getUserCurrency(), 100, PejotaHelper::getUserLocate())
-                    ),
+                    ->sortable(),
+                TextColumn::make('currency')
+                    ->translateLabel()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('base_total')
+                    ->label(__('Base value'))
+                    ->getStateUsing(function (Invoice $record): ?float {
+                        try {
+                            return $record->baseTotal;
+                        } catch (MissingExchangeRateException) {
+                            return null;
+                        }
+                    })
+                    ->money(PejotaHelper::getUserCurrency())
+                    ->placeholder('—')
+                    ->alignEnd()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->translateLabel()
                     ->dateTime()
@@ -334,6 +362,10 @@ class InvoiceResource extends Resource
                                         if (blank($get('payment_date'))) {
                                             $set('payment_date', self::defaultPaidDate($record));
                                         }
+                                        $effectiveDate = filled($get('payment_date')) ? $get('payment_date') : self::defaultPaidDate($record);
+                                        if (self::isForeignInvoice($record) && blank($get('realized_rate'))) {
+                                            $set('realized_rate', self::referenceRate($record, $effectiveDate));
+                                        }
                                     } elseif (self::isUnpaidStatus($state)) {
                                         $set('payment_date', null);
                                     }
@@ -343,17 +375,40 @@ class InvoiceResource extends Resource
                                     ->label(__('Total'))
                                     ->content(fn (Invoice $record): string => Number::currency(
                                         $record->total ?? 0,
-                                        PejotaHelper::getUserCurrency(),
+                                        $record->currency ?? self::baseCurrency(),
                                         PejotaHelper::getUserLocate(),
                                     )),
+                                Placeholder::make('base_total_display')
+                                    ->label(__('Base value'))
+                                    ->content(function (Invoice $record): string {
+                                        try {
+                                            return Number::currency($record->baseTotal, self::baseCurrency(), PejotaHelper::getUserLocate());
+                                        } catch (MissingExchangeRateException) {
+                                            return '—';
+                                        }
+                                    }),
                                 Placeholder::make('due_date_display')
                                     ->label(__('Due date'))
                                     ->content(fn (Invoice $record): string => $record->due_date?->format(PejotaHelper::getUserDateFormat()) ?? '—'),
                                 DatePicker::make('payment_date')
                                     ->translateLabel()
                                     ->date()
+                                    ->live()
                                     ->dehydrated()
-                                    ->disabled(fn (Get $get): bool => self::isUnpaidStatus($get('status'))),
+                                    ->disabled(fn (Get $get): bool => self::isUnpaidStatus($get('status')))
+                                    ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
+                                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record) && blank($get('realized_rate'))) {
+                                            $set('realized_rate', self::referenceRate($record, $state));
+                                        }
+                                    }),
+                                TextInput::make('realized_rate')
+                                    ->label(fn (Invoice $record): string => __('Realized rate').' (1 '.($record->currency ?? self::baseCurrency()).' = ? '.self::baseCurrency().')')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->step('any')
+                                    ->visible(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
+                                    ->required(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
+                                    ->helperText(__('Freezes the base-currency value received for this invoice.')),
                             ]),
                         ])
                         ->action(function (Invoice $record, array $data): void {
@@ -366,10 +421,13 @@ class InvoiceResource extends Resource
                                 $paymentDate = $record->payment_date?->format('Y-m-d') ?? self::defaultPaidDate($record);
                             }
 
-                            $record->update([
-                                'status' => $status,
-                                'payment_date' => $paymentDate,
-                            ]);
+                            $payload = ['status' => $status, 'payment_date' => $paymentDate];
+
+                            if ($status === InvoiceStatusEnum::PAID->value && filled($data['realized_rate'] ?? null)) {
+                                $payload['exchange_rate'] = (float) $data['realized_rate'];
+                            }
+
+                            $record->update($payload);
                         }),
                     Tables\Actions\Action::make('pdf')
                         ->label('PDF')
@@ -466,6 +524,34 @@ class InvoiceResource extends Resource
             $totalComponent,
             $invoiceValue
         );
+    }
+
+    private static function baseCurrency(): string
+    {
+        return PejotaHelper::getUserCurrency();
+    }
+
+    private static function isForeignInvoice(Invoice $record): bool
+    {
+        return ($record->currency ?? self::baseCurrency()) !== self::baseCurrency();
+    }
+
+    private static function referenceRate(Invoice $record, ?string $date): ?float
+    {
+        if (! self::isForeignInvoice($record)) {
+            return null;
+        }
+
+        try {
+            return app(ExchangeRateService::class)->convert(
+                1.0,
+                $record->currency,
+                self::baseCurrency(),
+                $date ? CarbonImmutable::parse($date) : CarbonImmutable::now(PejotaHelper::getUserTimeZone()),
+            );
+        } catch (MissingExchangeRateException) {
+            return null;
+        }
     }
 
     private static function isUnpaidStatus(?string $status): bool

@@ -224,5 +224,11 @@
     "Frozen": "Congelada",
     "In base currency": "Na moeda-base",
     "Until": "Até",
-    "Source": "Origem"
+    "Source": "Origem",
+    "Base value": "Valor base",
+    "Realized rate": "Taxa realizada",
+    "Freezes the base-currency value received for this invoice.": "Congela o valor recebido na moeda base para esta fatura.",
+    "Item prices are entered in this currency; changing it does not convert values.": "Os preços dos itens são informados nesta moeda; alterá-la não converte os valores.",
+    "Default currency for this client's invoices": "Moeda padrão para as faturas deste cliente",
+    ":count not converted": ":count sem cotação"
 }

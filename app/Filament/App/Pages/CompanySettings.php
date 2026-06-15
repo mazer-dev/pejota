@@ -234,20 +234,6 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
      */
     public function baseCurrencyOptions(): array
     {
-        $options = Currency::active()
-            ->orderBy('code')
-            ->get()
-            ->mapWithKeys(fn (Currency $currency): array => [
-                $currency->code => $currency->code.' — '.__($currency->name),
-            ])
-            ->all();
-
-        $current = PejotaHelper::getUserCurrency();
-
-        if ($current && ! array_key_exists($current, $options)) {
-            $options[$current] = $current;
-        }
-
-        return $options;
+        return Currency::selectOptions(PejotaHelper::getUserCurrency());
     }
 }

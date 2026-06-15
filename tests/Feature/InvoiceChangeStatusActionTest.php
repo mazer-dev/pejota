@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices;
 use App\Models\Client;
+use App\Models\ExchangeRate;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -114,5 +116,81 @@ class InvoiceChangeStatusActionTest extends TestCase
 
         $this->assertSame(InvoiceStatusEnum::CANCELED, $invoice->status);
         $this->assertNull($invoice->payment_date);
+    }
+
+    private function makeForeignInvoice(string $currency, ?string $paymentDate = null): Invoice
+    {
+        return Invoice::create([
+            'number' => 'INV-'.fake()->unique()->numerify('####'),
+            'title' => 'Invoice', 'status' => InvoiceStatusEnum::SENT,
+            'client_id' => $this->client->id, 'currency' => $currency,
+            'due_date' => now()->toDateString(), 'payment_date' => $paymentDate,
+            'total' => 100.00, 'company_id' => $this->user->company->id,
+        ]);
+    }
+
+    public function test_paying_base_currency_invoice_freezes_rate_one(): void
+    {
+        $invoice = $this->makeInvoice(InvoiceStatusEnum::SENT);
+
+        Livewire::test(ListInvoices::class)
+            ->set('activeTab', 'all')
+            ->callTableAction('change_status', $invoice, data: ['status' => InvoiceStatusEnum::PAID->value])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertEqualsWithDelta(1.0, (float) $invoice->refresh()->exchange_rate, 0.0000001);
+    }
+
+    public function test_paying_foreign_invoice_with_quote_freezes_triangulated_rate(): void
+    {
+        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        ExchangeRate::factory()->forCurrency('BRL')->on(now()->toDateString())->create(['rate' => 4.8]);
+        $invoice = $this->makeForeignInvoice('USD');
+
+        Livewire::test(ListInvoices::class)
+            ->set('activeTab', 'all')
+            ->callTableAction('change_status', $invoice, data: [
+                'status' => InvoiceStatusEnum::PAID->value,
+                'payment_date' => now()->toDateString(),
+                'realized_rate' => 5.0,
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertEqualsWithDelta(5.0, (float) $invoice->refresh()->exchange_rate, 0.0000001);
+    }
+
+    public function test_paying_foreign_invoice_with_manual_rate_freezes_manual_value(): void
+    {
+        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $invoice = $this->makeForeignInvoice('USD');
+
+        Livewire::test(ListInvoices::class)
+            ->set('activeTab', 'all')
+            ->callTableAction('change_status', $invoice, data: [
+                'status' => InvoiceStatusEnum::PAID->value,
+                'payment_date' => now()->toDateString(),
+                'realized_rate' => 5.42,
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertEqualsWithDelta(5.42, (float) $invoice->refresh()->exchange_rate, 0.0000001);
+    }
+
+    public function test_moving_from_paid_to_partially_paid_clears_rate(): void
+    {
+        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        ExchangeRate::factory()->forCurrency('BRL')->on(now()->toDateString())->create(['rate' => 5.0]);
+        $invoice = $this->makeForeignInvoice('USD', now()->toDateString());
+        $invoice->update(['status' => InvoiceStatusEnum::PAID]);
+        $this->assertNotNull($invoice->refresh()->exchange_rate);
+
+        Livewire::test(ListInvoices::class)
+            ->set('activeTab', 'all')
+            ->callTableAction('change_status', $invoice, data: [
+                'status' => InvoiceStatusEnum::PARTIALLY_PAID->value,
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertNull($invoice->refresh()->exchange_rate);
     }
 }

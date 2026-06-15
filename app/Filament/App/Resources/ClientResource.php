@@ -10,6 +10,8 @@ use App\Filament\App\Resources\ClientResource\Pages\ListClients;
 use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
+use App\Models\Currency;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
@@ -79,6 +81,9 @@ class ClientResource extends Resource
                 TextColumn::make('phone')
                     ->label(__('Phone'))
                     ->searchable(),
+                TextColumn::make('currency')
+                    ->translateLabel()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label(__('Created at'))
                     ->dateTime()
@@ -211,6 +216,11 @@ class ClientResource extends Resource
             TextInput::make('phone')
                 ->label(__('Phone'))
                 ->tel(),
+            Select::make('currency')
+                ->translateLabel()
+                ->options(fn (): array => Currency::selectOptions())
+                ->searchable()
+                ->helperText(__("Default currency for this client's invoices")),
         ];
     }
 }
