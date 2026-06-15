@@ -12,6 +12,7 @@ enum MenuSortEnum: int
     case WORK_SESSIONS = 40;
     case NOTES = 50;
     case ACCOUNTS = 55;
+    case EXCHANGE_RATES = 57;
     case SUBSCRIPTIONS = 60;
     case SETTINGS = 70;
     case PRODUCTS = 80;

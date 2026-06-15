@@ -214,5 +214,15 @@
     "Pending": "Pendientes",
     "Overdue": "Vencidas",
     "Delinquent": "Morosas",
-    "Due month": "Mes de vencimiento"
+    "Due month": "Mes de vencimiento",
+    "US Dollar": "Dólar estadounidense",
+    "Brazilian Real": "Real brasileño",
+    "Canadian Dollar": "Dólar canadiense",
+    "Euro": "Euro",
+    "Pound Sterling": "Libra esterlina",
+    "Exchange rate": "Tipo de cambio",
+    "Frozen": "Congelada",
+    "In base currency": "En moneda base",
+    "Until": "Hasta",
+    "Source": "Origen"
 }
