@@ -3,8 +3,11 @@
 namespace App\Models;
 
 use App\Enums\CompanySettingsEnum;
+use App\Enums\ContinuousModeEnum;
 use App\Enums\StatusPhaseEnum;
 use App\Helpers\PejotaHelper;
+use App\Models\Scopes\ExcludeRecurrenceTemplatesScope;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -35,6 +38,7 @@ use Spatie\Tags\HasTags;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
+#[ScopedBy([ExcludeRecurrenceTemplatesScope::class])]
 class Task extends Model
 {
     use BelongsToTenants,
@@ -56,6 +60,10 @@ class Task extends Model
         static::saving(function ($model) {
             if ($model->isDirty('status_id')) {
                 self::setStartEndDates($model);
+            }
+
+            if (! $model->is_continuous) {
+                $model->continuous_mode = null;
             }
         });
     }
@@ -88,6 +96,11 @@ class Task extends Model
     public function workSessions(): HasMany
     {
         return $this->hasMany(WorkSession::class);
+    }
+
+    public function taskCompletions(): HasMany
+    {
+        return $this->hasMany(TaskCompletion::class);
     }
 
     protected static function setStartEndDates(Model $model): void
@@ -149,6 +162,89 @@ class Task extends Model
         });
     }
 
+    public function isContinuous(): bool
+    {
+        return (bool) $this->is_continuous;
+    }
+
+    public function isDailyCheck(): bool
+    {
+        return $this->is_continuous && $this->continuous_mode === ContinuousModeEnum::DailyCheck;
+    }
+
+    public function isDoneToday(): bool
+    {
+        return $this->taskCompletions()
+            ->whereDate('completed_on', Carbon::today(PejotaHelper::getUserTimeZone()))
+            ->exists();
+    }
+
+    public function markDoneToday(): void
+    {
+        $today = Carbon::today(PejotaHelper::getUserTimeZone())->toDateString();
+
+        $existing = $this->taskCompletions()
+            ->whereDate('completed_on', $today)
+            ->first();
+
+        if (! $existing) {
+            $this->taskCompletions()->create([
+                'completed_on' => $today,
+                'company_id' => $this->company_id,
+                'user_id' => auth()->id(),
+            ]);
+        }
+    }
+
+    public function currentStreak(): int
+    {
+        $dates = $this->taskCompletions()
+            ->orderByDesc('completed_on')
+            ->pluck('completed_on')
+            ->map(fn ($date) => $date->toDateString())
+            ->all();
+
+        if ($dates === []) {
+            return 0;
+        }
+
+        $today = Carbon::today(PejotaHelper::getUserTimeZone());
+
+        if ($dates[0] !== $today->toDateString()) {
+            return 0;
+        }
+
+        $streak = 0;
+        $cursor = $today->copy();
+
+        foreach ($dates as $date) {
+            if ($date === $cursor->toDateString()) {
+                $streak++;
+                $cursor->subDay();
+            } else {
+                break;
+            }
+        }
+
+        return $streak;
+    }
+
+    public function scopeOrderedForList(Builder $query): void
+    {
+        $today = Carbon::today(PejotaHelper::getUserTimeZone())->toDateString();
+
+        $query
+            ->orderByDesc('is_continuous')
+            ->orderByRaw(
+                'CASE WHEN exists (select 1 from task_completions tc'
+                .' where tc.task_id = tasks.id and DATE(tc.completed_on) = ?) THEN 1 ELSE 0 END asc',
+                [$today],
+            )
+            ->orderByRaw('CASE WHEN due_date IS NULL THEN 1 ELSE 0 END asc')
+            ->orderBy('due_date')
+            ->orderBy('id');
+    }
+
     /**
      * Postpones the specified field by the given interval.
      *
@@ -188,6 +284,9 @@ class Task extends Model
             'actual_end' => 'date',
             'due_date' => 'date',
             'checklist' => 'array',
+            'is_recurrence_template' => 'boolean',
+            'is_continuous' => 'boolean',
+            'continuous_mode' => ContinuousModeEnum::class,
         ];
     }
 }

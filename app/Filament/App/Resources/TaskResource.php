@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\ContinuousModeEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
@@ -24,6 +25,7 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieTagsInput;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -39,6 +41,7 @@ use Filament\Infolists\Components\Tabs;
 use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\ActionSize;
@@ -255,6 +258,23 @@ class TaskResource extends Resource
 
                 ]),
 
+                Forms\Components\Section::make(__('Continuous task'))
+                    ->description(__('Pin this task to the top of the active list. Optionally track a daily check.'))
+                    ->collapsible()
+                    ->collapsed(fn (?Task $record) => ! ($record?->is_continuous))
+                    ->compact()
+                    ->schema([
+                        Toggle::make('is_continuous')
+                            ->label(__('Continuous task'))
+                            ->live(),
+                        Select::make('continuous_mode')
+                            ->label(__('Mode'))
+                            ->options(ContinuousModeEnum::class)
+                            ->default(ContinuousModeEnum::Simple)
+                            ->visible(fn (Get $get): bool => (bool) $get('is_continuous'))
+                            ->requiredIf('is_continuous', true),
+                    ]),
+
                 Forms\Components\Grid::make([
                     'default' => 2,
                     'md' => 5,
@@ -336,6 +356,10 @@ class TaskResource extends Resource
                 SelectFilter::make('project')
                     ->translateLabel()
                     ->relationship('project', 'name'),
+                Filter::make('is_continuous')
+                    ->label(__('Continuous'))
+                    ->toggle()
+                    ->query(fn (Builder $query): Builder => $query->where('is_continuous', true)),
                 Filter::make('due_date_not_empty')
                     ->form([
                         ToggleButtons::make('due_date')
@@ -484,6 +508,19 @@ class TaskResource extends Resource
                         ->url(fn ($record) => CreateWorkSession::getUrl([
                             'task' => $record->id,
                         ])),
+                    Tables\Actions\Action::make('markDoneToday')
+                        ->label(__('Done today'))
+                        ->tooltip(__('Mark this daily task as done today'))
+                        ->icon('heroicon-o-check-circle')
+                        ->color(Color::Green)
+                        ->visible(fn (Task $record): bool => $record->isDailyCheck() && ! $record->isDoneToday())
+                        ->action(function (Task $record): void {
+                            $record->markDoneToday();
+                            Notification::make()
+                                ->title(__('Done today').' — '.__('streak').': '.$record->currentStreak())
+                                ->success()
+                                ->send();
+                        }),
                     EditAction::make(),
                     Tables\Actions\Action::make(__('Clone'))
                         ->tooltip(

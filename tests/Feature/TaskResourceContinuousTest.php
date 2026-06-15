@@ -1,0 +1,123 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\ContinuousModeEnum;
+use App\Filament\App\Resources\TaskResource\Pages\CreateTask;
+use App\Filament\App\Resources\TaskResource\Pages\ListTasks;
+use App\Models\Status;
+use App\Models\Task;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\TestCase;
+
+class TaskResourceContinuousTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+        Landlord::addTenant('company_id', $this->user->company->id);
+    }
+
+    private function makeStatus(string $phase = 'todo'): Status
+    {
+        return Status::create([
+            'name' => 'Status '.$phase,
+            'phase' => $phase,
+            'color' => '#000000',
+            'sort_order' => 1,
+            'active' => true,
+            'company_id' => $this->user->company->id,
+        ]);
+    }
+
+    public function test_can_create_continuous_daily_check_task(): void
+    {
+        $status = $this->makeStatus();
+
+        Livewire::test(CreateTask::class)
+            ->fillForm([
+                'title' => 'Review inbox',
+                'status_id' => $status->id,
+                'priority' => 'medium',
+                'is_continuous' => true,
+                'continuous_mode' => ContinuousModeEnum::DailyCheck->value,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $task = Task::query()->where('title', 'Review inbox')->first();
+
+        $this->assertNotNull($task);
+        $this->assertTrue($task->is_continuous);
+        $this->assertSame(ContinuousModeEnum::DailyCheck, $task->continuous_mode);
+    }
+
+    public function test_mark_done_today_action_records_completion(): void
+    {
+        $status = $this->makeStatus();
+        $task = Task::create([
+            'title' => 'Daily',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'is_continuous' => true,
+            'continuous_mode' => ContinuousModeEnum::DailyCheck,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->callTableAction('markDoneToday', $task);
+
+        $this->assertTrue($task->refresh()->isDoneToday());
+    }
+
+    public function test_done_today_action_hidden_for_non_daily_tasks(): void
+    {
+        $status = $this->makeStatus();
+        $simple = Task::create([
+            'title' => 'Simple',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'is_continuous' => true,
+            'continuous_mode' => ContinuousModeEnum::Simple,
+        ]);
+        $plain = Task::create([
+            'title' => 'Plain',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->assertTableActionHidden('markDoneToday', $simple)
+            ->assertTableActionHidden('markDoneToday', $plain);
+    }
+
+    public function test_continuous_filter_shows_only_continuous(): void
+    {
+        $status = $this->makeStatus();
+        $continuous = Task::create([
+            'title' => 'Continuous',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'is_continuous' => true,
+            'continuous_mode' => ContinuousModeEnum::Simple,
+        ]);
+        $plain = Task::create([
+            'title' => 'Plain',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->filterTable('is_continuous')
+            ->assertCanSeeTableRecords([$continuous])
+            ->assertCanNotSeeTableRecords([$plain]);
+    }
+}
