@@ -21,7 +21,7 @@ class ExchangeRateFetch extends Command
 
     protected $description = 'Fetch ECB exchange rates from Frankfurter and upsert non-frozen rows (global, USD-pivot)';
 
-    private const BASE_URL = 'https://api.frankfurter.dev/v2/';
+    private const BASE_URL = 'https://api.frankfurter.dev/v1/';
 
     public function handle(): int
     {
