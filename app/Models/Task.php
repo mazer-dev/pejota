@@ -63,9 +63,9 @@ class Task extends Model
                 self::setStartEndDates($model);
             }
 
-            if (! $model->is_continuous) {
-                $model->continuous_mode = null;
-            }
+            $model->continuous_mode = $model->is_continuous
+                ? ContinuousModeEnum::DailyCheck
+                : null;
         });
 
         static::updated(function (Task $model) {
@@ -206,7 +206,7 @@ class Task extends Model
 
     public function isDailyCheck(): bool
     {
-        return $this->is_continuous && $this->continuous_mode === ContinuousModeEnum::DailyCheck;
+        return $this->isContinuous();
     }
 
     public function isDoneToday(): bool
