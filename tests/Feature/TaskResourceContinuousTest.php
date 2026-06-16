@@ -49,7 +49,6 @@ class TaskResourceContinuousTest extends TestCase
                 'status_id' => $status->id,
                 'priority' => 'medium',
                 'is_continuous' => true,
-                'continuous_mode' => ContinuousModeEnum::DailyCheck->value,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
@@ -59,6 +58,7 @@ class TaskResourceContinuousTest extends TestCase
         $this->assertNotNull($task);
         $this->assertTrue($task->is_continuous);
         $this->assertSame(ContinuousModeEnum::DailyCheck, $task->continuous_mode);
+        $this->assertTrue($task->isDailyCheck());
     }
 
     public function test_mark_done_today_action_records_completion(): void
@@ -78,15 +78,14 @@ class TaskResourceContinuousTest extends TestCase
         $this->assertTrue($task->refresh()->isDoneToday());
     }
 
-    public function test_done_today_action_hidden_for_non_daily_tasks(): void
+    public function test_done_today_action_visible_for_continuous_and_hidden_for_plain(): void
     {
         $status = $this->makeStatus();
-        $simple = Task::create([
-            'title' => 'Simple',
+        $continuous = Task::create([
+            'title' => 'Continuous',
             'status_id' => $status->id,
             'company_id' => $this->user->company->id,
             'is_continuous' => true,
-            'continuous_mode' => ContinuousModeEnum::Simple,
         ]);
         $plain = Task::create([
             'title' => 'Plain',
@@ -95,7 +94,7 @@ class TaskResourceContinuousTest extends TestCase
         ]);
 
         Livewire::test(ListTasks::class)
-            ->assertTableActionHidden('markDoneToday', $simple)
+            ->assertTableActionVisible('markDoneToday', $continuous)
             ->assertTableActionHidden('markDoneToday', $plain);
     }
 

@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote')->hourly();
 
 Schedule::command(GenerateRecurringTasks::class)->dailyAt('00:30');
+Schedule::command('exchange-rate:fetch')->dailyAt('06:00');
