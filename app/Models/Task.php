@@ -7,6 +7,7 @@ use App\Enums\ContinuousModeEnum;
 use App\Enums\StatusPhaseEnum;
 use App\Helpers\PejotaHelper;
 use App\Models\Scopes\ExcludeRecurrenceTemplatesScope;
+use App\Services\RecurrenceService;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -66,6 +67,10 @@ class Task extends Model
                 $model->continuous_mode = null;
             }
         });
+
+        static::updated(function (Task $model) {
+            self::handleRecurrenceOnCompletion($model);
+        });
     }
 
     public function client(): BelongsTo
@@ -103,8 +108,17 @@ class Task extends Model
         return $this->hasMany(TaskCompletion::class);
     }
 
+    public function recurrence(): BelongsTo
+    {
+        return $this->belongsTo(TaskRecurrence::class, 'recurrence_id');
+    }
+
     protected static function setStartEndDates(Model $model): void
     {
+        if (! auth()->check()) {
+            return;
+        }
+
         $settings = auth()->user()->company
             ->settings();
 
@@ -125,6 +139,29 @@ class Task extends Model
                 $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
             }
         }
+    }
+
+    protected static function handleRecurrenceOnCompletion(Task $model): void
+    {
+        if ($model->recurrence_id === null) {
+            return;
+        }
+
+        if (! $model->wasChanged('status_id')) {
+            return;
+        }
+
+        $status = Status::find($model->status_id);
+
+        if (! $status || $status->phase !== StatusPhaseEnum::CLOSED->value) {
+            return;
+        }
+
+        $completedOn = $model->actual_end
+            ? Carbon::parse($model->actual_end)
+            : Carbon::today(auth()->check() ? PejotaHelper::getUserTimeZone() : null);
+
+        app(RecurrenceService::class)->generateOnCompletion($model, $completedOn);
     }
 
     public function getActivitylogOptions(): LogOptions
