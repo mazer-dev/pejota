@@ -36,9 +36,22 @@ class ListTasks extends ListRecords
         return [
             'opened' => Tab::make()
                 ->label(__('Opened'))
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->opened()->orderedForList())
+                ->modifyQueryUsing(function (Builder $query): Builder {
+                    $query->opened();
+
+                    if ($this->getTableSortColumn() === null) {
+                        $query->orderedForList();
+                    }
+
+                    return $query;
+                })
                 ->badge(fn (Task $record): int => $record->opened()->count())
                 ->badgeColor(Color::Orange),
+            'daily_checks' => Tab::make()
+                ->label(__('Daily checks'))
+                ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('is_continuous', true))
+                ->badge(fn (Task $record): int => $record->where('is_continuous', true)->count())
+                ->badgeColor(Color::Amber),
             'closed' => Tab::make()
                 ->label(__('Closed'))
                 ->modifyQueryUsing(fn (Builder $query): Builder => $query->closed()),

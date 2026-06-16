@@ -119,4 +119,85 @@ class TaskResourceContinuousTest extends TestCase
             ->assertCanSeeTableRecords([$continuous])
             ->assertCanNotSeeTableRecords([$plain]);
     }
+
+    public function test_default_order_pins_continuous_tasks_to_top(): void
+    {
+        $status = $this->makeStatus();
+        $plain = Task::create([
+            'title' => 'Apple',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+        ]);
+        $continuous = Task::create([
+            'title' => 'Zebra',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'is_continuous' => true,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->assertCanSeeTableRecords([$continuous, $plain], inOrder: true);
+    }
+
+    public function test_sorting_by_column_does_not_pin_continuous_tasks(): void
+    {
+        $status = $this->makeStatus();
+        $plain = Task::create([
+            'title' => 'Apple',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+        ]);
+        $continuous = Task::create([
+            'title' => 'Zebra',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'is_continuous' => true,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->sortTable('title')
+            ->assertCanSeeTableRecords([$plain, $continuous], inOrder: true);
+    }
+
+    public function test_daily_checks_tab_shows_only_continuous(): void
+    {
+        $status = $this->makeStatus();
+        $continuous = Task::create([
+            'title' => 'Continuous',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'is_continuous' => true,
+        ]);
+        $plain = Task::create([
+            'title' => 'Plain',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->set('activeTab', 'daily_checks')
+            ->assertCanSeeTableRecords([$continuous])
+            ->assertCanNotSeeTableRecords([$plain]);
+    }
+
+    public function test_hide_continuous_filter_removes_continuous_tasks(): void
+    {
+        $status = $this->makeStatus();
+        $continuous = Task::create([
+            'title' => 'Continuous',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'is_continuous' => true,
+        ]);
+        $plain = Task::create([
+            'title' => 'Plain',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->filterTable('hide_continuous')
+            ->assertCanSeeTableRecords([$plain])
+            ->assertCanNotSeeTableRecords([$continuous]);
+    }
 }

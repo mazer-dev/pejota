@@ -66,6 +66,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
@@ -333,7 +334,11 @@ class TaskResource extends Resource
                 'project.name',
                 'due_date',
                 'status.name',
+                Group::make('is_continuous')
+                    ->label(__('Daily check'))
+                    ->getTitleFromRecordUsing(fn (Task $record): string => $record->is_continuous ? __('Daily checks') : __('Tasks')),
             ])
+            ->recordClasses(fn (Model $record): ?string => $record->is_continuous ? 'fi-daily-check-row' : null)
             ->striped()
             ->columns(
                 $columns
@@ -358,6 +363,10 @@ class TaskResource extends Resource
                     ->label(__('Continuous'))
                     ->toggle()
                     ->query(fn (Builder $query): Builder => $query->where('is_continuous', true)),
+                Filter::make('hide_continuous')
+                    ->label(__('Hide daily checks'))
+                    ->toggle()
+                    ->query(fn (Builder $query): Builder => $query->where('is_continuous', false)),
                 Filter::make('recurring')
                     ->label(__('Recurring'))
                     ->toggle()
