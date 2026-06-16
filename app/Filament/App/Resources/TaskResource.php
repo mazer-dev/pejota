@@ -2,9 +2,14 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\ContinuousModeEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
+use App\Enums\RecurrenceAnchorFieldEnum;
+use App\Enums\RecurrenceFrequencyEnum;
+use App\Enums\RecurrenceGenerationModeEnum;
+use App\Enums\RecurrenceStopTypeEnum;
 use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
 use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Filament\App\Resources\TaskResource\Pages\CreateTask;
@@ -17,6 +22,7 @@ use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\WorkSession;
+use App\Services\RecurrenceService;
 use Filament\Forms;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
@@ -24,6 +30,7 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieTagsInput;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -39,6 +46,7 @@ use Filament\Infolists\Components\Tabs;
 use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\ActionSize;
@@ -255,6 +263,23 @@ class TaskResource extends Resource
 
                 ]),
 
+                Forms\Components\Section::make(__('Continuous task'))
+                    ->description(__('Pin this task to the top of the active list. Optionally track a daily check.'))
+                    ->collapsible()
+                    ->collapsed(fn (?Task $record) => ! ($record?->is_continuous))
+                    ->compact()
+                    ->schema([
+                        Toggle::make('is_continuous')
+                            ->label(__('Continuous task'))
+                            ->live(),
+                        Select::make('continuous_mode')
+                            ->label(__('Mode'))
+                            ->options(ContinuousModeEnum::class)
+                            ->default(ContinuousModeEnum::Simple)
+                            ->visible(fn (Get $get): bool => (bool) $get('is_continuous'))
+                            ->requiredIf('is_continuous', true),
+                    ]),
+
                 Forms\Components\Grid::make([
                     'default' => 2,
                     'md' => 5,
@@ -336,6 +361,14 @@ class TaskResource extends Resource
                 SelectFilter::make('project')
                     ->translateLabel()
                     ->relationship('project', 'name'),
+                Filter::make('is_continuous')
+                    ->label(__('Continuous'))
+                    ->toggle()
+                    ->query(fn (Builder $query): Builder => $query->where('is_continuous', true)),
+                Filter::make('recurring')
+                    ->label(__('Recurring'))
+                    ->toggle()
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('recurrence_id')),
                 Filter::make('due_date_not_empty')
                     ->form([
                         ToggleButtons::make('due_date')
@@ -484,6 +517,19 @@ class TaskResource extends Resource
                         ->url(fn ($record) => CreateWorkSession::getUrl([
                             'task' => $record->id,
                         ])),
+                    Tables\Actions\Action::make('markDoneToday')
+                        ->label(__('Done today'))
+                        ->tooltip(__('Mark this daily task as done today'))
+                        ->icon('heroicon-o-check-circle')
+                        ->color(Color::Green)
+                        ->visible(fn (Task $record): bool => $record->isDailyCheck() && ! $record->isDoneToday())
+                        ->action(function (Task $record): void {
+                            $record->markDoneToday();
+                            Notification::make()
+                                ->title(__('Done today').' — '.__('streak').': '.$record->currentStreak())
+                                ->success()
+                                ->send();
+                        }),
                     EditAction::make(),
                     Tables\Actions\Action::make(__('Clone'))
                         ->tooltip(
@@ -494,6 +540,97 @@ class TaskResource extends Resource
                         ->icon('heroicon-o-document-duplicate')
                         ->color(Color::Amber)
                         ->action(fn (Task $record) => self::clone($record)),
+
+                    Tables\Actions\Action::make('makeRecurring')
+                        ->label(__('Make recurring'))
+                        ->icon('heroicon-o-arrow-path')
+                        ->color(Color::Indigo)
+                        ->visible(fn (Task $record): bool => $record->recurrence_id === null)
+                        ->form([
+                            Select::make('frequency')
+                                ->label(__('Frequency'))
+                                ->options(RecurrenceFrequencyEnum::class)
+                                ->default(RecurrenceFrequencyEnum::Monthly)
+                                ->required(),
+                            TextInput::make('interval')
+                                ->label(__('Every (interval)'))
+                                ->numeric()
+                                ->minValue(1)
+                                ->default(1)
+                                ->required(),
+                            Select::make('anchor_field')
+                                ->label(__('Apply to date'))
+                                ->options(RecurrenceAnchorFieldEnum::class)
+                                ->default(RecurrenceAnchorFieldEnum::DueDate)
+                                ->required(),
+                            TextInput::make('offset_days')
+                                ->label(__('Planned-end lead days (when both)'))
+                                ->numeric()
+                                ->default(0),
+                            Select::make('generation_mode')
+                                ->label(__('Generation'))
+                                ->options(RecurrenceGenerationModeEnum::class)
+                                ->default(RecurrenceGenerationModeEnum::ByDate)
+                                ->required(),
+                            Select::make('stop_type')
+                                ->label(__('Stop condition'))
+                                ->options(RecurrenceStopTypeEnum::class)
+                                ->default(RecurrenceStopTypeEnum::Never)
+                                ->live()
+                                ->required(),
+                            DatePicker::make('until_date')
+                                ->label(__('Until date'))
+                                ->visible(fn (Get $get): bool => $get('stop_type') === RecurrenceStopTypeEnum::UntilDate->value),
+                            TextInput::make('max_count')
+                                ->label(__('Number of occurrences'))
+                                ->numeric()
+                                ->minValue(1)
+                                ->visible(fn (Get $get): bool => $get('stop_type') === RecurrenceStopTypeEnum::Count->value),
+                        ])
+                        ->action(function (Task $record, array $data): void {
+                            $frequency = $data['frequency'] instanceof RecurrenceFrequencyEnum
+                                ? $data['frequency']
+                                : RecurrenceFrequencyEnum::from($data['frequency']);
+                            $anchorField = $data['anchor_field'] instanceof RecurrenceAnchorFieldEnum
+                                ? $data['anchor_field']
+                                : RecurrenceAnchorFieldEnum::from($data['anchor_field']);
+                            $generationMode = $data['generation_mode'] instanceof RecurrenceGenerationModeEnum
+                                ? $data['generation_mode']
+                                : RecurrenceGenerationModeEnum::from($data['generation_mode']);
+                            $stopType = $data['stop_type'] instanceof RecurrenceStopTypeEnum
+                                ? $data['stop_type']
+                                : RecurrenceStopTypeEnum::from($data['stop_type']);
+
+                            app(RecurrenceService::class)->enableForTask($record, [
+                                'frequency' => $frequency,
+                                'interval' => (int) $data['interval'],
+                                'anchor_field' => $anchorField,
+                                'offset_days' => (int) ($data['offset_days'] ?? 0),
+                                'generation_mode' => $generationMode,
+                                'stop_type' => $stopType,
+                                'until_date' => $data['until_date'] ?? null,
+                                'max_count' => isset($data['max_count']) ? (int) $data['max_count'] : null,
+                            ]);
+
+                            Notification::make()
+                                ->title(__('Recurrence enabled'))
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\Action::make('stopSeries')
+                        ->label(__('Stop series'))
+                        ->icon('heroicon-o-no-symbol')
+                        ->color(Color::Red)
+                        ->requiresConfirmation()
+                        ->visible(fn (Task $record): bool => $record->recurrence?->is_active === true)
+                        ->action(function (Task $record): void {
+                            app(RecurrenceService::class)->stopSeries($record->recurrence);
+
+                            Notification::make()
+                                ->title(__('Series stopped'))
+                                ->success()
+                                ->send();
+                        }),
 
                 ]),
             ])
