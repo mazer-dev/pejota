@@ -12,8 +12,8 @@ enum ContinuousModeEnum: string implements HasLabel
     public function getLabel(): ?string
     {
         return match ($this) {
-            self::Simple => __('Simple'),
-            self::DailyCheck => __('Daily check'),
+            self::Simple => __('Simple (pinned only)'),
+            self::DailyCheck => __('Daily check (with streak)'),
         };
     }
 }

@@ -264,20 +264,27 @@ class TaskResource extends Resource
                 ]),
 
                 Forms\Components\Section::make(__('Continuous task'))
-                    ->description(__('Pin this task to the top of the active list. Optionally track a daily check.'))
+                    ->description(__('Pins this task to the top of the active list. In Daily check mode, mark it done each day to build a streak; Simple mode just keeps it pinned.'))
                     ->collapsible()
                     ->collapsed(fn (?Task $record) => ! ($record?->is_continuous))
                     ->compact()
                     ->schema([
-                        Toggle::make('is_continuous')
-                            ->label(__('Continuous task'))
-                            ->live(),
-                        Select::make('continuous_mode')
-                            ->label(__('Mode'))
-                            ->options(ContinuousModeEnum::class)
-                            ->default(ContinuousModeEnum::Simple)
-                            ->visible(fn (Get $get): bool => (bool) $get('is_continuous'))
-                            ->requiredIf('is_continuous', true),
+                        Forms\Components\Grid::make([
+                            'default' => 1,
+                            'sm' => 2,
+                        ])->schema([
+                            Toggle::make('is_continuous')
+                                ->label(__('Continuous task'))
+                                ->inlineLabel()
+                                ->live(),
+                            Select::make('continuous_mode')
+                                ->label(__('Mode'))
+                                ->inlineLabel()
+                                ->options(ContinuousModeEnum::class)
+                                ->default(ContinuousModeEnum::Simple)
+                                ->visible(fn (Get $get): bool => (bool) $get('is_continuous'))
+                                ->requiredIf('is_continuous', true),
+                        ]),
                     ]),
 
                 Forms\Components\Grid::make([
