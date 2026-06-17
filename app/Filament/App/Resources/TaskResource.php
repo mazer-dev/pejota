@@ -338,7 +338,13 @@ class TaskResource extends Resource
                     ->label(__('Daily check'))
                     ->getTitleFromRecordUsing(fn (Task $record): string => $record->is_continuous ? __('Daily checks') : __('Tasks')),
             ])
-            ->recordClasses(fn (Model $record): ?string => $record->is_continuous ? 'fi-daily-check-row' : null)
+            ->recordClasses(function (Model $record): ?string {
+                if (! $record->is_continuous) {
+                    return null;
+                }
+
+                return $record->isDoneToday() ? 'fi-daily-check-done' : 'fi-daily-check-pending';
+            })
             ->striped()
             ->columns(
                 $columns
@@ -1205,6 +1211,17 @@ class TaskResource extends Resource
                 ->toggleable(
                     isToggledHiddenByDefault: ! in_array('work_session', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
+            IconColumn::make('done_today')
+                ->label(__('Today'))
+                ->wrapHeader()
+                ->icon(fn (Task $record): ?string => ! $record->is_continuous
+                    ? null
+                    : ($record->isDoneToday() ? 'heroicon-s-check-circle' : 'heroicon-o-clock'))
+                ->color(fn (Task $record): string => $record->isDoneToday() ? 'success' : 'warning')
+                ->tooltip(fn (Task $record): ?string => ! $record->is_continuous
+                    ? null
+                    : ($record->isDoneToday() ? __('Checked in today') : __('Pending check-in today')))
+                ->toggleable(),
             SelectColumn::make('status_id')
                 ->label('Status')
                 ->options(fn (): array => Status::all()->pluck('name', 'id')->toArray())
