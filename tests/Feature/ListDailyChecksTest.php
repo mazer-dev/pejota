@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
 use App\Filament\App\Widgets\ListDailyChecks;
 use App\Models\Status;
 use App\Models\Task;
@@ -96,6 +97,29 @@ class ListDailyChecksTest extends TestCase
         $this->makeTask('Habit', true);
 
         $this->assertTrue(ListDailyChecks::canView());
+    }
+
+    public function test_done_today_column_renders_a_visible_icon(): void
+    {
+        $this->makeTask('Habit', true);
+
+        Livewire::test(ListDailyChecks::class)
+            ->assertSeeHtml('fi-ta-icon-item');
+    }
+
+    public function test_clicking_a_row_links_to_the_task_view_page(): void
+    {
+        $task = $this->makeTask('Habit', true);
+
+        $url = Livewire::test(ListDailyChecks::class)
+            ->instance()
+            ->getTable()
+            ->getRecordUrl($task);
+
+        $this->assertSame(
+            ViewTask::getUrl([$task->id]),
+            $url,
+        );
     }
 
     public function test_widget_lists_pending_checks_before_done_ones(): void

@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Widgets;
 
+use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
 use App\Models\Task;
 use App\Services\DailyCheckService;
 use Filament\Support\Enums\FontWeight;
@@ -41,6 +42,7 @@ class ListDailyChecks extends BaseWidget
                     ->toggleable(),
                 DailyCheckService::streakColumn(),
                 DailyCheckService::doneTodayColumn(),
-            ]);
+            ])
+            ->recordUrl(fn (Task $record): string => ViewTask::getUrl([$record->id]));
     }
 }
