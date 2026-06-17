@@ -830,6 +830,31 @@ class TaskResource extends Resource
                         ]),
 
                         Tabs::make('Tabs')->schema([
+                            Tab::make('Daily checks')
+                                ->label(__('Daily checks'))
+                                ->visible(fn (Model $record): bool => (bool) $record->is_continuous)
+                                ->badge(fn (Model $record): int => $record->currentStreak())
+                                ->schema([
+                                    TextEntry::make('current_streak')
+                                        ->label(__('Current streak'))
+                                        ->icon('heroicon-o-fire')
+                                        ->color(fn (Model $record): string => $record->currentStreak() > 0 ? 'success' : 'gray')
+                                        ->getStateUsing(fn (Model $record): string => $record->currentStreak().' '.__('days')),
+
+                                    RepeatableEntry::make('taskCompletions')
+                                        ->label(__('Check-in history'))
+                                        ->contained(false)
+                                        ->columnSpanFull()
+                                        ->getStateUsing(fn (Model $record) => $record->taskCompletions()->orderByDesc('completed_on')->get())
+                                        ->schema([
+                                            TextEntry::make('completed_on')
+                                                ->hiddenLabel()
+                                                ->date(PejotaHelper::getUserDateFormat())
+                                                ->icon('heroicon-o-check-circle')
+                                                ->color(Color::Green),
+                                        ]),
+                                ]),
+
                             Tab::make('Comments')
                                 ->translateLabel()
                                 ->badge(fn (Model $record): int => $record->filamentComments->count())
@@ -1255,6 +1280,16 @@ class TaskResource extends Resource
             SpatieTagsColumn::make('tags')
                 ->toggleable(
                     isToggledHiddenByDefault: ! in_array('tags', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
+            TextColumn::make('streak')
+                ->label(__('Streak'))
+                ->badge()
+                ->icon('heroicon-o-fire')
+                ->getStateUsing(fn (Task $record): ?int => $record->is_continuous ? $record->currentStreak() : null)
+                ->color(fn (Task $record): string => $record->is_continuous && $record->currentStreak() > 0 ? 'success' : 'gray')
+                ->tooltip(fn (Task $record): ?string => $record->is_continuous ? __('Consecutive days checked in').($record->isDoneToday() ? '' : ' — '.__('not done today')) : null)
+                ->toggleable(
+                    isToggledHiddenByDefault: ! in_array('streak', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
             TextColumn::make('created_at')
                 ->translateLabel()
