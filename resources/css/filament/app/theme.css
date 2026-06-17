@@ -63,13 +63,22 @@ div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside 
     }
 }
 
-/* daily check (continuous) rows - subtle amber highlight */
-.fi-ta-row.fi-daily-check-row {
+/* daily check (continuous) rows - pending today: amber call-to-action */
+.fi-ta-row.fi-daily-check-pending {
     @apply bg-amber-50 dark:bg-amber-950 !important;
 }
 
-.fi-ta-row.fi-daily-check-row:hover {
+.fi-ta-row.fi-daily-check-pending:hover {
     @apply bg-amber-100 dark:bg-amber-900 dark:text-gray-200 !important;
+}
+
+/* daily check (continuous) rows - done today: subtle green */
+.fi-ta-row.fi-daily-check-done {
+    @apply bg-green-50 dark:bg-green-950 !important;
+}
+
+.fi-ta-row.fi-daily-check-done:hover {
+    @apply bg-green-100 dark:bg-green-900 dark:text-gray-200 !important;
 }
 
 /* dropdown list */

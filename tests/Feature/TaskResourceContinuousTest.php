@@ -5,10 +5,13 @@ namespace Tests\Feature;
 use App\Enums\ContinuousModeEnum;
 use App\Filament\App\Resources\TaskResource\Pages\CreateTask;
 use App\Filament\App\Resources\TaskResource\Pages\ListTasks;
+use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
+use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use NunoMazer\Samehouse\Facades\Landlord;
 use Tests\TestCase;
@@ -25,6 +28,12 @@ class TaskResourceContinuousTest extends TestCase
         $this->user = User::factory()->create();
         $this->actingAs($this->user);
         Landlord::addTenant('company_id', $this->user->company->id);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
     }
 
     private function makeStatus(string $phase = 'todo'): Status
@@ -199,5 +208,83 @@ class TaskResourceContinuousTest extends TestCase
             ->filterTable('hide_continuous')
             ->assertCanSeeTableRecords([$plain])
             ->assertCanNotSeeTableRecords([$continuous]);
+    }
+
+    public function test_view_page_shows_streak_and_completion_dates_for_daily_check(): void
+    {
+        $status = $this->makeStatus();
+        $task = Task::create([
+            'title' => 'Daily habit',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'priority' => 'medium',
+            'is_continuous' => true,
+        ]);
+        $task->markDoneToday();
+
+        $today = Carbon::today(PejotaHelper::getUserTimeZone())->format(PejotaHelper::getUserDateFormat());
+
+        Livewire::test(ViewTask::class, ['record' => $task->id])
+            ->assertSee(__('Daily checks'))
+            ->assertSee($today);
+    }
+
+    public function test_table_has_streak_column(): void
+    {
+        Livewire::test(ListTasks::class)
+            ->assertTableColumnExists('streak');
+    }
+
+    public function test_table_has_done_today_column(): void
+    {
+        Livewire::test(ListTasks::class)
+            ->assertTableColumnExists('done_today');
+    }
+
+    public function test_done_today_action_reappears_on_a_new_day(): void
+    {
+        $status = $this->makeStatus();
+        $task = Task::create([
+            'title' => 'Daily habit',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'priority' => 'medium',
+            'is_continuous' => true,
+        ]);
+
+        Carbon::setTestNow(Carbon::parse('2026-06-16 10:00:00'));
+        $task->markDoneToday();
+
+        Livewire::test(ListTasks::class)
+            ->assertTableActionHidden('markDoneToday', $task);
+
+        Carbon::setTestNow(Carbon::parse('2026-06-17 10:00:00'));
+
+        Livewire::test(ListTasks::class)
+            ->assertTableActionVisible('markDoneToday', $task);
+    }
+
+    public function test_daily_check_rows_carry_pending_and_done_state_classes(): void
+    {
+        $status = $this->makeStatus();
+        $pending = Task::create([
+            'title' => 'Pending habit',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'priority' => 'medium',
+            'is_continuous' => true,
+        ]);
+        $done = Task::create([
+            'title' => 'Done habit',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'priority' => 'medium',
+            'is_continuous' => true,
+        ]);
+        $done->markDoneToday();
+
+        Livewire::test(ListTasks::class)
+            ->assertSeeHtml('fi-daily-check-pending')
+            ->assertSeeHtml('fi-daily-check-done');
     }
 }
