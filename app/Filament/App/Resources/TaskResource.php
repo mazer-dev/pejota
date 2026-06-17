@@ -372,7 +372,13 @@ class TaskResource extends Resource
                 Filter::make('hide_continuous')
                     ->label(__('Hide daily checks'))
                     ->toggle()
-                    ->query(fn (Builder $query): Builder => $query->where('is_continuous', false)),
+                    ->query(function (Builder $query, $livewire): Builder {
+                        if (($livewire->activeTab ?? null) === 'daily_checks') {
+                            return $query;
+                        }
+
+                        return $query->where('is_continuous', false);
+                    }),
                 Filter::make('recurring')
                     ->label(__('Recurring'))
                     ->toggle()

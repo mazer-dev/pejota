@@ -279,6 +279,23 @@ class TaskResourceContinuousTest extends TestCase
             ->assertCanSeeTableRecords([$task]);
     }
 
+    public function test_hide_continuous_filter_does_not_affect_daily_checks_tab(): void
+    {
+        $status = $this->makeStatus();
+        $continuous = Task::create([
+            'title' => 'Continuous',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'priority' => 'medium',
+            'is_continuous' => true,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->set('activeTab', 'daily_checks')
+            ->filterTable('hide_continuous')
+            ->assertCanSeeTableRecords([$continuous]);
+    }
+
     public function test_clicking_today_column_marks_check_in(): void
     {
         $status = $this->makeStatus();
