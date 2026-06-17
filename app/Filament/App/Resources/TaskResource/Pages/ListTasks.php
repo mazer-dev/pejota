@@ -37,7 +37,7 @@ class ListTasks extends ListRecords
             'opened' => Tab::make()
                 ->label(__('Opened'))
                 ->modifyQueryUsing(function (Builder $query): Builder {
-                    $query->opened();
+                    $query->opened()->excludeDoneTodayChecks();
 
                     if ($this->getTableSortColumn() === null) {
                         $query->orderedForList();
@@ -45,7 +45,7 @@ class ListTasks extends ListRecords
 
                     return $query;
                 })
-                ->badge(fn (Task $record): int => $record->opened()->count())
+                ->badge(fn (Task $record): int => $record->opened()->excludeDoneTodayChecks()->count())
                 ->badgeColor(Color::Orange),
             'daily_checks' => Tab::make()
                 ->label(__('Daily checks'))

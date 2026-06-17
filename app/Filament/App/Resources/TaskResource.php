@@ -1220,7 +1220,25 @@ class TaskResource extends Resource
                 ->color(fn (Task $record): string => $record->isDoneToday() ? 'success' : 'warning')
                 ->tooltip(fn (Task $record): ?string => ! $record->is_continuous
                     ? null
-                    : ($record->isDoneToday() ? __('Checked in today') : __('Pending check-in today')))
+                    : ($record->isDoneToday() ? __('Checked in today').' — '.__('Click to undo') : __('Pending check-in today').' — '.__('Click to check in')))
+                ->action(function (Task $record): void {
+                    if (! $record->is_continuous) {
+                        return;
+                    }
+
+                    if ($record->isDoneToday()) {
+                        $record->markUndoneToday();
+
+                        return;
+                    }
+
+                    $record->markDoneToday();
+
+                    Notification::make()
+                        ->title(__('Done today').' — '.__('streak').': '.$record->currentStreak())
+                        ->success()
+                        ->send();
+                })
                 ->toggleable(),
             SelectColumn::make('status_id')
                 ->label('Status')

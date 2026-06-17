@@ -241,7 +241,7 @@ class TaskResourceContinuousTest extends TestCase
             ->assertTableColumnExists('done_today');
     }
 
-    public function test_done_today_action_reappears_on_a_new_day(): void
+    public function test_done_daily_check_is_hidden_from_opened_tab_until_next_day(): void
     {
         $status = $this->makeStatus();
         $task = Task::create([
@@ -256,12 +256,63 @@ class TaskResourceContinuousTest extends TestCase
         $task->markDoneToday();
 
         Livewire::test(ListTasks::class)
-            ->assertTableActionHidden('markDoneToday', $task);
+            ->assertCanNotSeeTableRecords([$task]);
 
         Carbon::setTestNow(Carbon::parse('2026-06-17 10:00:00'));
 
         Livewire::test(ListTasks::class)
-            ->assertTableActionVisible('markDoneToday', $task);
+            ->assertCanSeeTableRecords([$task]);
+    }
+
+    public function test_pending_daily_check_still_visible_in_opened_tab(): void
+    {
+        $status = $this->makeStatus();
+        $task = Task::create([
+            'title' => 'Daily habit',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'priority' => 'medium',
+            'is_continuous' => true,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->assertCanSeeTableRecords([$task]);
+    }
+
+    public function test_clicking_today_column_marks_check_in(): void
+    {
+        $status = $this->makeStatus();
+        $task = Task::create([
+            'title' => 'Daily habit',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'priority' => 'medium',
+            'is_continuous' => true,
+        ]);
+
+        Livewire::test(ListTasks::class)
+            ->callTableColumnAction('done_today', $task);
+
+        $this->assertTrue($task->refresh()->isDoneToday());
+    }
+
+    public function test_clicking_today_column_again_removes_check_in(): void
+    {
+        $status = $this->makeStatus();
+        $task = Task::create([
+            'title' => 'Daily habit',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'priority' => 'medium',
+            'is_continuous' => true,
+        ]);
+        $task->markDoneToday();
+
+        Livewire::test(ListTasks::class)
+            ->set('activeTab', 'daily_checks')
+            ->callTableColumnAction('done_today', $task);
+
+        $this->assertFalse($task->refresh()->isDoneToday());
     }
 
     public function test_daily_check_rows_carry_pending_and_done_state_classes(): void
@@ -284,7 +335,10 @@ class TaskResourceContinuousTest extends TestCase
         $done->markDoneToday();
 
         Livewire::test(ListTasks::class)
-            ->assertSeeHtml('fi-daily-check-pending')
+            ->assertSeeHtml('fi-daily-check-pending');
+
+        Livewire::test(ListTasks::class)
+            ->set('activeTab', 'daily_checks')
             ->assertSeeHtml('fi-daily-check-done');
     }
 }

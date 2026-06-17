@@ -233,6 +233,25 @@ class Task extends Model
         }
     }
 
+    public function markUndoneToday(): void
+    {
+        $this->taskCompletions()
+            ->whereDate('completed_on', Carbon::today(PejotaHelper::getUserTimeZone()))
+            ->delete();
+    }
+
+    public function scopeExcludeDoneTodayChecks(Builder $query): void
+    {
+        $today = Carbon::today(PejotaHelper::getUserTimeZone())->toDateString();
+
+        $query->where(function (Builder $query) use ($today) {
+            $query->where('is_continuous', false)
+                ->orWhereDoesntHave('taskCompletions', function (Builder $query) use ($today) {
+                    $query->whereDate('completed_on', $today);
+                });
+        });
+    }
+
     public function currentStreak(): int
     {
         $dates = $this->taskCompletions()
