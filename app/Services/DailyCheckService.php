@@ -51,6 +51,7 @@ class DailyCheckService
         return IconColumn::make('done_today')
             ->label(__('Today'))
             ->wrapHeader()
+            ->getStateUsing(fn (Task $record): ?bool => $record->is_continuous ? $record->isDoneToday() : null)
             ->icon(fn (Task $record): ?string => ! $record->is_continuous
                 ? null
                 : ($record->isDoneToday() ? 'heroicon-s-check-circle' : 'heroicon-o-clock'))
