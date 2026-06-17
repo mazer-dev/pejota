@@ -12,7 +12,7 @@ class ListRunningSessions extends BaseWidget
 {
     protected static ?int $sort = 100;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = ['default' => 'full', 'md' => 3];
 
     protected function getTableHeading(): string|Htmlable|null
     {

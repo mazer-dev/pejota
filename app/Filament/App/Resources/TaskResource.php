@@ -21,6 +21,7 @@ use App\Helpers\PejotaHelper;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\WorkSession;
+use App\Services\DailyCheckService;
 use App\Services\RecurrenceService;
 use Filament\Forms;
 use Filament\Forms\Components\Checkbox;
@@ -338,13 +339,7 @@ class TaskResource extends Resource
                     ->label(__('Daily check'))
                     ->getTitleFromRecordUsing(fn (Task $record): string => $record->is_continuous ? __('Daily checks') : __('Tasks')),
             ])
-            ->recordClasses(function (Model $record): ?string {
-                if (! $record->is_continuous) {
-                    return null;
-                }
-
-                return $record->isDoneToday() ? 'fi-daily-check-done' : 'fi-daily-check-pending';
-            })
+            ->recordClasses(fn (Task $record): ?string => DailyCheckService::recordClasses($record))
             ->striped()
             ->columns(
                 $columns
@@ -537,13 +532,7 @@ class TaskResource extends Resource
                         ->icon('heroicon-o-check-circle')
                         ->color(Color::Green)
                         ->visible(fn (Task $record): bool => $record->isDailyCheck() && ! $record->isDoneToday())
-                        ->action(function (Task $record): void {
-                            $record->markDoneToday();
-                            Notification::make()
-                                ->title(__('Done today').' — '.__('streak').': '.$record->currentStreak())
-                                ->success()
-                                ->send();
-                        }),
+                        ->action(fn (Task $record) => DailyCheckService::toggle($record)),
                     EditAction::make(),
                     Tables\Actions\Action::make(__('Clone'))
                         ->tooltip(
@@ -1217,34 +1206,7 @@ class TaskResource extends Resource
                 ->toggleable(
                     isToggledHiddenByDefault: ! in_array('work_session', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
-            IconColumn::make('done_today')
-                ->label(__('Today'))
-                ->wrapHeader()
-                ->icon(fn (Task $record): ?string => ! $record->is_continuous
-                    ? null
-                    : ($record->isDoneToday() ? 'heroicon-s-check-circle' : 'heroicon-o-clock'))
-                ->color(fn (Task $record): string => $record->isDoneToday() ? 'success' : 'warning')
-                ->tooltip(fn (Task $record): ?string => ! $record->is_continuous
-                    ? null
-                    : ($record->isDoneToday() ? __('Checked in today').' — '.__('Click to undo') : __('Pending check-in today').' — '.__('Click to check in')))
-                ->action(function (Task $record): void {
-                    if (! $record->is_continuous) {
-                        return;
-                    }
-
-                    if ($record->isDoneToday()) {
-                        $record->markUndoneToday();
-
-                        return;
-                    }
-
-                    $record->markDoneToday();
-
-                    Notification::make()
-                        ->title(__('Done today').' — '.__('streak').': '.$record->currentStreak())
-                        ->success()
-                        ->send();
-                })
+            DailyCheckService::doneTodayColumn()
                 ->toggleable(),
             SelectColumn::make('status_id')
                 ->label('Status')
@@ -1322,13 +1284,7 @@ class TaskResource extends Resource
                 ->toggleable(
                     isToggledHiddenByDefault: ! in_array('tags', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
-            TextColumn::make('streak')
-                ->label(__('Streak'))
-                ->badge()
-                ->icon('heroicon-o-fire')
-                ->getStateUsing(fn (Task $record): ?int => $record->is_continuous ? $record->currentStreak() : null)
-                ->color(fn (Task $record): string => $record->is_continuous && $record->currentStreak() > 0 ? 'success' : 'gray')
-                ->tooltip(fn (Task $record): ?string => $record->is_continuous ? __('Consecutive days checked in').($record->isDoneToday() ? '' : ' — '.__('not done today')) : null)
+            DailyCheckService::streakColumn()
                 ->toggleable(
                     isToggledHiddenByDefault: ! in_array('streak', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
