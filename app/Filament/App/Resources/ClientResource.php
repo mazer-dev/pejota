@@ -13,6 +13,7 @@ use App\Models\Client;
 use App\Models\Currency;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
@@ -221,6 +222,15 @@ class ClientResource extends Resource
                 ->options(fn (): array => Currency::selectOptions())
                 ->searchable()
                 ->helperText(__("Default currency for this client's invoices")),
+            TextInput::make('default_hourly_rate')
+                ->translateLabel()
+                ->numeric()
+                ->minValue(0)
+                ->helperText(__("Default hourly rate, in this client's currency")),
+            Toggle::make('billable_default')
+                ->translateLabel()
+                ->default(true)
+                ->helperText(__('New work sessions for this client are billable by default')),
         ];
     }
 }

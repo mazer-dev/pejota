@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Enums\CompanySettingsEnum;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,7 +29,16 @@ class Client extends Model
         );
     }
 
-    public function contracts(): HasMany {
+    public function contracts(): HasMany
+    {
         return $this->hasMany(Contract::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'default_hourly_rate' => MoneyCast::class,
+            'billable_default' => 'boolean',
+        ];
     }
 }

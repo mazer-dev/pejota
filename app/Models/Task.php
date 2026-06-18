@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\ContinuousModeEnum;
 use App\Enums\StatusPhaseEnum;
@@ -343,6 +344,7 @@ class Task extends Model
             'is_recurrence_template' => 'boolean',
             'is_continuous' => 'boolean',
             'continuous_mode' => ContinuousModeEnum::class,
+            'hourly_rate' => MoneyCast::class,
         ];
     }
 }

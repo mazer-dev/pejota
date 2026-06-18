@@ -15,6 +15,7 @@ use App\Helpers\PejotaHelper;
 use App\Models\WorkSession;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Closure;
 use Filament\Forms;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\RichEditor;
@@ -41,6 +42,7 @@ use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
@@ -139,12 +141,21 @@ class WorkSessionResource extends Resource
                     ->searchable(),
                 TextColumn::make('value')
                     ->translateLabel()
-                    ->numeric()
+                    ->money(fn (WorkSession $record): string => $record->currency ?? PejotaHelper::getUserCurrency())
                     ->hidden(fn ($livewire) => isset($livewire->activeTab) ? $livewire->activeTab === 'running' : true)
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->summarize(
+                        Sum::make()
+                            ->label('Total value')
+                            ->formatStateUsing(fn ($state): string => number_format(((float) $state) / 100, 2))
+                    ),
                 TextColumn::make('currency')
                     ->translateLabel()
                     ->hidden(fn ($livewire) => isset($livewire->activeTab) ? $livewire->activeTab === 'running' : true)
+                    ->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('billable')
+                    ->translateLabel()
+                    ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('task.title')
                     ->translateLabel()
@@ -279,6 +290,7 @@ class WorkSessionResource extends Resource
                     ->seconds(false)
                     ->required()
                     ->default(fn (): string => now()->toDateTimeString())
+                    ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced())
                     ->live()
                     ->afterStateUpdated(
                         fn (
@@ -297,6 +309,14 @@ class WorkSessionResource extends Resource
                     ->timezone(PejotaHelper::getUserTimeZone())
                     ->seconds(false)
                     ->required(fn (Get $get): bool => ! $get('is_running'))
+                    ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced())
+                    ->rules([
+                        fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get): void {
+                            if ($value && $get('start') && Carbon::parse($value)->lessThan(Carbon::parse($get('start')))) {
+                                $fail(__('End must be greater than or equal to start.'));
+                            }
+                        },
+                    ])
                     ->live()
                     ->afterStateUpdated(
                         fn (
@@ -315,8 +335,8 @@ class WorkSessionResource extends Resource
                     ->numeric()
                     ->integer()
                     ->default(0)
-//                    ->helperText(__('Duration in minutes. If you enter manually end time, it will be calculated.'))
                     ->prefixIcon('heroicon-o-play')
+                    ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced())
                     ->live()
                     ->afterStateUpdated(
                         fn (
@@ -333,7 +353,20 @@ class WorkSessionResource extends Resource
                     ->translateLabel()
                     ->required()
                     ->numeric()
-                    ->default(0),
+                    ->default(0)
+                    ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced()),
+
+                Toggle::make('billable')
+                    ->translateLabel()
+                    ->inline(false)
+                    ->default(true)
+                    ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced()),
+
+                TextInput::make('currency')
+                    ->translateLabel()
+                    ->disabled()
+                    ->dehydrated()
+                    ->default(fn (): string => PejotaHelper::getUserCurrency()),
 
                 Toggle::make('is_running')
                     ->label(fn (bool $state) => $state ? 'Running' : 'Finished')
@@ -349,7 +382,10 @@ class WorkSessionResource extends Resource
                             $set('end', null);
                             $set('duration', 0);
                         } else {
-                            $set('end', now()->timezone(PejotaHelper::getUserTimeZone())->format('Y-m-d H:i'));
+                            if (! $get('end')) {
+                                $tz = PejotaHelper::getUserTimeZone();
+                                $set('end', $tz ? now()->timezone($tz)->format('Y-m-d H:i') : now()->format('Y-m-d H:i'));
+                            }
                             self::formSetTimers(false, $get, $set);
                         }
                     }),
@@ -366,7 +402,9 @@ class WorkSessionResource extends Resource
                     ->relationship('client', 'name')
                     ->searchable()
                     ->preload()
-                    ->createOptionForm(ClientResource::getSchema()),
+                    ->createOptionForm(ClientResource::getSchema())
+                    ->live()
+                    ->afterStateUpdated(fn (Get $get, Set $set) => self::applyCascade($get, $set)),
                 Select::make('project')
                     ->label('Project')
                     ->translateLabel()
@@ -377,11 +415,15 @@ class WorkSessionResource extends Resource
                     )
                     ->searchable()
                     ->preload()
-                    ->createOptionForm(ProjectResource::getFormComponents()),
+                    ->createOptionForm(ProjectResource::getFormComponents())
+                    ->live()
+                    ->afterStateUpdated(fn (Get $get, Set $set) => self::applyCascade($get, $set)),
                 Select::make('task')
                     ->translateLabel()
                     ->relationship('task', 'title')
-                    ->searchable(),
+                    ->searchable()
+                    ->live()
+                    ->afterStateUpdated(fn (Get $get, Set $set) => self::applyCascade($get, $set)),
 
             ]),
 
@@ -514,16 +556,16 @@ class WorkSessionResource extends Resource
 
     public static function clone(WorkSession $record)
     {
+        $tz = PejotaHelper::getUserTimeZone();
         $newModel = $record->replicate();
-        $newModel->start = Carbon::now()
-            ->timezone(PejotaHelper::getUserTimeZone())
+        $newModel->invoice_item_id = null;
+        $newModel->start = ($tz ? Carbon::now()->timezone($tz) : Carbon::now())
             ->setTime(
                 $record->start->hour,
                 $record->start->minute,
                 $record->start->second
             );
-        $newModel->end = Carbon::now()
-            ->timezone(PejotaHelper::getUserTimeZone())
+        $newModel->end = ($tz ? Carbon::now()->timezone($tz) : Carbon::now())
             ->setTime(
                 $record->end->hour,
                 $record->end->minute,
@@ -534,7 +576,20 @@ class WorkSessionResource extends Resource
         return redirect(ViewWorkSession::getUrl([$newModel->id]));
     }
 
-    public static function formSetTimers(bool $fromDuration, Get $get, Set $set)
+    public static function applyCascade(Get $get, Set $set): void
+    {
+        $session = new WorkSession([
+            'client_id' => $get('client'),
+            'project_id' => $get('project'),
+            'task_id' => $get('task'),
+        ]);
+
+        $set('rate', $session->resolveRate());
+        $set('currency', $session->resolveCurrency());
+        $set('billable', $session->resolveBillable());
+    }
+
+    public static function formSetTimers(bool $fromDuration, Get $get, Set $set): void
     {
         $start = $get('start');
         $end = $get('end');
@@ -550,11 +605,11 @@ class WorkSessionResource extends Resource
 
         $set('end', $end->toDateTimeString());
 
-        $duration = (int) $start->diffInMinutes($end);
+        $duration = (int) $start->diffInMinutes($end, absolute: false);
 
         $set('duration', $duration);
 
-        $set('time', PejotaHelper::formatDuration((int) $get('duration')));
+        $set('time', PejotaHelper::formatDuration($duration));
 
         $set('is_running', $duration == 0);
     }

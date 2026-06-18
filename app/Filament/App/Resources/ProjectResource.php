@@ -224,6 +224,11 @@ class ProjectResource extends Resource
             TextInput::make('name')
                 ->translateLabel()
                 ->required(),
+            TextInput::make('hourly_rate')
+                ->translateLabel()
+                ->numeric()
+                ->minValue(0)
+                ->helperText(__('Overrides the client rate for this project (optional)')),
             RichEditor::make('description')
                 ->translateLabel()
                 ->columnSpanFull()

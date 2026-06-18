@@ -38,6 +38,7 @@ class CreateInvoice extends CreateRecord
                     'status' => InvoiceStatusEnum::DRAFT,
                     'title' => $source->title,
                     'client_id' => $source->client_id,
+                    'currency' => $source->currency,
                     'project_id' => $source->project_id,
                     'contract_id' => $source->contract_id,
                     'extra_info' => $source->extra_info,

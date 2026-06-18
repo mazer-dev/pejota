@@ -192,6 +192,11 @@ class TaskResource extends Resource
                     ->translateLabel()
                     ->columnSpanFull()
                     ->required(),
+                TextInput::make('hourly_rate')
+                    ->translateLabel()
+                    ->numeric()
+                    ->minValue(0)
+                    ->helperText(__('Overrides the project/client rate for this task (optional)')),
 
                 Forms\Components\Section::make(__('Details'))
                     ->collapsible()

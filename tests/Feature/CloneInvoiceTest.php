@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
+use App\Filament\App\Resources\InvoiceResource\Pages\CreateInvoice;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -10,6 +12,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class CloneInvoiceTest extends TestCase
@@ -84,5 +87,76 @@ class CloneInvoiceTest extends TestCase
     {
         $this->get(route('filament.app.resources.invoices.create'))
             ->assertOk();
+    }
+
+    public function test_opening_clone_page_does_not_consume_any_invoice_number(): void
+    {
+        $this->user->company->settings()->set(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
+            'ym000'
+        );
+
+        $client = Client::create([
+            'name' => 'Test Client',
+            'company_id' => $this->user->company->id,
+        ]);
+
+        $invoice = Invoice::create([
+            'number' => 'TEST-001',
+            'title' => 'Original Invoice',
+            'status' => InvoiceStatusEnum::PAID,
+            'client_id' => $client->id,
+            'total' => 100.00,
+            'company_id' => $this->user->company->id,
+        ]);
+
+        $this->get(route('filament.app.resources.invoices.create', ['clone' => $invoice->id]))
+            ->assertOk();
+
+        $lastNumber = $this->user->company->settings()->get(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value
+        );
+
+        $this->assertNull($lastNumber, 'Opening the clone page must not consume a number');
+    }
+
+    public function test_opening_create_page_does_not_consume_any_invoice_number(): void
+    {
+        $this->user->company->settings()->set(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
+            'ym000'
+        );
+
+        $this->get(route('filament.app.resources.invoices.create'))
+            ->assertOk();
+
+        $lastNumber = $this->user->company->settings()->get(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value
+        );
+
+        $this->assertNull($lastNumber, 'Opening the create page must not consume a number');
+    }
+
+    public function test_cloning_preserves_source_currency(): void
+    {
+        $client = Client::create([
+            'name' => 'BRL Client',
+            'company_id' => $this->user->company->id,
+            'currency' => 'BRL',
+        ]);
+
+        $invoice = Invoice::create([
+            'number' => 'BRL-001',
+            'title' => 'Foreign Invoice',
+            'status' => InvoiceStatusEnum::PAID,
+            'client_id' => $client->id,
+            'currency' => 'BRL',
+            'total' => 1000.00,
+            'company_id' => $this->user->company->id,
+        ]);
+
+        Livewire::withQueryParams(['clone' => $invoice->id])
+            ->test(CreateInvoice::class)
+            ->assertSet('data.currency', 'BRL');
     }
 }

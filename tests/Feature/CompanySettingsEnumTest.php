@@ -95,6 +95,41 @@ class CompanySettingsEnumTest extends TestCase
         $this->assertSame(8, $number);
     }
 
+    public function test_peek_does_not_mutate_and_is_repeatable(): void
+    {
+        $this->user->company->settings()->set(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
+            'ym000'
+        );
+
+        $first = CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->peekNextDocNumber();
+        $second = CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->peekNextDocNumber();
+
+        $this->assertSame(1, $first);
+        $this->assertSame(1, $second);
+
+        $stored = $this->user->company->settings()->get(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value
+        );
+
+        $this->assertNull($stored, 'Peeking must not persist the counter');
+    }
+
+    public function test_peek_then_consume_returns_same_number(): void
+    {
+        $this->user->company->settings()->set(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
+            'ym000'
+        );
+
+        $peeked = CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->peekNextDocNumber();
+        $consumed = CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumber();
+
+        $this->assertSame(1, $peeked);
+        $this->assertSame(1, $consumed);
+        $this->assertSame(2, CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->peekNextDocNumber());
+    }
+
     public function test_period_is_saved_after_reset(): void
     {
         $expectedPeriod = Carbon::now()->format('ym');
