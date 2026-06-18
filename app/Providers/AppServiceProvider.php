@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Sentry\ConfigureUserScope;
+use App\Services\Timesheet\Layouts\ClientTimesheetLayout;
+use App\Services\Timesheet\Layouts\InternalTimesheetLayout;
+use App\Services\Timesheet\TimesheetLayoutRegistry;
 use Detection\MobileDetect;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
@@ -19,7 +22,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(TimesheetLayoutRegistry::class, function (): TimesheetLayoutRegistry {
+            $registry = new TimesheetLayoutRegistry;
+            $registry->register(new ClientTimesheetLayout);
+            $registry->register(new InternalTimesheetLayout);
+
+            return $registry;
+        });
     }
 
     /**
