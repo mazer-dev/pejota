@@ -76,9 +76,9 @@ class InvoiceResource extends Resource
                 ])->schema([
                     TextInput::make('number')
                         ->translateLabel()
-                        ->required()
-                        ->default(fn () => CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumberFormated())
-                        ->unique(ignorable: fn ($record) => $record?->isDirty('number') ? null : $record),
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->default(fn () => CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->peekNextDocNumberFormated()),
                     Select::make('status')
                         ->options(InvoiceStatusEnum::class)
                         ->default(fn () => InvoiceStatusEnum::DRAFT)

@@ -115,21 +115,15 @@ enum CompanySettingsEnum: string
     }
 
     /**
-     * Returns the next sequential document number, resetting to 1 when
-     * the date period encoded in the configured format mask changes.
+     * Returns the next sequential document number WITHOUT persisting anything.
      *
-     * Side effects: updates docs.invoice_number_last and (on period change)
-     * docs.invoice_number_last_period in company settings.
+     * Safe to call repeatedly (e.g. to preview the number in a form): it always
+     * returns the same value and never mutates company settings. The number is
+     * actually consumed only by getNextDocNumber() when the document is saved.
      */
-    public function getNextDocNumber(): int
+    public function peekNextDocNumber(): int
     {
-        $allowed = [
-            self::DOCS_INVOICE_NUMBER_LAST,
-        ];
-
-        if (in_array($this, $allowed) === false) {
-            throw new Exception($this.' setting is not allowed to get the next number');
-        }
+        $this->assertAllowedForNumbering();
 
         $company = auth()->user()->company;
 
@@ -145,22 +139,60 @@ enum CompanySettingsEnum: string
         );
 
         if ($storedPeriod !== $currentPeriod) {
-            $number = 1;
+            return 1;
+        }
 
-            $company->settings()->set($this->value, $number);
+        return ((int) $company->settings()->get($this->value, 0)) + 1;
+    }
 
+    /**
+     * Consumes and returns the next sequential document number, resetting to 1
+     * when the date period encoded in the configured format mask changes.
+     *
+     * Side effects: updates docs.invoice_number_last and (on period change)
+     * docs.invoice_number_last_period in company settings. Call this once, when
+     * the document is actually persisted - use peekNextDocNumber() for previews.
+     */
+    public function getNextDocNumber(): int
+    {
+        $this->assertAllowedForNumbering();
+
+        $company = auth()->user()->company;
+
+        $format = $company->settings()->get(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
+            'ym000'
+        ) ?? 'ym000';
+
+        $currentPeriod = $this->getCurrentPeriod($format);
+
+        $storedPeriod = $company->settings()->get(
+            CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST_PERIOD->value
+        );
+
+        $number = $this->peekNextDocNumber();
+
+        $company->settings()->set($this->value, $number);
+
+        if ($storedPeriod !== $currentPeriod) {
             $company->settings()->set(
                 CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST_PERIOD->value,
                 $currentPeriod
             );
-        } else {
-            $number = $company->settings()->get($this->value, 0);
-            $number++;
-
-            $company->settings()->set($this->value, $number);
         }
 
         return $number;
+    }
+
+    private function assertAllowedForNumbering(): void
+    {
+        $allowed = [
+            self::DOCS_INVOICE_NUMBER_LAST,
+        ];
+
+        if (in_array($this, $allowed) === false) {
+            throw new Exception($this.' setting is not allowed to get the next number');
+        }
     }
 
     /**
@@ -232,6 +264,13 @@ enum CompanySettingsEnum: string
     public function getNextDocNumberFormated(): string
     {
         $number = $this->getNextDocNumber();
+
+        return $this->formatDocNumer($number);
+    }
+
+    public function peekNextDocNumberFormated(): string
+    {
+        $number = $this->peekNextDocNumber();
 
         return $this->formatDocNumer($number);
     }

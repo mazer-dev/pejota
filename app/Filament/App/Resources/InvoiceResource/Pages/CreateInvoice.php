@@ -13,6 +13,17 @@ class CreateInvoice extends CreateRecord
 {
     protected static string $resource = InvoiceResource::class;
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['number'] = CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumberFormated();
+
+        return $data;
+    }
+
     public function mount(): void
     {
         parent::mount();
@@ -24,7 +35,6 @@ class CreateInvoice extends CreateRecord
 
             if ($source) {
                 $this->form->fill([
-                    'number' => CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumberFormated(),
                     'status' => InvoiceStatusEnum::DRAFT,
                     'title' => $source->title,
                     'client_id' => $source->client_id,
