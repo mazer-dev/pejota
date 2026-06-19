@@ -23,7 +23,7 @@
         x-cloak
         @click.outside="open = false"
         x-transition
-        class="absolute end-0 z-50 mt-2 w-80 rounded-lg bg-white p-3 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+        class="absolute end-0 z-50 mt-2 w-96 min-w-[20rem] rounded-lg bg-white p-3 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
     >
         <h3 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             @lang('Running')
@@ -34,7 +34,12 @@
                 <li wire:key="ws-{{ $session->id }}"
                     class="flex items-center justify-between gap-2 rounded-md bg-gray-50 px-2 py-1 dark:bg-white/5">
                     <div class="min-w-0">
-                        <p class="truncate text-sm text-gray-800 dark:text-gray-100">{{ $session->title }}</p>
+                        <a
+                            href="{{ \App\Filament\App\Resources\WorkSessionResource::getUrl('edit', ['record' => $session]) }}"
+                            class="block truncate text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
+                        >
+                            {{ $session->title }}
+                        </a>
                         <p class="truncate text-xs text-gray-500">
                             {{ $session->client?->labelName }}
                             <span
@@ -57,9 +62,10 @@
                     <button
                         type="button"
                         wire:click="stopSession({{ $session->id }})"
-                        class="rounded-md bg-danger-600 px-2 py-1 text-xs font-medium text-white hover:bg-danger-500"
+                        x-tooltip="{ content: '@lang('Stop session')', theme: $store.theme }"
+                        class="shrink-0 rounded-md p-1 text-danger-600 hover:bg-danger-50 hover:text-danger-500 dark:text-danger-400 dark:hover:bg-danger-500/10"
                     >
-                        @lang('Stop')
+                        <x-filament::icon icon="heroicon-m-stop-circle" class="h-5 w-5" />
                     </button>
                 </li>
             @empty
@@ -74,27 +80,31 @@
                 placeholder="{{ __('Title') }}"
                 class="fi-input block w-full rounded-md border-gray-300 text-sm dark:bg-white/5 dark:text-white"
             />
-            <select wire:model.live="newClient"
-                    class="fi-select block w-full rounded-md border-gray-300 text-sm dark:bg-white/5 dark:text-white">
-                <option value="">{{ __('Client') }}</option>
-                @foreach ($clientOptions as $id => $name)
-                    <option value="{{ $id }}">{{ $name }}</option>
-                @endforeach
-            </select>
-            <select wire:model="newProject"
-                    class="fi-select block w-full rounded-md border-gray-300 text-sm dark:bg-white/5 dark:text-white">
-                <option value="">{{ __('Project') }}</option>
-                @foreach ($projectOptions as $id => $name)
-                    <option value="{{ $id }}">{{ $name }}</option>
-                @endforeach
-            </select>
-            <select wire:model="newTask"
-                    class="fi-select block w-full rounded-md border-gray-300 text-sm dark:bg-white/5 dark:text-white">
-                <option value="">{{ __('Task') }}</option>
-                @foreach ($taskOptions as $id => $name)
-                    <option value="{{ $id }}">{{ $name }}</option>
-                @endforeach
-            </select>
+
+            @include('livewire.partials.searchable-select', [
+                'field' => 'newClient',
+                'searchProp' => 'clientSearch',
+                'options' => $clientOptions,
+                'selectedLabel' => $selectedClientLabel,
+                'placeholder' => __('Client'),
+            ])
+
+            @include('livewire.partials.searchable-select', [
+                'field' => 'newProject',
+                'searchProp' => 'projectSearch',
+                'options' => $projectOptions,
+                'selectedLabel' => $selectedProjectLabel,
+                'placeholder' => __('Project'),
+            ])
+
+            @include('livewire.partials.searchable-select', [
+                'field' => 'newTask',
+                'searchProp' => 'taskSearch',
+                'options' => $taskOptions,
+                'selectedLabel' => $selectedTaskLabel,
+                'placeholder' => __('Task'),
+            ])
+
             <button
                 type="button"
                 wire:click="startSession"

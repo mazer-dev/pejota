@@ -272,5 +272,10 @@
     "Stop condition": "Condición de parada",
     "Recurrence enabled": "Recurrencia activada",
     "Series stopped": "Serie detenida",
-    "Recurring": "Recurrente"
+    "Recurring": "Recurrente",
+    "Search...": "Buscar...",
+    "Clear selection": "Limpiar selección",
+    "No results": "Sin resultados",
+    "Stop session": "Detener sesión",
+    "No running sessions": "No hay sesiones en curso"
 }

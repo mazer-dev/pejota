@@ -79,4 +79,44 @@ class WorkSessionsTopNavTest extends TestCase
         $this->assertNotNull($session->end);
         $this->assertGreaterThanOrEqual(59, $session->duration);
     }
+
+    public function test_client_search_filters_options(): void
+    {
+        Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        Client::create(['name' => 'Globex', 'company_id' => $this->user->company->id]);
+
+        Livewire::test(WorkSessionsTopNav::class)
+            ->set('clientSearch', 'Acme')
+            ->assertSee('Acme')
+            ->assertDontSee('Globex');
+    }
+
+    public function test_changing_client_resets_project_and_task(): void
+    {
+        Livewire::test(WorkSessionsTopNav::class)
+            ->set('newClient', 1)
+            ->set('newProject', 5)
+            ->set('newTask', 9)
+            ->set('newClient', 2)
+            ->assertSet('newProject', null)
+            ->assertSet('newTask', null);
+    }
+
+    public function test_changing_project_resets_task(): void
+    {
+        Livewire::test(WorkSessionsTopNav::class)
+            ->set('newProject', 5)
+            ->set('newTask', 9)
+            ->set('newProject', 6)
+            ->assertSet('newTask', null);
+    }
+
+    public function test_selected_client_label_is_shown(): void
+    {
+        $client = Client::create(['name' => 'Umbrella Corp', 'company_id' => $this->user->company->id]);
+
+        Livewire::test(WorkSessionsTopNav::class)
+            ->set('newClient', $client->id)
+            ->assertSee('Umbrella Corp');
+    }
 }
