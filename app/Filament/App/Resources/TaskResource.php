@@ -160,6 +160,7 @@ class TaskResource extends Resource
                 Forms\Components\Grid::make(3)->schema([
                     Select::make('client')
                         ->translateLabel()
+                        ->placeholder(__('Select the client'))
                         ->relationship('client', 'name')
                         ->preload()
                         ->searchable()
@@ -167,6 +168,7 @@ class TaskResource extends Resource
                     Select::make('project')
                         ->label('Project')
                         ->translateLabel()
+                        ->placeholder(__('Select the project'))
                         ->relationship(
                             'project',
                             'name',
@@ -192,6 +194,7 @@ class TaskResource extends Resource
                         }),
                     Select::make('parent_task')
                         ->translateLabel()
+                        ->placeholder(__('Select the parent task'))
                         ->relationship(
                             'parent',
                             'title',
@@ -219,7 +222,8 @@ class TaskResource extends Resource
                         }),
                 ]),
                 TextInput::make('title')
-                    ->translateLabel()
+                    ->hiddenLabel()
+                    ->placeholder(__('Title'))
                     ->columnSpanFull()
                     ->required(),
 
@@ -227,10 +231,13 @@ class TaskResource extends Resource
                     ->collapsible()
                     ->compact()
                     ->schema([
-                        SpatieTagsInput::make('tags'),
+                        SpatieTagsInput::make('tags')
+                            ->hiddenLabel()
+                            ->placeholder(__('Tags')),
 
                         RichEditor::make('description')
-                            ->translateLabel()
+                            ->hiddenLabel()
+                            ->placeholder(__('Description'))
                             ->columnSpanFull()
                             ->extraInputAttributes(
                                 ['style' => 'max-height: 300px; overflow: scroll']
