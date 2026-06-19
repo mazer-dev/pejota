@@ -222,11 +222,6 @@ class TaskResource extends Resource
                     ->translateLabel()
                     ->columnSpanFull()
                     ->required(),
-                TextInput::make('hourly_rate')
-                    ->translateLabel()
-                    ->numeric()
-                    ->minValue(0)
-                    ->helperText(__('Overrides the project/client rate for this task (optional)')),
 
                 Forms\Components\Section::make(__('Details'))
                     ->collapsible()
@@ -270,7 +265,7 @@ class TaskResource extends Resource
 
                 Forms\Components\Grid::make([
                     'default' => 2,
-                    'md' => 4,
+                    'md' => 5,
                 ])->schema([
                     Select::make('priority')
                         ->translateLabel()
@@ -297,22 +292,17 @@ class TaskResource extends Resource
                         ])
                         ->default('h'),
 
-                ]),
+                    TextInput::make('hourly_rate')
+                        ->translateLabel()
+                        ->numeric()
+                        ->minValue(0)
+                        ->helperText(__('Overrides the project/client rate for this task (optional)')),
 
-                Forms\Components\Section::make(__('Daily check'))
-                    ->description(__('Turn this task into a daily habit: it stays pinned to the top of the active list and you check it in each day to build a streak.'))
-                    ->collapsible()
-                    ->collapsed(fn (?Task $record) => ! ($record?->is_continuous))
-                    ->compact()
-                    ->schema([
-                        Toggle::make('is_continuous')
-                            ->label(__('Track as a daily habit'))
-                            ->inlineLabel(),
-                    ]),
+                ]),
 
                 Forms\Components\Grid::make([
                     'default' => 2,
-                    'md' => 5,
+                    'md' => 6,
                 ])->schema([
                     //                    Forms\Components\Select::make('date_setting')
                     //                        ->translateLabel()
@@ -349,6 +339,11 @@ class TaskResource extends Resource
                         ->translateLabel(),
                     DatePicker::make('actual_end')
                         ->translateLabel(),
+
+                    Toggle::make('is_continuous')
+                        ->label(__('Track as a daily habit'))
+                        ->helperText(__('Turn this task into a daily habit: it stays pinned to the top of the active list and you check it in each day to build a streak.'))
+                        ->inline(false),
 
                 ]),
             ]);

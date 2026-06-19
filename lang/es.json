@@ -137,6 +137,8 @@
     "Projects": "Proyectos",
     "Quantity": "Cantidad",
     "Rate": "Tasa",
+    "Hourly rate": "Tarifa por hora",
+    "Overrides the project/client rate for this task (optional)": "Reemplaza la tarifa del proyecto/cliente para esta tarea (opcional)",
     "Received this month": "Recibido este mes",
     "Report": "Informe",
     "Reference product": "Producto de referencia",
