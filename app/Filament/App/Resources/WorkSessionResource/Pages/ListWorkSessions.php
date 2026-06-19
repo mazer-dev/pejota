@@ -31,6 +31,7 @@ use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Builder;
+use Livewire\Features\SupportRedirects\Redirector;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ListWorkSessions extends ListRecords
@@ -119,15 +120,21 @@ class ListWorkSessions extends ListRecords
             Action::make('generateInvoice')
                 ->label(__('Generate invoice'))
                 ->icon('heroicon-o-document-text')
-                ->fillForm(fn (): array => [
-                    'client_id' => $this->tableFilters['client']['value'] ?? null,
-                    'from' => CarbonImmutable::now(PejotaHelper::getUserTimeZone() ?? 'UTC')->startOfMonth()->format('Y-m-d'),
-                    'to' => CarbonImmutable::now(PejotaHelper::getUserTimeZone() ?? 'UTC')->endOfMonth()->format('Y-m-d'),
-                    'grouping' => TimesheetGrouping::None->value,
-                    'product_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value),
-                    'unit_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_UNIT->value),
-                    'title' => __('Work sessions'),
-                ])
+                ->fillForm(function (): array {
+                    $tz = PejotaHelper::getUserTimeZone() ?? 'UTC';
+                    $from = CarbonImmutable::now($tz)->startOfMonth()->format('Y-m-d');
+                    $to = CarbonImmutable::now($tz)->endOfMonth()->format('Y-m-d');
+
+                    return [
+                        'client_id' => $this->tableFilters['client']['value'] ?? null,
+                        'from' => $from,
+                        'to' => $to,
+                        'grouping' => TimesheetGrouping::None->value,
+                        'product_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value),
+                        'unit_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_UNIT->value),
+                        'title' => __('Work sessions :from–:to', ['from' => $from, 'to' => $to]),
+                    ];
+                })
                 ->form([
                     Select::make('client_id')
                         ->label(__('Client'))
@@ -158,7 +165,7 @@ class ListWorkSessions extends ListRecords
                         ->required(),
                     TextInput::make('title')->label(__('Title'))->required(),
                 ])
-                ->action(function (array $data) {
+                ->action(function (array $data): ?Redirector {
                     $tz = PejotaHelper::getUserTimeZone() ?? 'UTC';
 
                     $request = new SessionInvoiceRequest(
@@ -179,7 +186,7 @@ class ListWorkSessions extends ListRecords
                     if ($invoice === null) {
                         Notification::make()->warning()->title(__('No billable sessions to invoice.'))->send();
 
-                        return;
+                        return null;
                     }
 
                     Notification::make()->success()->title(__('Invoice created.'))->send();

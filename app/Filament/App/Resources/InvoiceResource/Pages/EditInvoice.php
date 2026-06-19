@@ -18,6 +18,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Livewire\Features\SupportRedirects\Redirector;
 
 class EditInvoice extends EditRecord
 {
@@ -63,7 +64,7 @@ class EditInvoice extends EditRecord
                         ->searchable()
                         ->required(),
                 ])
-                ->action(function (array $data) {
+                ->action(function (array $data): ?Redirector {
                     $tz = PejotaHelper::getUserTimeZone() ?? 'UTC';
 
                     $request = new SessionInvoiceRequest(
@@ -81,13 +82,13 @@ class EditInvoice extends EditRecord
                     } catch (\DomainException $e) {
                         Notification::make()->danger()->title($e->getMessage())->send();
 
-                        return;
+                        return null;
                     }
 
                     if ($count === 0) {
                         Notification::make()->warning()->title(__('No billable sessions to invoice.'))->send();
 
-                        return;
+                        return null;
                     }
 
                     Notification::make()->success()->title(__(':count item(s) added.', ['count' => $count]))->send();
