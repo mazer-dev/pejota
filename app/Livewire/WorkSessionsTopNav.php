@@ -64,6 +64,29 @@ class WorkSessionsTopNav extends Component
     public function updatedNewProject(): void
     {
         $this->reset(['newTask', 'taskSearch']);
+
+        $project = $this->newProject ? Project::find($this->newProject) : null;
+
+        if ($project?->client_id) {
+            $this->newClient = $project->client_id;
+        }
+    }
+
+    public function updatedNewTask(): void
+    {
+        $task = $this->newTask ? Task::find($this->newTask) : null;
+
+        if (! $task) {
+            return;
+        }
+
+        if ($task->project_id) {
+            $this->newProject = $task->project_id;
+        }
+
+        if ($task->client_id) {
+            $this->newClient = $task->client_id;
+        }
     }
 
     /**

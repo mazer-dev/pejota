@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Livewire\WorkSessionsTopNav;
 use App\Models\Client;
+use App\Models\Project;
+use App\Models\Status;
+use App\Models\Task;
 use App\Models\User;
 use App\Models\WorkSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -109,6 +112,50 @@ class WorkSessionsTopNavTest extends TestCase
             ->set('newTask', 9)
             ->set('newProject', 6)
             ->assertSet('newTask', null);
+    }
+
+    public function test_selecting_task_fills_its_project_and_client(): void
+    {
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $project = Project::create([
+            'name' => 'Apollo',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+        ]);
+        $status = Status::create([
+            'name' => 'To Do',
+            'phase' => 'todo',
+            'color' => '#000000',
+            'sort_order' => 1,
+            'active' => true,
+            'company_id' => $this->user->company->id,
+        ]);
+        $task = Task::create([
+            'title' => 'Build feature',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+            'project_id' => $project->id,
+        ]);
+
+        Livewire::test(WorkSessionsTopNav::class)
+            ->set('newTask', $task->id)
+            ->assertSet('newProject', $project->id)
+            ->assertSet('newClient', $client->id);
+    }
+
+    public function test_selecting_project_fills_its_client(): void
+    {
+        $client = Client::create(['name' => 'Globex', 'company_id' => $this->user->company->id]);
+        $project = Project::create([
+            'name' => 'Zeus',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+        ]);
+
+        Livewire::test(WorkSessionsTopNav::class)
+            ->set('newProject', $project->id)
+            ->assertSet('newClient', $client->id);
     }
 
     public function test_selected_client_label_is_shown(): void

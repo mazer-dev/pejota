@@ -76,8 +76,8 @@ class TasksOverview extends BaseWidget
             )
                 ->icon('heroicon-o-shield-check')
                 ->url(ListTasks::getUrl([
-                    'tableFilters[planned_end][to_planned_end]' => now(PejotaHelper::getUserTimeZone())->subDay()->format('Y-m-d'),
-                ])),
+                'tableFilters[planned_end][to_planned_end]' => now(PejotaHelper::getUserTimeZone())->subDay()->format('Y-m-d'),
+            ])),
         ];
     }
 }
