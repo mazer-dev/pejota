@@ -24,6 +24,8 @@ enum CompanySettingsEnum: string
     case DOCS_INVOICE_NUMBER_LAST = 'docs.invoice_number_last';
     case DOCS_INVOICE_NUMBER_FORMAT = 'docs.invoice_number_format';
     case DOCS_INVOICE_NUMBER_LAST_PERIOD = 'docs.invoice_number_last_period';
+    case INVOICE_SESSION_PRODUCT = 'invoices.session_default_product';
+    case INVOICE_SESSION_UNIT = 'invoices.session_default_unit';
 
     public static function getLocales(): array
     {

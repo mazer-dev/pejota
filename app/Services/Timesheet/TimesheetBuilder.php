@@ -3,7 +3,6 @@
 namespace App\Services\Timesheet;
 
 use App\Enums\TimesheetDetailLevel;
-use App\Enums\TimesheetGrouping;
 use App\Models\Client;
 use App\Models\Task;
 use App\Models\WorkSession;
@@ -54,16 +53,7 @@ class TimesheetBuilder
 
     private function groupKey(WorkSession $session, TimesheetRequest $request): string
     {
-        $local = $session->start->copy()->setTimezone($request->timezone);
-
-        return match ($request->grouping) {
-            TimesheetGrouping::Project => $session->project?->name ?? __('No project'),
-            TimesheetGrouping::Task => $session->task?->title ?? __('No task'),
-            TimesheetGrouping::Day => $local->format('Y-m-d'),
-            TimesheetGrouping::Week => __('Week of :date', ['date' => $local->copy()->startOfWeek()->format('Y-m-d')]),
-            TimesheetGrouping::Month => $local->format('Y-m'),
-            TimesheetGrouping::None => __('Total'),
-        };
+        return SessionGroupKey::for($session, $request->grouping, $request->timezone);
     }
 
     /**

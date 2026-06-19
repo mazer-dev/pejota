@@ -173,7 +173,7 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 <td>{{ $item->name }}</td>
-                <td style="text-align: right">{{ $item->quantity }}</td>
+                <td style="text-align: right">{{ \Illuminate\Support\Number::format((float) $item->quantity, maxPrecision: 2, locale: \App\Helpers\PejotaHelper::getUserLocate()) }}</td>
                 <td>{{ $item->unit->name }}</td>
                 <td style="text-align: right">{{ $money($item->price) }}</td>
                 <td style="text-align: right">{{ $money($invoice->discount) }}</td>

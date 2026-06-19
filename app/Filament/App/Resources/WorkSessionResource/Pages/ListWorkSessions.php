@@ -2,12 +2,18 @@
 
 namespace App\Filament\App\Resources\WorkSessionResource\Pages;
 
+use App\Enums\CompanySettingsEnum;
 use App\Enums\TimesheetDetailLevel;
 use App\Enums\TimesheetGrouping;
+use App\Filament\App\Resources\InvoiceResource;
 use App\Filament\App\Resources\WorkSessionResource;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
+use App\Models\Product;
+use App\Models\Unit;
 use App\Models\WorkSession;
+use App\Services\Invoicing\SessionInvoiceRequest;
+use App\Services\Invoicing\SessionInvoiceService;
 use App\Services\Timesheet\Renderers\CsvTimesheetRenderer;
 use App\Services\Timesheet\Renderers\PdfTimesheetRenderer;
 use App\Services\Timesheet\TimesheetBuilder;
@@ -18,7 +24,9 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Colors\Color;
@@ -107,6 +115,76 @@ class ListWorkSessions extends ListRecords
                     return $data['format'] === 'csv'
                         ? app(CsvTimesheetRenderer::class)->render($timesheet, $layout, $request)
                         : app(PdfTimesheetRenderer::class)->download($timesheet, $layout, $request);
+                }),
+            Action::make('generateInvoice')
+                ->label(__('Generate invoice'))
+                ->icon('heroicon-o-document-text')
+                ->fillForm(fn (): array => [
+                    'client_id' => $this->tableFilters['client']['value'] ?? null,
+                    'from' => CarbonImmutable::now(PejotaHelper::getUserTimeZone() ?? 'UTC')->startOfMonth()->format('Y-m-d'),
+                    'to' => CarbonImmutable::now(PejotaHelper::getUserTimeZone() ?? 'UTC')->endOfMonth()->format('Y-m-d'),
+                    'grouping' => TimesheetGrouping::None->value,
+                    'product_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value),
+                    'unit_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_UNIT->value),
+                    'title' => __('Work sessions'),
+                ])
+                ->form([
+                    Select::make('client_id')
+                        ->label(__('Client'))
+                        ->options(fn (): array => Client::orderBy('name')->pluck('name', 'id')->all())
+                        ->searchable()
+                        ->required(),
+                    DatePicker::make('from')->label(__('From'))->required(),
+                    DatePicker::make('to')->label(__('To'))->required()->afterOrEqual('from'),
+                    Select::make('grouping')
+                        ->label(__('Grouping'))
+                        ->options([
+                            TimesheetGrouping::None->value => __('None'),
+                            TimesheetGrouping::Project->value => __('Project'),
+                            TimesheetGrouping::Task->value => __('Task'),
+                            TimesheetGrouping::Day->value => __('Day'),
+                            TimesheetGrouping::Week->value => __('Week'),
+                            TimesheetGrouping::Month->value => __('Month'),
+                        ])->required(),
+                    Select::make('product_id')
+                        ->label(__('Product'))
+                        ->options(fn (): array => Product::orderBy('name')->pluck('name', 'id')->all())
+                        ->searchable()
+                        ->required(),
+                    Select::make('unit_id')
+                        ->label(__('Unit'))
+                        ->options(fn (): array => Unit::orderBy('name')->pluck('name', 'id')->all())
+                        ->searchable()
+                        ->required(),
+                    TextInput::make('title')->label(__('Title'))->required(),
+                ])
+                ->action(function (array $data) {
+                    $tz = PejotaHelper::getUserTimeZone() ?? 'UTC';
+
+                    $request = new SessionInvoiceRequest(
+                        clientId: (int) $data['client_id'],
+                        from: CarbonImmutable::parse($data['from'], $tz)->startOfDay()->setTimezone('UTC'),
+                        to: CarbonImmutable::parse($data['to'], $tz)->endOfDay()->setTimezone('UTC'),
+                        timezone: $tz,
+                        grouping: TimesheetGrouping::from($data['grouping']),
+                        productId: (int) $data['product_id'],
+                        unitId: (int) $data['unit_id'],
+                    );
+
+                    auth()->user()->company->settings()->set(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value, (int) $data['product_id']);
+                    auth()->user()->company->settings()->set(CompanySettingsEnum::INVOICE_SESSION_UNIT->value, (int) $data['unit_id']);
+
+                    $invoice = app(SessionInvoiceService::class)->createInvoice($request, ['title' => $data['title']]);
+
+                    if ($invoice === null) {
+                        Notification::make()->warning()->title(__('No billable sessions to invoice.'))->send();
+
+                        return;
+                    }
+
+                    Notification::make()->success()->title(__('Invoice created.'))->send();
+
+                    return redirect(InvoiceResource::getUrl('edit', ['record' => $invoice]));
                 }),
         ];
     }
