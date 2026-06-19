@@ -9,6 +9,9 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
+use App\Models\Project;
+use App\Models\Status;
+use App\Models\Task;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\WorkSession;
@@ -170,6 +173,52 @@ class WorkSessionResourceTest extends TestCase
         $session = WorkSession::where('title', 'Pro bono hour')->first();
         $this->assertNotNull($session);
         $this->assertFalse($session->billable, 'A deliberate billable=false must survive save even for a billable client');
+    }
+
+    public function test_selecting_project_fills_client_in_the_form(): void
+    {
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $project = Project::create([
+            'name' => 'Apollo',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+        ]);
+
+        Livewire::test(CreateWorkSession::class)
+            ->set('data.project', $project->id)
+            ->assertFormSet(['client' => $client->id]);
+    }
+
+    public function test_selecting_task_fills_project_and_client_in_the_form(): void
+    {
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $project = Project::create([
+            'name' => 'Apollo',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+        ]);
+        $status = Status::create([
+            'name' => 'To Do',
+            'phase' => 'todo',
+            'color' => '#000000',
+            'sort_order' => 1,
+            'active' => true,
+            'company_id' => $this->user->company->id,
+        ]);
+        $task = Task::create([
+            'title' => 'Build feature',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+            'project_id' => $project->id,
+        ]);
+
+        Livewire::test(CreateWorkSession::class)
+            ->set('data.task', $task->id)
+            ->assertFormSet([
+                'project' => $project->id,
+                'client' => $client->id,
+            ]);
     }
 
     public function test_end_before_start_shows_form_error(): void

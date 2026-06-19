@@ -18,6 +18,7 @@ use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Filament\App\Resources\WorkSessionResource\Pages\ViewWorkSession;
 use App\Helpers\PejotaHelper;
+use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\WorkSession;
@@ -34,6 +35,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\Grid;
@@ -175,7 +177,19 @@ class TaskResource extends Resource
                         )
                         ->searchable()
                         ->preload()
-                        ->createOptionForm(ProjectResource::getFormComponents()),
+                        ->createOptionForm(ProjectResource::getFormComponents())
+                        ->live()
+                        ->afterStateUpdated(function (Get $get, Set $set): void {
+                            if (! $get('project')) {
+                                return;
+                            }
+
+                            $project = Project::find($get('project'));
+
+                            if ($project?->client_id) {
+                                $set('client', $project->client_id);
+                            }
+                        }),
                     Select::make('parent_task')
                         ->translateLabel()
                         ->relationship(
@@ -186,7 +200,23 @@ class TaskResource extends Resource
                                 ->opened()
                                 ->orderBy('title')
                         )
-                        ->searchable(),
+                        ->searchable()
+                        ->live()
+                        ->afterStateUpdated(function (Get $get, Set $set): void {
+                            if (! $get('parent_task')) {
+                                return;
+                            }
+
+                            $parent = Task::find($get('parent_task'));
+
+                            if ($parent?->project_id) {
+                                $set('project', $parent->project_id);
+                            }
+
+                            if ($parent?->client_id) {
+                                $set('client', $parent->client_id);
+                            }
+                        }),
                 ]),
                 TextInput::make('title')
                     ->translateLabel()

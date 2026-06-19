@@ -12,6 +12,8 @@ use App\Filament\App\Resources\WorkSessionResource\Pages\EditWorkSession;
 use App\Filament\App\Resources\WorkSessionResource\Pages\ListWorkSessions;
 use App\Filament\App\Resources\WorkSessionResource\Pages\ViewWorkSession;
 use App\Helpers\PejotaHelper;
+use App\Models\Project;
+use App\Models\Task;
 use App\Models\WorkSession;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -417,13 +419,19 @@ class WorkSessionResource extends Resource
                     ->preload()
                     ->createOptionForm(ProjectResource::getFormComponents())
                     ->live()
-                    ->afterStateUpdated(fn (Get $get, Set $set) => self::applyCascade($get, $set)),
+                    ->afterStateUpdated(function (Get $get, Set $set): void {
+                        self::fillClientFromProject($get, $set);
+                        self::applyCascade($get, $set);
+                    }),
                 Select::make('task')
                     ->translateLabel()
                     ->relationship('task', 'title')
                     ->searchable()
                     ->live()
-                    ->afterStateUpdated(fn (Get $get, Set $set) => self::applyCascade($get, $set)),
+                    ->afterStateUpdated(function (Get $get, Set $set): void {
+                        self::fillParentsFromTask($get, $set);
+                        self::applyCascade($get, $set);
+                    }),
 
             ]),
 
@@ -574,6 +582,36 @@ class WorkSessionResource extends Resource
         $newModel->save();
 
         return redirect(ViewWorkSession::getUrl([$newModel->id]));
+    }
+
+    public static function fillClientFromProject(Get $get, Set $set): void
+    {
+        if (! $get('project')) {
+            return;
+        }
+
+        $project = Project::find($get('project'));
+
+        if ($project?->client_id) {
+            $set('client', $project->client_id);
+        }
+    }
+
+    public static function fillParentsFromTask(Get $get, Set $set): void
+    {
+        if (! $get('task')) {
+            return;
+        }
+
+        $task = Task::find($get('task'));
+
+        if ($task?->project_id) {
+            $set('project', $task->project_id);
+        }
+
+        if ($task?->client_id) {
+            $set('client', $task->client_id);
+        }
     }
 
     public static function applyCascade(Get $get, Set $set): void

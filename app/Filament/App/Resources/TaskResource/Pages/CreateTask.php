@@ -16,15 +16,14 @@ class CreateTask extends CreateRecord
         if (request()->get('parent')) {
             $task = Task::find(request()->get('parent'));
 
-            $this->data['title'] = '[' . __('Subtask') . '] ' . $task->title;
+            $this->data['title'] = '['.__('Subtask').'] '.$task->title;
             $this->data['client'] = $task->client_id;
             $this->data['project'] = $task->project_id;
             $this->data['parent_task'] = $task->id;
             $this->data['due_date'] = $task->due_date;
-            $this->data['planned_end'] = $task->pkanned_end;
+            $this->data['planned_end'] = $task->planned_end;
 
             $this->redirectUrl = URL::previous();
         }
     }
-
 }
