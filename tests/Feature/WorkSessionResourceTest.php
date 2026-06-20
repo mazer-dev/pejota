@@ -221,6 +221,100 @@ class WorkSessionResourceTest extends TestCase
             ]);
     }
 
+    public function test_selecting_client_with_single_project_fills_the_project(): void
+    {
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $project = Project::create([
+            'name' => 'Apollo',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+        ]);
+
+        Livewire::test(CreateWorkSession::class)
+            ->set('data.client', $client->id)
+            ->assertFormSet(['project' => $project->id]);
+    }
+
+    public function test_selecting_client_with_multiple_projects_does_not_fill_the_project(): void
+    {
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        Project::create([
+            'name' => 'Apollo',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+        ]);
+        Project::create([
+            'name' => 'Gemini',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+        ]);
+
+        Livewire::test(CreateWorkSession::class)
+            ->set('data.client', $client->id)
+            ->assertFormSet(['project' => null]);
+    }
+
+    public function test_selecting_project_with_single_task_fills_the_task(): void
+    {
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $project = Project::create([
+            'name' => 'Apollo',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+        ]);
+        $status = Status::create([
+            'name' => 'To Do',
+            'phase' => 'todo',
+            'color' => '#000000',
+            'sort_order' => 1,
+            'active' => true,
+            'company_id' => $this->user->company->id,
+        ]);
+        $task = Task::create([
+            'title' => 'Only task',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+            'project_id' => $project->id,
+        ]);
+
+        Livewire::test(CreateWorkSession::class)
+            ->set('data.project', $project->id)
+            ->assertFormSet(['task' => $task->id]);
+    }
+
+    public function test_selecting_client_chains_down_to_single_project_and_task(): void
+    {
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $project = Project::create([
+            'name' => 'Apollo',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+        ]);
+        $status = Status::create([
+            'name' => 'To Do',
+            'phase' => 'todo',
+            'color' => '#000000',
+            'sort_order' => 1,
+            'active' => true,
+            'company_id' => $this->user->company->id,
+        ]);
+        $task = Task::create([
+            'title' => 'Only task',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+            'project_id' => $project->id,
+        ]);
+
+        Livewire::test(CreateWorkSession::class)
+            ->set('data.client', $client->id)
+            ->assertFormSet([
+                'project' => $project->id,
+                'task' => $task->id,
+            ]);
+    }
+
     public function test_end_before_start_shows_form_error(): void
     {
         Livewire::test(CreateWorkSession::class)

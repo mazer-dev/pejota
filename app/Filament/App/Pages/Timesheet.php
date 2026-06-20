@@ -16,6 +16,7 @@ use App\Services\Timesheet\TimesheetRequest;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -64,37 +65,44 @@ class Timesheet extends Page implements HasForms
     {
         return $form
             ->schema([
-                Select::make('client_id')
-                    ->label(__('Client'))
-                    ->options(fn (): array => Client::orderBy('name')->pluck('name', 'id')->all())
-                    ->searchable()
-                    ->required(),
-                DatePicker::make('from')->label(__('From'))->required(),
-                DatePicker::make('to')->label(__('To'))->required()->afterOrEqual('from'),
-                Select::make('grouping')
-                    ->label(__('Grouping'))
-                    ->options([
-                        TimesheetGrouping::None->value => __('None'),
-                        TimesheetGrouping::Project->value => __('Project'),
-                        TimesheetGrouping::Task->value => __('Task'),
-                        TimesheetGrouping::Day->value => __('Day'),
-                        TimesheetGrouping::Week->value => __('Week'),
-                        TimesheetGrouping::Month->value => __('Month'),
-                    ])
-                    ->required(),
-                Select::make('detailLevel')
-                    ->label(__('Detail level'))
-                    ->options([
-                        TimesheetDetailLevel::Detailed->value => __('Detailed (per session)'),
-                        TimesheetDetailLevel::GroupSummary->value => __('Summary per group'),
-                        TimesheetDetailLevel::ParentTaskRollup->value => __('Roll up subtasks into parent'),
-                    ])
-                    ->required(),
-                Select::make('layoutKey')
-                    ->label(__('Layout'))
-                    ->options(fn (): array => collect(app(TimesheetLayoutRegistry::class)->all())
-                        ->mapWithKeys(fn ($layout, $key) => [$key => $layout->label()])->all())
-                    ->required(),
+                Grid::make(4)
+                    ->schema([
+                        Select::make('client_id')
+                            ->label(__('Client'))
+                            ->options(fn (): array => Client::orderBy('name')->pluck('name', 'id')->all())
+                            ->searchable()
+                            ->required()
+                            ->columnSpan(2),
+                        DatePicker::make('from')->label(__('From'))->required()->columnSpan(1),
+                        DatePicker::make('to')->label(__('To'))->required()->afterOrEqual('from')->columnSpan(1),
+                    ]),
+                Grid::make(3)
+                    ->schema([
+                        Select::make('grouping')
+                            ->label(__('Grouping'))
+                            ->options([
+                                TimesheetGrouping::None->value => __('None'),
+                                TimesheetGrouping::Project->value => __('Project'),
+                                TimesheetGrouping::Task->value => __('Task'),
+                                TimesheetGrouping::Day->value => __('Day'),
+                                TimesheetGrouping::Week->value => __('Week'),
+                                TimesheetGrouping::Month->value => __('Month'),
+                            ])
+                            ->required(),
+                        Select::make('detailLevel')
+                            ->label(__('Detail level'))
+                            ->options([
+                                TimesheetDetailLevel::Detailed->value => __('Detailed (per session)'),
+                                TimesheetDetailLevel::GroupSummary->value => __('Summary per group'),
+                                TimesheetDetailLevel::ParentTaskRollup->value => __('Roll up subtasks into parent'),
+                            ])
+                            ->required(),
+                        Select::make('layoutKey')
+                            ->label(__('Layout'))
+                            ->options(fn (): array => collect(app(TimesheetLayoutRegistry::class)->all())
+                                ->mapWithKeys(fn ($layout, $key) => [$key => $layout->label()])->all())
+                            ->required(),
+                    ]),
                 Toggle::make('includeValue')->label(__('Include value')),
                 Toggle::make('billableOnly')->label(__('Billable only')),
             ])
