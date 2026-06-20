@@ -406,7 +406,10 @@ class WorkSessionResource extends Resource
                     ->preload()
                     ->createOptionForm(ClientResource::getSchema())
                     ->live()
-                    ->afterStateUpdated(fn (Get $get, Set $set) => self::applyCascade($get, $set)),
+                    ->afterStateUpdated(function (Get $get, Set $set): void {
+                        self::fillChildrenFromClient($get, $set);
+                        self::applyCascade($get, $set);
+                    }),
                 Select::make('project')
                     ->label('Project')
                     ->translateLabel()
@@ -421,6 +424,7 @@ class WorkSessionResource extends Resource
                     ->live()
                     ->afterStateUpdated(function (Get $get, Set $set): void {
                         self::fillClientFromProject($get, $set);
+                        self::fillTaskFromProject($get, $set);
                         self::applyCascade($get, $set);
                     }),
                 Select::make('task')
@@ -594,6 +598,42 @@ class WorkSessionResource extends Resource
 
         if ($project?->client_id) {
             $set('client', $project->client_id);
+        }
+    }
+
+    public static function fillChildrenFromClient(Get $get, Set $set): void
+    {
+        if (! $get('client')) {
+            return;
+        }
+
+        $projectIds = Project::query()
+            ->where('client_id', $get('client'))
+            ->limit(2)
+            ->pluck('id');
+
+        if ($projectIds->count() !== 1) {
+            return;
+        }
+
+        $set('project', $projectIds->first());
+
+        self::fillTaskFromProject($get, $set);
+    }
+
+    public static function fillTaskFromProject(Get $get, Set $set): void
+    {
+        if (! $get('project')) {
+            return;
+        }
+
+        $taskIds = Task::query()
+            ->where('project_id', $get('project'))
+            ->limit(2)
+            ->pluck('id');
+
+        if ($taskIds->count() === 1) {
+            $set('task', $taskIds->first());
         }
     }
 
