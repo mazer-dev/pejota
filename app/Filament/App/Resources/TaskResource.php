@@ -159,15 +159,14 @@ class TaskResource extends Resource
             ->schema([
                 Forms\Components\Grid::make(3)->schema([
                     Select::make('client')
-                        ->translateLabel()
+                        ->hiddenLabel()
                         ->placeholder(__('Select the client'))
                         ->relationship('client', 'name')
                         ->preload()
                         ->searchable()
                         ->createOptionForm(ClientResource::getSchema()),
                     Select::make('project')
-                        ->label('Project')
-                        ->translateLabel()
+                        ->hiddenLabel()
                         ->placeholder(__('Select the project'))
                         ->relationship(
                             'project',
@@ -193,7 +192,7 @@ class TaskResource extends Resource
                             }
                         }),
                     Select::make('parent_task')
-                        ->translateLabel()
+                        ->hiddenLabel()
                         ->placeholder(__('Select the parent task'))
                         ->relationship(
                             'parent',
