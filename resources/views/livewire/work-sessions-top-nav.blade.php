@@ -23,7 +23,7 @@
         x-cloak
         @click.outside="open = false"
         x-transition
-        class="absolute end-0 z-50 mt-2 w-96 min-w-[20rem] rounded-lg bg-white p-3 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+        class="absolute end-0 z-50 mt-2 w-[40rem] min-w-[40rem] max-w-[calc(100vw-2rem)] rounded-lg bg-white p-3 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
     >
         <h3 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             @lang('Running')
