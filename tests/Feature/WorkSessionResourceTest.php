@@ -328,4 +328,58 @@ class WorkSessionResourceTest extends TestCase
             ->call('create')
             ->assertHasFormErrors(['end']);
     }
+
+    public function test_creating_work_session_from_task_prefills_form_correctly(): void
+    {
+        $client = Client::create([
+            'name' => 'Acme',
+            'company_id' => $this->user->company->id,
+            'currency' => 'EUR',
+            'default_hourly_rate' => 75.00,
+            'billable_default' => true,
+        ]);
+        $project = Project::create([
+            'name' => 'Apollo',
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+            'hourly_rate' => 85.00,
+        ]);
+        $status = Status::create([
+            'name' => 'To Do',
+            'phase' => 'todo',
+            'color' => '#000000',
+            'sort_order' => 1,
+            'active' => true,
+            'company_id' => $this->user->company->id,
+        ]);
+        $task = Task::create([
+            'title' => 'Build feature',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'client_id' => $client->id,
+            'project_id' => $project->id,
+            'hourly_rate' => 95.00,
+        ]);
+
+        Livewire::withQueryParams(['task' => $task->id])
+            ->test(CreateWorkSession::class)
+            ->assertFormSet([
+                'title' => 'Build feature',
+                'client' => $client->id,
+                'project' => $project->id,
+                'task' => $task->id,
+                'rate' => 95.00,
+                'currency' => 'EUR',
+                'billable' => true,
+                'is_running' => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $session = WorkSession::where('title', 'Build feature')->first();
+        $this->assertNotNull($session);
+        $this->assertSame('EUR', $session->currency);
+        $this->assertEquals(95.00, $session->rate);
+        $this->assertTrue($session->billable);
+    }
 }

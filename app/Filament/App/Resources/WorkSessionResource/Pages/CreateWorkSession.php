@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources\WorkSessionResource\Pages;
 
 use App\Filament\App\Resources\WorkSessionResource;
 use App\Models\Task;
+use App\Models\WorkSession;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\URL;
 
@@ -37,10 +38,25 @@ class CreateWorkSession extends CreateRecord
 
     public static function getFillFormArray(Task $task): array
     {
+        $session = new WorkSession([
+            'client_id' => $task->client_id,
+            'project_id' => $task->project_id,
+            'task_id' => $task->id,
+        ]);
+        $session->setRelation('task', $task);
+        if ($task->project_id && $task->relationLoaded('project')) {
+            $session->setRelation('project', $task->project);
+        }
+        if ($task->client_id && $task->relationLoaded('client')) {
+            $session->setRelation('client', $task->client);
+        }
+
         $fill = [
             'title' => $task->title,
             'start' => now(),
-            'rate' => 0,
+            'rate' => $session->resolveRate(),
+            'currency' => $session->resolveCurrency(),
+            'billable' => $session->resolveBillable(),
             'is_running' => true,
         ];
 
