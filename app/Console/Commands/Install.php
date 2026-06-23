@@ -45,7 +45,7 @@ class Install extends Command
         $this->info('User created successfully');
 
         $companyName = $this->ask('Please enter the company name, enter for "My Company"', 'My Company');
-        $companyEmail = $this->ask('Please enter the company email or enter for empty');
+        $companyEmail = $this->ask('Please enter the company email or enter for "company@example.com"', 'company@example.com');
 
         Company::create([
             'name' => $companyName,

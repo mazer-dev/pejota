@@ -163,7 +163,7 @@ class InvoiceResource extends Resource
                                 ])
                                 ->searchable()
                                 ->live()
-                                ->afterStateUpdated(function ($state, $set) {
+                                ->afterStateUpdated(function ($state, $set, Get $get) {
                                     if ($state) {
                                         $product = Product::find($state);
                                         if ($product) {
@@ -171,6 +171,7 @@ class InvoiceResource extends Resource
                                             $set('obs', $product->description);
                                             $set('unit_id', $product->unit_id);
                                             $set('price', $product->price);
+                                            self::calcItemTotal($get, $set);
                                         }
                                     }
                                 }),
