@@ -1149,14 +1149,12 @@ class TaskResource extends Resource
 
     public static function getStateCompleted($component)
     {
-        $index = explode('.', $component->getStatePath())[1];
+        $state = $component->getContainer()->getState();
+        
+        \Log::info('getStatePath: ' . $component->getStatePath());
+        \Log::info('Container state: ', is_array($state) ? $state : ['raw' => $state]);
 
-        $data = $component
-            ->getContainer()
-            ->getParentComponent()
-            ->getState()[$index];
-
-        return $data['completed'];
+        return is_array($state) ? ($state['completed'] ?? false) : false;
     }
 
     protected static function getPostponeActions($field): array
