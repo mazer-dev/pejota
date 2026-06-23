@@ -285,7 +285,7 @@ class TaskResource extends Resource
                         ->options(
                             Status::orderBy('sort_order')->pluck('name', 'id')
                         )
-                        ->default(Status::orderBy('sort_order')->first()->id),
+                        ->default(fn () => Status::orderBy('sort_order')->first()?->id),
 
                     TextInput::make('effort')
                         ->translateLabel()
