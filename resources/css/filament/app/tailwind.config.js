@@ -5,6 +5,7 @@ export default {
     content: [
         './app/Filament/App/**/*.php',
         './resources/views/filament/app/**/*.blade.php',
+        './resources/views/livewire/**/*.blade.php',
         './vendor/filament/**/*.blade.php',
     ],
 }

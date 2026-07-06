@@ -23,6 +23,9 @@ class WorkSession extends Model
 
         static::creating(function (WorkSession $model): void {
             $model->user_id ??= auth()->id();
+            if (is_null($model->currency)) {
+                $model->currency = $model->resolveCurrency();
+            }
         });
 
         static::saving(function (WorkSession $model): void {
@@ -76,7 +79,15 @@ class WorkSession extends Model
 
     public function resolveCurrency(): string
     {
-        return $this->client?->currency ?? PejotaHelper::getUserCurrency();
+        if ($this->client?->currency) {
+            return $this->client->currency;
+        }
+
+        if (auth()->check() && auth()->user()->company) {
+            return PejotaHelper::getUserCurrency();
+        }
+
+        return 'USD';
     }
 
     public function resolveBillable(): bool

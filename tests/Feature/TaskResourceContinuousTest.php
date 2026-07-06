@@ -358,4 +358,44 @@ class TaskResourceContinuousTest extends TestCase
             ->set('activeTab', 'daily_checks')
             ->assertSeeHtml('fi-daily-check-done');
     }
+
+    public function test_task_checklist_toggle_action(): void
+    {
+        $status = $this->makeStatus();
+        $task = Task::create([
+            'title' => 'Task with checklist',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'priority' => 'medium',
+            'checklist' => [
+                ['item' => 'Item 1', 'completed' => false],
+                ['item' => 'Item 2', 'completed' => true],
+            ],
+        ]);
+
+        Livewire::test(ViewTask::class, ['record' => $task->id])
+            ->call('mountInfolistAction', 'checkCompleted', 'checklist.0.checkCompletedAction', 'infolist');
+
+        $this->assertTrue($task->refresh()->checklist[0]['completed']);
+    }
+
+    public function test_embedded_task_list_view_action(): void
+    {
+        $status = $this->makeStatus();
+        $project = \App\Models\Project::create([
+            'name' => 'Apollo Project',
+            'company_id' => $this->user->company->id,
+            'active' => true,
+        ]);
+        $task = Task::create([
+            'title' => 'Embedded Task',
+            'status_id' => $status->id,
+            'company_id' => $this->user->company->id,
+            'project_id' => $project->id,
+            'priority' => 'medium',
+        ]);
+
+        Livewire::test(\App\Livewire\Projects\ListTasks::class, ['project' => $project])
+            ->callTableAction('view', $task);
+    }
 }

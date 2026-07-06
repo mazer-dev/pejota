@@ -10,3 +10,5 @@ Route::get(
 )
     ->name('attachments.get')
     ->middleware(Authenticate::class);
+
+Route::redirect('/', '/app');
