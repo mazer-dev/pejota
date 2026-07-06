@@ -19,7 +19,9 @@ use App\Models\Product;
 use App\Services\ExchangeRateService;
 use App\Services\InvoiceService;
 use Carbon\CarbonImmutable;
+use Filament\Actions\MountableAction;
 use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\Component;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
@@ -341,104 +343,7 @@ class InvoiceResource extends Resource
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
-                    Tables\Actions\Action::make('change_status')
-                        ->label(__('Change status'))
-                        ->icon('heroicon-o-arrow-path')
-                        ->color('warning')
-                        ->fillForm(fn (Invoice $record): array => [
-                            'status' => $record->status->value,
-                            'payment_date' => $record->payment_date?->format('Y-m-d'),
-                        ])
-                        ->form([
-                            ToggleButtons::make('status')
-                                ->translateLabel()
-                                ->options(InvoiceStatusEnum::class)
-                                ->inline()
-                                ->required()
-                                ->live()
-                                ->columnSpanFull()
-                                ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
-                                    if ($state === InvoiceStatusEnum::PAID->value) {
-                                        if (blank($get('payment_date'))) {
-                                            $set('payment_date', self::defaultPaidDate($record));
-                                        }
-                                        $effectiveDate = filled($get('payment_date')) ? $get('payment_date') : self::defaultPaidDate($record);
-                                        if (self::isForeignInvoice($record) && blank($get('realized_rate'))) {
-                                            $set('realized_rate', self::referenceRate($record, $effectiveDate));
-                                        }
-                                    } elseif (self::isUnpaidStatus($state)) {
-                                        $set('payment_date', null);
-                                    }
-                                }),
-                            Grid::make(3)->schema([
-                                Placeholder::make('total_display')
-                                    ->label(__('Total'))
-                                    ->content(fn (Invoice $record): string => Number::currency(
-                                        $record->total ?? 0,
-                                        $record->currency ?? self::baseCurrency(),
-                                        PejotaHelper::getUserLocate(),
-                                    )),
-                                Placeholder::make('base_total_display')
-                                    ->label(__('Base value'))
-                                    ->content(function (Invoice $record, Get $get): string {
-                                        $rate = $get('realized_rate');
-
-                                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record) && filled($rate)) {
-                                            return Number::currency((float) $record->total * (float) $rate, self::baseCurrency(), PejotaHelper::getUserLocate());
-                                        }
-
-                                        try {
-                                            return Number::currency($record->baseTotal, self::baseCurrency(), PejotaHelper::getUserLocate());
-                                        } catch (MissingExchangeRateException) {
-                                            return '—';
-                                        }
-                                    }),
-                                Placeholder::make('due_date_display')
-                                    ->label(__('Due date'))
-                                    ->content(fn (Invoice $record): string => $record->due_date?->format(PejotaHelper::getUserDateFormat()) ?? '—'),
-                                DatePicker::make('payment_date')
-                                    ->translateLabel()
-                                    ->date()
-                                    ->live()
-                                    ->dehydrated()
-                                    ->disabled(fn (Get $get): bool => self::isUnpaidStatus($get('status')))
-                                    ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
-                                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record)) {
-                                            $rate = self::referenceRate($record, $state);
-                                            if ($rate !== null) {
-                                                $set('realized_rate', $rate);
-                                            }
-                                        }
-                                    }),
-                                TextInput::make('realized_rate')
-                                    ->label(fn (Invoice $record): string => __('Realized rate').' (1 '.($record->currency ?? self::baseCurrency()).' = ? '.self::baseCurrency().')')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->step('any')
-                                    ->live(onBlur: true)
-                                    ->visible(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
-                                    ->required(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
-                                    ->helperText(__('Freezes the base-currency value received for this invoice.')),
-                            ]),
-                        ])
-                        ->action(function (Invoice $record, array $data): void {
-                            $status = $data['status'];
-                            $paymentDate = $data['payment_date'] ?? null;
-
-                            if (self::isUnpaidStatus($status)) {
-                                $paymentDate = null;
-                            } elseif ($status === InvoiceStatusEnum::PAID->value && blank($paymentDate)) {
-                                $paymentDate = $record->payment_date?->format('Y-m-d') ?? self::defaultPaidDate($record);
-                            }
-
-                            $payload = ['status' => $status, 'payment_date' => $paymentDate];
-
-                            if ($status === InvoiceStatusEnum::PAID->value && filled($data['realized_rate'] ?? null)) {
-                                $payload['exchange_rate'] = (float) $data['realized_rate'];
-                            }
-
-                            $record->update($payload);
-                        }),
+                    self::configureChangeStatusAction(Tables\Actions\Action::make('change_status')),
                     Tables\Actions\Action::make('pdf')
                         ->label('PDF')
                         ->color('info')
@@ -534,6 +439,134 @@ class InvoiceResource extends Resource
             $totalComponent,
             $invoiceValue
         );
+    }
+
+    /**
+     * Applies the shared "change status" modal (form, prefill and save rules) to a table
+     * row action or a page header action, so both stay identical.
+     */
+    public static function configureChangeStatusAction(MountableAction $action): MountableAction
+    {
+        return $action
+            ->label(__('Change status'))
+            ->icon('heroicon-o-arrow-path')
+            ->color('warning')
+            ->fillForm(fn (Invoice $record): array => self::changeStatusFormData($record))
+            ->form(self::changeStatusFormSchema())
+            ->action(fn (Invoice $record, array $data) => self::saveChangeStatus($record, $data));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function changeStatusFormData(Invoice $record): array
+    {
+        return [
+            'status' => $record->status->value,
+            'payment_date' => $record->payment_date?->format('Y-m-d'),
+        ];
+    }
+
+    /**
+     * @return array<int, Component>
+     */
+    private static function changeStatusFormSchema(): array
+    {
+        return [
+            ToggleButtons::make('status')
+                ->translateLabel()
+                ->options(InvoiceStatusEnum::class)
+                ->inline()
+                ->required()
+                ->live()
+                ->columnSpanFull()
+                ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
+                    if ($state === InvoiceStatusEnum::PAID->value) {
+                        if (blank($get('payment_date'))) {
+                            $set('payment_date', self::defaultPaidDate($record));
+                        }
+                        $effectiveDate = filled($get('payment_date')) ? $get('payment_date') : self::defaultPaidDate($record);
+                        if (self::isForeignInvoice($record) && blank($get('realized_rate'))) {
+                            $set('realized_rate', self::referenceRate($record, $effectiveDate));
+                        }
+                    } elseif (self::isUnpaidStatus($state)) {
+                        $set('payment_date', null);
+                    }
+                }),
+            Grid::make(3)->schema([
+                Placeholder::make('total_display')
+                    ->label(__('Total'))
+                    ->content(fn (Invoice $record): string => Number::currency(
+                        $record->total ?? 0,
+                        $record->currency ?? self::baseCurrency(),
+                        PejotaHelper::getUserLocate(),
+                    )),
+                Placeholder::make('base_total_display')
+                    ->label(__('Base value'))
+                    ->content(function (Invoice $record, Get $get): string {
+                        $rate = $get('realized_rate');
+
+                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record) && filled($rate)) {
+                            return Number::currency((float) $record->total * (float) $rate, self::baseCurrency(), PejotaHelper::getUserLocate());
+                        }
+
+                        try {
+                            return Number::currency($record->baseTotal, self::baseCurrency(), PejotaHelper::getUserLocate());
+                        } catch (MissingExchangeRateException) {
+                            return '—';
+                        }
+                    }),
+                Placeholder::make('due_date_display')
+                    ->label(__('Due date'))
+                    ->content(fn (Invoice $record): string => $record->due_date?->format(PejotaHelper::getUserDateFormat()) ?? '—'),
+                DatePicker::make('payment_date')
+                    ->translateLabel()
+                    ->date()
+                    ->live()
+                    ->dehydrated()
+                    ->disabled(fn (Get $get): bool => self::isUnpaidStatus($get('status')))
+                    ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
+                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record)) {
+                            $rate = self::referenceRate($record, $state);
+                            if ($rate !== null) {
+                                $set('realized_rate', $rate);
+                            }
+                        }
+                    }),
+                TextInput::make('realized_rate')
+                    ->label(fn (Invoice $record): string => __('Realized rate').' (1 '.($record->currency ?? self::baseCurrency()).' = ? '.self::baseCurrency().')')
+                    ->numeric()
+                    ->minValue(0)
+                    ->step('any')
+                    ->live(onBlur: true)
+                    ->visible(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
+                    ->required(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
+                    ->helperText(__('Freezes the base-currency value received for this invoice.')),
+            ]),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function saveChangeStatus(Invoice $record, array $data): void
+    {
+        $status = $data['status'];
+        $paymentDate = $data['payment_date'] ?? null;
+
+        if (self::isUnpaidStatus($status)) {
+            $paymentDate = null;
+        } elseif ($status === InvoiceStatusEnum::PAID->value && blank($paymentDate)) {
+            $paymentDate = $record->payment_date?->format('Y-m-d') ?? self::defaultPaidDate($record);
+        }
+
+        $payload = ['status' => $status, 'payment_date' => $paymentDate];
+
+        if ($status === InvoiceStatusEnum::PAID->value && filled($data['realized_rate'] ?? null)) {
+            $payload['exchange_rate'] = (float) $data['realized_rate'];
+        }
+
+        $record->update($payload);
     }
 
     private static function baseCurrency(): string

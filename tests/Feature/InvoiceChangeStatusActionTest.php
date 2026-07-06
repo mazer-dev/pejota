@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices;
+use App\Filament\App\Resources\InvoiceResource\Pages\ViewInvoice;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
 use App\Models\ExchangeRate;
@@ -232,6 +233,49 @@ class InvoiceChangeStatusActionTest extends TestCase
             ->set('mountedTableActionsData.0.status', InvoiceStatusEnum::PAID->value)
             ->set('mountedTableActionsData.0.realized_rate', 7.0)
             ->assertSee($expected);
+    }
+
+    public function test_view_page_exposes_change_status_action(): void
+    {
+        $invoice = $this->makeInvoice(InvoiceStatusEnum::SENT);
+
+        Livewire::test(ViewInvoice::class, ['record' => $invoice->id])
+            ->assertActionExists('change_status');
+    }
+
+    public function test_view_page_change_status_to_paid_freezes_realized_rate(): void
+    {
+        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $invoice = $this->makeForeignInvoice('USD');
+
+        Livewire::test(ViewInvoice::class, ['record' => $invoice->id])
+            ->callAction('change_status', data: [
+                'status' => InvoiceStatusEnum::PAID->value,
+                'payment_date' => now()->toDateString(),
+                'realized_rate' => 5.25,
+            ])
+            ->assertHasNoActionErrors();
+
+        $invoice->refresh();
+
+        $this->assertSame(InvoiceStatusEnum::PAID, $invoice->status);
+        $this->assertEqualsWithDelta(5.25, (float) $invoice->exchange_rate, 0.0000001);
+    }
+
+    public function test_view_page_change_status_to_unpaid_clears_payment_date(): void
+    {
+        $invoice = $this->makeInvoice(InvoiceStatusEnum::PAID, now()->toDateString());
+
+        Livewire::test(ViewInvoice::class, ['record' => $invoice->id])
+            ->callAction('change_status', data: [
+                'status' => InvoiceStatusEnum::UNPAID->value,
+            ])
+            ->assertHasNoActionErrors();
+
+        $invoice->refresh();
+
+        $this->assertSame(InvoiceStatusEnum::UNPAID, $invoice->status);
+        $this->assertNull($invoice->payment_date);
     }
 
     public function test_moving_from_paid_to_partially_paid_clears_rate(): void

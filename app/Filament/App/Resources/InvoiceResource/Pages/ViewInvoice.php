@@ -15,6 +15,7 @@ class ViewInvoice extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            InvoiceResource::configureChangeStatusAction(Action::make('change_status')),
             EditAction::make(),
             Action::make('pdf')
                 ->label('PDF')
