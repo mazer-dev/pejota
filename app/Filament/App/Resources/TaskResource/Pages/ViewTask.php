@@ -3,6 +3,7 @@
 namespace App\Filament\App\Resources\TaskResource\Pages;
 
 use App\Filament\App\Resources\TaskResource;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -13,5 +14,12 @@ class ViewTask extends ViewRecord
     public function getTitle(): string|Htmlable
     {
         return $this->record->title;
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            TaskResource::configureMakeRecurringAction(Action::make('makeRecurring')),
+        ];
     }
 }

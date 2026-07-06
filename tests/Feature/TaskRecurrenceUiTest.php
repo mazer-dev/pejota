@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Enums\RecurrenceAnchorFieldEnum;
 use App\Enums\RecurrenceFrequencyEnum;
 use App\Enums\RecurrenceGenerationModeEnum;
+use App\Enums\PriorityEnum;
 use App\Enums\RecurrenceStopTypeEnum;
 use App\Filament\App\Resources\TaskResource\Pages\ListTasks;
+use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
@@ -59,6 +61,29 @@ class TaskRecurrenceUiTest extends TestCase
         $this->assertNotNull($task->recurrence_id);
         $this->assertTrue($task->recurrence->is_active);
         $this->assertSame(1, Task::query()->count());
+    }
+
+    public function test_make_recurring_action_on_view_page_creates_rule(): void
+    {
+        $status = $this->makeStatus();
+        $task = Task::create([
+            'title' => 'Invoice client', 'status_id' => $status->id,
+            'company_id' => $this->user->company->id, 'due_date' => '2026-01-15',
+            'priority' => PriorityEnum::MEDIUM->value,
+        ]);
+
+        Livewire::test(ViewTask::class, ['record' => $task->getRouteKey()])
+            ->callAction('makeRecurring', data: [
+                'frequency' => RecurrenceFrequencyEnum::Monthly->value,
+                'interval' => 1,
+                'anchor_field' => RecurrenceAnchorFieldEnum::DueDate->value,
+                'generation_mode' => RecurrenceGenerationModeEnum::ByDate->value,
+                'stop_type' => RecurrenceStopTypeEnum::Never->value,
+            ]);
+
+        $task->refresh();
+        $this->assertNotNull($task->recurrence_id);
+        $this->assertTrue($task->recurrence->is_active);
     }
 
     public function test_stop_series_action_deactivates(): void

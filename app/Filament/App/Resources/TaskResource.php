@@ -24,8 +24,10 @@ use App\Models\Task;
 use App\Models\WorkSession;
 use App\Services\DailyCheckService;
 use App\Services\RecurrenceService;
+use Filament\Actions\MountableAction;
 use Filament\Forms;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Component;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -580,82 +582,7 @@ class TaskResource extends Resource
                         ->color(Color::Amber)
                         ->action(fn (Task $record) => self::clone($record)),
 
-                    Tables\Actions\Action::make('makeRecurring')
-                        ->label(__('Make recurring'))
-                        ->icon('heroicon-o-arrow-path')
-                        ->color(Color::Indigo)
-                        ->visible(fn (Task $record): bool => $record->recurrence_id === null)
-                        ->form([
-                            Select::make('frequency')
-                                ->label(__('Frequency'))
-                                ->options(RecurrenceFrequencyEnum::class)
-                                ->default(RecurrenceFrequencyEnum::Monthly)
-                                ->required(),
-                            TextInput::make('interval')
-                                ->label(__('Every (interval)'))
-                                ->numeric()
-                                ->minValue(1)
-                                ->default(1)
-                                ->required(),
-                            Select::make('anchor_field')
-                                ->label(__('Apply to date'))
-                                ->options(RecurrenceAnchorFieldEnum::class)
-                                ->default(RecurrenceAnchorFieldEnum::DueDate)
-                                ->required(),
-                            TextInput::make('offset_days')
-                                ->label(__('Planned-end lead days (when both)'))
-                                ->numeric()
-                                ->default(0),
-                            Select::make('generation_mode')
-                                ->label(__('Generation'))
-                                ->options(RecurrenceGenerationModeEnum::class)
-                                ->default(RecurrenceGenerationModeEnum::ByDate)
-                                ->required(),
-                            Select::make('stop_type')
-                                ->label(__('Stop condition'))
-                                ->options(RecurrenceStopTypeEnum::class)
-                                ->default(RecurrenceStopTypeEnum::Never)
-                                ->live()
-                                ->required(),
-                            DatePicker::make('until_date')
-                                ->label(__('Until date'))
-                                ->visible(fn (Get $get): bool => $get('stop_type') === RecurrenceStopTypeEnum::UntilDate->value),
-                            TextInput::make('max_count')
-                                ->label(__('Number of occurrences'))
-                                ->numeric()
-                                ->minValue(1)
-                                ->visible(fn (Get $get): bool => $get('stop_type') === RecurrenceStopTypeEnum::Count->value),
-                        ])
-                        ->action(function (Task $record, array $data): void {
-                            $frequency = $data['frequency'] instanceof RecurrenceFrequencyEnum
-                                ? $data['frequency']
-                                : RecurrenceFrequencyEnum::from($data['frequency']);
-                            $anchorField = $data['anchor_field'] instanceof RecurrenceAnchorFieldEnum
-                                ? $data['anchor_field']
-                                : RecurrenceAnchorFieldEnum::from($data['anchor_field']);
-                            $generationMode = $data['generation_mode'] instanceof RecurrenceGenerationModeEnum
-                                ? $data['generation_mode']
-                                : RecurrenceGenerationModeEnum::from($data['generation_mode']);
-                            $stopType = $data['stop_type'] instanceof RecurrenceStopTypeEnum
-                                ? $data['stop_type']
-                                : RecurrenceStopTypeEnum::from($data['stop_type']);
-
-                            app(RecurrenceService::class)->enableForTask($record, [
-                                'frequency' => $frequency,
-                                'interval' => (int) $data['interval'],
-                                'anchor_field' => $anchorField,
-                                'offset_days' => (int) ($data['offset_days'] ?? 0),
-                                'generation_mode' => $generationMode,
-                                'stop_type' => $stopType,
-                                'until_date' => $data['until_date'] ?? null,
-                                'max_count' => isset($data['max_count']) ? (int) $data['max_count'] : null,
-                            ]);
-
-                            Notification::make()
-                                ->title(__('Recurrence enabled'))
-                                ->success()
-                                ->send();
-                        }),
+                    self::configureMakeRecurringAction(Tables\Actions\Action::make('makeRecurring')),
                     Tables\Actions\Action::make('stopSeries')
                         ->label(__('Stop series'))
                         ->icon('heroicon-o-no-symbol')
@@ -1362,5 +1289,99 @@ class TaskResource extends Resource
         $newModel->save();
 
         return redirect(EditTask::getUrl([$newModel->id]));
+    }
+
+    public static function configureMakeRecurringAction(MountableAction $action): MountableAction
+    {
+        return $action
+            ->label(__('Make recurring'))
+            ->icon('heroicon-o-arrow-path')
+            ->color(Color::Indigo)
+            ->visible(fn (Task $record): bool => $record->recurrence_id === null)
+            ->form(self::makeRecurringFormSchema())
+            ->action(fn (Task $record, array $data) => self::enableRecurrenceFromForm($record, $data));
+    }
+
+    /**
+     * @return array<int, Component>
+     */
+    private static function makeRecurringFormSchema(): array
+    {
+        return [
+            Select::make('frequency')
+                ->label(__('Frequency'))
+                ->options(RecurrenceFrequencyEnum::class)
+                ->default(RecurrenceFrequencyEnum::Monthly)
+                ->required(),
+            TextInput::make('interval')
+                ->label(__('Every (interval)'))
+                ->numeric()
+                ->minValue(1)
+                ->default(1)
+                ->required(),
+            Select::make('anchor_field')
+                ->label(__('Apply to date'))
+                ->options(RecurrenceAnchorFieldEnum::class)
+                ->default(RecurrenceAnchorFieldEnum::DueDate)
+                ->required(),
+            TextInput::make('offset_days')
+                ->label(__('Planned-end lead days (when both)'))
+                ->numeric()
+                ->default(0),
+            Select::make('generation_mode')
+                ->label(__('Generation'))
+                ->options(RecurrenceGenerationModeEnum::class)
+                ->default(RecurrenceGenerationModeEnum::ByDate)
+                ->required(),
+            Select::make('stop_type')
+                ->label(__('Stop condition'))
+                ->options(RecurrenceStopTypeEnum::class)
+                ->default(RecurrenceStopTypeEnum::Never)
+                ->live()
+                ->required(),
+            DatePicker::make('until_date')
+                ->label(__('Until date'))
+                ->visible(fn (Get $get): bool => $get('stop_type') === RecurrenceStopTypeEnum::UntilDate->value),
+            TextInput::make('max_count')
+                ->label(__('Number of occurrences'))
+                ->numeric()
+                ->minValue(1)
+                ->visible(fn (Get $get): bool => $get('stop_type') === RecurrenceStopTypeEnum::Count->value),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function enableRecurrenceFromForm(Task $record, array $data): void
+    {
+        $frequency = $data['frequency'] instanceof RecurrenceFrequencyEnum
+            ? $data['frequency']
+            : RecurrenceFrequencyEnum::from($data['frequency']);
+        $anchorField = $data['anchor_field'] instanceof RecurrenceAnchorFieldEnum
+            ? $data['anchor_field']
+            : RecurrenceAnchorFieldEnum::from($data['anchor_field']);
+        $generationMode = $data['generation_mode'] instanceof RecurrenceGenerationModeEnum
+            ? $data['generation_mode']
+            : RecurrenceGenerationModeEnum::from($data['generation_mode']);
+        $stopType = $data['stop_type'] instanceof RecurrenceStopTypeEnum
+            ? $data['stop_type']
+            : RecurrenceStopTypeEnum::from($data['stop_type']);
+
+        app(RecurrenceService::class)->enableForTask($record, [
+            'frequency' => $frequency,
+            'interval' => (int) $data['interval'],
+            'anchor_field' => $anchorField,
+            'offset_days' => (int) ($data['offset_days'] ?? 0),
+            'generation_mode' => $generationMode,
+            'stop_type' => $stopType,
+            'until_date' => $data['until_date'] ?? null,
+            'max_count' => isset($data['max_count']) ? (int) $data['max_count'] : null,
+        ]);
+
+        Notification::make()
+            ->title(__('Recurrence enabled'))
+            ->success()
+            ->send();
     }
 }
