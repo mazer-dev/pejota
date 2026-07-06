@@ -549,7 +549,8 @@ class TaskResource extends Resource
             ], layout: FiltersLayout::AboveContentCollapsible)
             ->actions([
                 ActionGroup::make([
-                    ViewAction::make(),
+                    ViewAction::make()
+                        ->infolist(fn (Infolist $infolist): Infolist => self::infolist($infolist)),
                     CommentsAction::make(),
                     Tables\Actions\Action::make(__('Start Session'))
                         ->tooltip(__('Start a new session for this task'))
@@ -783,32 +784,46 @@ class TaskResource extends Resource
                                         ->contained(false)
                                         ->hiddenLabel()
                                         ->schema([
-                                            TextEntry::make('item')
-                                                ->hiddenLabel()
-                                                ->formatStateUsing(function ($state, $component): HtmlString {
-                                                    if (self::getStateCompleted($component)) {
-                                                        $state = '<s>'.$state.'</s>';
-                                                    }
+                                             Split::make([
+                                                 Actions::make([
+                                                     Action::make('checkCompleted')
+                                                         ->icon(fn ($component) => self::getStateCompleted($component) ? 'heroicon-o-check' : 'heroicon-o-stop')
+                                                         ->color(fn ($component) => self::getStateCompleted($component) ? Color::Green : Color::Gray)
+                                                         ->action(function (Model $record, $component, $livewire) {
+                                                             $statePath = $component->getContainer()->getStatePath();
+                                                             $parts = explode('.', $statePath);
+                                                             $index = null;
+                                                             foreach ($parts as $part) {
+                                                                 if (is_numeric($part)) {
+                                                                     $index = (int) $part;
+                                                                     break;
+                                                                 }
+                                                             }
 
-                                                    return new HtmlString($state);
-                                                })
-                                                ->prefixAction(fn ($component) => Action::make('checkCompleted')
-                                                    ->icon(
-                                                        self::getStateCompleted(
-                                                            $component
-                                                        ) ? 'heroicon-o-check' : 'heroicon-o-stop'
-                                                    )
-                                                    ->color(
-                                                        self::getStateCompleted($component) ? Color::Green : Color::Gray
-                                                    )
-                                                    ->action(function (Model $record, $component) {
-                                                        $index = explode('.', $component->getStatePath())[1];
-                                                        $checklist = $record->checklist;
-                                                        $checklist[$index]['completed'] = ! $record->checklist[$index]['completed'];
-                                                        $record->checklist = $checklist;
-                                                        $record->save();
-                                                    })
-                                                ),
+                                                             if ($index !== null) {
+                                                                 $checklist = $record->checklist;
+                                                                 $checklist[$index]['completed'] = ! ($checklist[$index]['completed'] ?? false);
+                                                                 $record->checklist = $checklist;
+                                                                 $record->save();
+
+                                                                 if (method_exists($livewire, 'getRecord')) {
+                                                                     $livewire->getRecord()->refresh();
+                                                                 } elseif (property_exists($livewire, 'record') && $livewire->record) {
+                                                                     $livewire->record->refresh();
+                                                                 }
+                                                             }
+                                                         })
+                                                 ])->grow(false),
+                                                 TextEntry::make('item')
+                                                     ->hiddenLabel()
+                                                     ->formatStateUsing(function ($state, $component): HtmlString {
+                                                          if (self::getStateCompleted($component)) {
+                                                              $state = '<s>'.$state.'</s>';
+                                                          }
+
+                                                          return new HtmlString($state);
+                                                     })
+                                             ]),
                                         ]),
                                 ]),
 
@@ -1150,9 +1165,6 @@ class TaskResource extends Resource
     public static function getStateCompleted($component)
     {
         $state = $component->getContainer()->getState();
-        
-        \Log::info('getStatePath: ' . $component->getStatePath());
-        \Log::info('Container state: ', is_array($state) ? $state : ['raw' => $state]);
 
         return is_array($state) ? ($state['completed'] ?? false) : false;
     }

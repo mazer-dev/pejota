@@ -1,0 +1,1 @@
+<livewire:comments :record="$record ?? $entry?->getRecord() ?? $component?->getRecord() ?? (method_exists($this, 'getRecord') ? $this->getRecord() : (property_exists($this, 'record') ? $this->record : null))" />
