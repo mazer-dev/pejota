@@ -5,11 +5,13 @@ namespace Tests\Feature;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices;
+use App\Helpers\PejotaHelper;
 use App\Models\Client;
 use App\Models\ExchangeRate;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Number;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -174,6 +176,62 @@ class InvoiceChangeStatusActionTest extends TestCase
             ->assertHasNoTableActionErrors();
 
         $this->assertEqualsWithDelta(5.42, (float) $invoice->refresh()->exchange_rate, 0.0000001);
+    }
+
+    public function test_changing_payment_date_recalculates_realized_rate_for_that_date(): void
+    {
+        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $early = now()->subDays(20)->toDateString();
+        $mid = now()->subDays(5)->toDateString();
+        ExchangeRate::factory()->forCurrency('BRL')->on($early)->create(['rate' => 4.0]);
+        ExchangeRate::factory()->forCurrency('BRL')->on($mid)->create(['rate' => 6.0]);
+        $invoice = $this->makeForeignInvoice('USD');
+
+        Livewire::test(ListInvoices::class)
+            ->set('activeTab', 'all')
+            ->mountTableAction('change_status', $invoice)
+            ->set('mountedTableActionsData.0.status', InvoiceStatusEnum::PAID->value)
+            ->assertSet('mountedTableActionsData.0.realized_rate', 6.0)
+            ->set('mountedTableActionsData.0.payment_date', $early)
+            ->assertSet('mountedTableActionsData.0.realized_rate', 4.0)
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $this->assertEqualsWithDelta(4.0, (float) $invoice->refresh()->exchange_rate, 0.0000001);
+    }
+
+    public function test_changing_payment_date_to_uncovered_date_keeps_previous_realized_rate(): void
+    {
+        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $covered = now()->subDays(5)->toDateString();
+        $uncovered = now()->subDays(30)->toDateString();
+        ExchangeRate::factory()->forCurrency('BRL')->on($covered)->create(['rate' => 5.5]);
+        $invoice = $this->makeForeignInvoice('USD');
+
+        Livewire::test(ListInvoices::class)
+            ->set('activeTab', 'all')
+            ->mountTableAction('change_status', $invoice)
+            ->set('mountedTableActionsData.0.status', InvoiceStatusEnum::PAID->value)
+            ->set('mountedTableActionsData.0.payment_date', $covered)
+            ->assertSet('mountedTableActionsData.0.realized_rate', 5.5)
+            ->set('mountedTableActionsData.0.payment_date', $uncovered)
+            ->assertSet('mountedTableActionsData.0.realized_rate', 5.5);
+    }
+
+    public function test_base_value_reflects_edited_realized_rate(): void
+    {
+        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        ExchangeRate::factory()->forCurrency('BRL')->on(now()->toDateString())->create(['rate' => 5.0]);
+        $invoice = $this->makeForeignInvoice('USD');
+
+        $expected = Number::currency(100 * 7.0, 'BRL', PejotaHelper::getUserLocate());
+
+        Livewire::test(ListInvoices::class)
+            ->set('activeTab', 'all')
+            ->mountTableAction('change_status', $invoice)
+            ->set('mountedTableActionsData.0.status', InvoiceStatusEnum::PAID->value)
+            ->set('mountedTableActionsData.0.realized_rate', 7.0)
+            ->assertSee($expected);
     }
 
     public function test_moving_from_paid_to_partially_paid_clears_rate(): void

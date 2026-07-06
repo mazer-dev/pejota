@@ -380,7 +380,13 @@ class InvoiceResource extends Resource
                                     )),
                                 Placeholder::make('base_total_display')
                                     ->label(__('Base value'))
-                                    ->content(function (Invoice $record): string {
+                                    ->content(function (Invoice $record, Get $get): string {
+                                        $rate = $get('realized_rate');
+
+                                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record) && filled($rate)) {
+                                            return Number::currency((float) $record->total * (float) $rate, self::baseCurrency(), PejotaHelper::getUserLocate());
+                                        }
+
                                         try {
                                             return Number::currency($record->baseTotal, self::baseCurrency(), PejotaHelper::getUserLocate());
                                         } catch (MissingExchangeRateException) {
@@ -397,8 +403,11 @@ class InvoiceResource extends Resource
                                     ->dehydrated()
                                     ->disabled(fn (Get $get): bool => self::isUnpaidStatus($get('status')))
                                     ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
-                                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record) && blank($get('realized_rate'))) {
-                                            $set('realized_rate', self::referenceRate($record, $state));
+                                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record)) {
+                                            $rate = self::referenceRate($record, $state);
+                                            if ($rate !== null) {
+                                                $set('realized_rate', $rate);
+                                            }
                                         }
                                     }),
                                 TextInput::make('realized_rate')
@@ -406,6 +415,7 @@ class InvoiceResource extends Resource
                                     ->numeric()
                                     ->minValue(0)
                                     ->step('any')
+                                    ->live(onBlur: true)
                                     ->visible(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
                                     ->required(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
                                     ->helperText(__('Freezes the base-currency value received for this invoice.')),
