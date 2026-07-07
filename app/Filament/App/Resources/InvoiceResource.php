@@ -10,29 +10,40 @@ use App\Filament\App\Resources\InvoiceResource\Pages\CreateInvoice;
 use App\Filament\App\Resources\InvoiceResource\Pages\EditInvoice;
 use App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices;
 use App\Filament\App\Resources\InvoiceResource\Pages\ViewInvoice;
+use App\Filament\App\Resources\InvoiceResource\RelationManagers\DeliveriesRelationManager;
 use App\Filament\App\Widgets\InvoicesOverview;
 use App\Helpers\PejotaHelper;
+use App\Jobs\SendInvoiceDelivery;
 use App\Models\Client;
 use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Services\ExchangeRateService;
 use App\Services\InvoiceService;
+use App\Services\Invoicing\InvoiceDeliveryComposer;
+use App\Services\Messaging\TemplateContextBuilder;
+use App\Services\Messaging\TemplateRenderer;
+use App\Services\Timesheet\TimesheetLayoutRegistry;
 use Carbon\CarbonImmutable;
 use Filament\Actions\MountableAction;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
@@ -344,6 +355,7 @@ class InvoiceResource extends Resource
                     ViewAction::make(),
                     EditAction::make(),
                     self::configureChangeStatusAction(Tables\Actions\Action::make('change_status')),
+                    self::configureSendAction(Tables\Actions\Action::make('send')),
                     Tables\Actions\Action::make('pdf')
                         ->label('PDF')
                         ->color('info')
@@ -366,7 +378,7 @@ class InvoiceResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //            RelationManagers\ItemRelationManager::class,
+            DeliveriesRelationManager::class,
         ];
     }
 
@@ -567,6 +579,99 @@ class InvoiceResource extends Resource
         }
 
         $record->update($payload);
+    }
+
+    /**
+     * Applies the shared "send" modal (form, prefill and dispatch) to a table
+     * row action or a page header action, so both stay identical.
+     */
+    public static function configureSendAction(MountableAction $action): MountableAction
+    {
+        return $action
+            ->label(__('Send'))
+            ->icon('heroicon-o-paper-airplane')
+            ->color('primary')
+            ->visible(fn (Invoice $record): bool => self::companyMailConfigComplete($record))
+            ->fillForm(fn (Invoice $record): array => self::sendFormDefaults($record))
+            ->form(self::sendFormSchema())
+            ->action(fn (Invoice $record, array $data) => self::dispatchSend($record, $data));
+    }
+
+    private static function companyMailConfigComplete(Invoice $invoice): bool
+    {
+        $config = $invoice->company?->mailConfig;
+
+        return $config !== null && $config->isComplete();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function sendFormDefaults(Invoice $invoice): array
+    {
+        $context = app(TemplateContextBuilder::class)->forInvoice($invoice);
+        $renderer = app(TemplateRenderer::class);
+        $client = $invoice->client;
+        $dueMonth = $invoice->due_date ?? now();
+
+        return [
+            'to' => $client?->billingEmailRecipients() ?? [],
+            'cc' => [],
+            'subject' => $renderer->render((string) $client?->resolvedEmailSubject(), $context, html: false),
+            'body' => $renderer->render((string) $client?->resolvedEmailBody(), $context, html: true),
+            'signature' => $renderer->render((string) $client?->resolvedEmailSignature(), $context, html: true),
+            'attach_invoice_pdf' => true,
+            'attach_timesheet' => false,
+            'timesheet_from' => $dueMonth->copy()->startOfMonth()->format('Y-m-d'),
+            'timesheet_to' => $dueMonth->copy()->endOfMonth()->format('Y-m-d'),
+            'timesheet_layout' => 'client',
+        ];
+    }
+
+    /**
+     * @return array<int, Component>
+     */
+    private static function sendFormSchema(): array
+    {
+        return [
+            TagsInput::make('to')->label(__('To'))->required()->nestedRecursiveRules(['email']),
+            TagsInput::make('cc')->label(__('CC'))->nestedRecursiveRules(['email']),
+            TextInput::make('subject')->translateLabel()->required(),
+            RichEditor::make('body')->translateLabel(),
+            RichEditor::make('signature')->translateLabel(),
+            Toggle::make('attach_invoice_pdf')->label(__('Attach invoice PDF'))->default(true),
+            Toggle::make('attach_timesheet')->label(__('Attach timesheet'))->live()->default(false),
+            DatePicker::make('timesheet_from')->label(__('Timesheet from'))->visible(fn (Get $get) => $get('attach_timesheet')),
+            DatePicker::make('timesheet_to')->label(__('Timesheet to'))->visible(fn (Get $get) => $get('attach_timesheet')),
+            Select::make('timesheet_layout')
+                ->label(__('Timesheet layout'))
+                ->options(fn (): array => collect(app(TimesheetLayoutRegistry::class)->all())
+                    ->mapWithKeys(fn ($layout, $key) => [$key => $layout->label()])->all())
+                ->default('client')
+                ->visible(fn (Get $get) => $get('attach_timesheet')),
+            FileUpload::make('external_file')
+                ->label(__('Attach a file'))
+                ->disk('local')
+                ->directory('invoice-deliveries')
+                ->visibility('private'),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private static function dispatchSend(Invoice $invoice, array $data): void
+    {
+        $data['external_file_path'] = $data['external_file'] ?? null;
+
+        $delivery = app(InvoiceDeliveryComposer::class)->compose($invoice, $data, auth()->id());
+
+        SendInvoiceDelivery::dispatch($delivery->id);
+
+        Notification::make()
+            ->title(__('Invoice send queued'))
+            ->success()
+            ->send();
     }
 
     private static function baseCurrency(): string

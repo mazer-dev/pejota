@@ -72,6 +72,11 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(InvoiceDelivery::class);
+    }
+
     public function scopePending(Builder $query): void
     {
         $query->whereIn('status', [

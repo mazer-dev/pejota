@@ -16,6 +16,7 @@ class ViewInvoice extends ViewRecord
     {
         return [
             InvoiceResource::configureChangeStatusAction(Action::make('change_status')),
+            InvoiceResource::configureSendAction(Action::make('send')),
             EditAction::make(),
             Action::make('pdf')
                 ->label('PDF')
