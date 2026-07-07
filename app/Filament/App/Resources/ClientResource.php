@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
+use App\Filament\App\Pages\CompanySettings;
 use App\Filament\App\Resources\ClientResource\Pages\CreateClient;
 use App\Filament\App\Resources\ClientResource\Pages\EditClient;
 use App\Filament\App\Resources\ClientResource\Pages\ListClients;
@@ -11,7 +12,12 @@ use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
 use App\Models\Currency;
+use Filament\Forms;
+use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
@@ -33,6 +39,7 @@ use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 use Parallax\FilamentComments\Tables\Actions\CommentsAction;
 
@@ -203,7 +210,7 @@ class ClientResource extends Resource
         ];
     }
 
-    public static function getSchema()
+    public static function getSchema(): array
     {
         return [
             TextInput::make('name')
@@ -231,6 +238,67 @@ class ClientResource extends Resource
                 ->translateLabel()
                 ->default(true)
                 ->helperText(__('New work sessions for this client are billable by default')),
+            Forms\Components\Section::make('Billing')
+                ->translateLabel()
+                ->columns(1)
+                ->schema([
+                    Toggle::make('bill_by_email')
+                        ->label('Send invoices by email')
+                        ->translateLabel()
+                        ->default(true),
+                    Toggle::make('bill_by_whatsapp')
+                        ->label('Send invoices by WhatsApp')
+                        ->translateLabel()
+                        ->default(false),
+                    Repeater::make('contacts')
+                        ->translateLabel()
+                        ->relationship()
+                        ->schema([
+                            TextInput::make('name')
+                                ->label(__('Name'))
+                                ->required(),
+                            TextInput::make('email')
+                                ->label(__('Email'))
+                                ->email(),
+                            TextInput::make('whatsapp')
+                                ->label(__('WhatsApp'))
+                                ->tel(),
+                            Toggle::make('receives_billing')
+                                ->label('Receives billing')
+                                ->translateLabel(),
+                        ])
+                        ->columns(2)
+                        ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                        ->collapsible()
+                        ->defaultItems(0)
+                        ->addActionLabel(__('Add contact')),
+                    Forms\Components\Section::make('Email template overrides')
+                        ->translateLabel()
+                        ->description(__('Leave blank to use the company default.'))
+                        ->collapsed()
+                        ->schema([
+                            TextInput::make('billing_email_subject')
+                                ->label('Email subject')
+                                ->translateLabel()
+                                ->hintAction(
+                                    FormAction::make('client_billing_vars')
+                                        ->icon('heroicon-o-question-mark-circle')
+                                        ->label('')
+                                        ->modalHeading(__('Available variables'))
+                                        ->modalContent(new HtmlString(CompanySettings::billingVariablesHelp()))
+                                ),
+                            RichEditor::make('billing_email_body')
+                                ->label('Email body')
+                                ->translateLabel(),
+                            RichEditor::make('billing_email_signature')
+                                ->label('Email signature')
+                                ->translateLabel(),
+                            Textarea::make('billing_whatsapp_template')
+                                ->label('WhatsApp template')
+                                ->translateLabel()
+                                ->rows(4),
+                        ]),
+                ]),
         ];
     }
 }

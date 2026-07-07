@@ -26,6 +26,10 @@ enum CompanySettingsEnum: string
     case DOCS_INVOICE_NUMBER_LAST_PERIOD = 'docs.invoice_number_last_period';
     case INVOICE_SESSION_PRODUCT = 'invoices.session_default_product';
     case INVOICE_SESSION_UNIT = 'invoices.session_default_unit';
+    case BILLING_EMAIL_SUBJECT = 'billing.email_subject';
+    case BILLING_EMAIL_BODY = 'billing.email_body';
+    case BILLING_EMAIL_SIGNATURE = 'billing.email_signature';
+    case BILLING_WHATSAPP_TEMPLATE = 'billing.whatsapp_template';
 
     public static function getLocales(): array
     {

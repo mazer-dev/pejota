@@ -319,5 +319,19 @@
     "Test email sent": "E-mail de teste enviado",
     "Test email failed": "Falha ao enviar e-mail de teste",
     "PeJota — test email": "PeJota — e-mail de teste",
-    "This is a test email from PeJota. Your SMTP settings are working correctly.": "Este é um e-mail de teste do PeJota. Suas configurações SMTP estão funcionando corretamente."
+    "This is a test email from PeJota. Your SMTP settings are working correctly.": "Este é um e-mail de teste do PeJota. Suas configurações SMTP estão funcionando corretamente.",
+    "Billing": "Cobrança",
+    "Send invoices by email": "Enviar faturas por e-mail",
+    "Send invoices by WhatsApp": "Enviar faturas por WhatsApp",
+    "Receives billing": "Recebe cobrança",
+    "WhatsApp": "WhatsApp",
+    "Add contact": "Adicionar contato",
+    "Email template overrides": "Sobreposições do template de e-mail",
+    "Leave blank to use the company default.": "Deixe em branco para usar o padrão da empresa.",
+    "Email subject": "Assunto do e-mail",
+    "Email body": "Corpo do e-mail",
+    "Email signature": "Assinatura do e-mail",
+    "WhatsApp template": "Template de WhatsApp",
+    "Available variables": "Variáveis disponíveis",
+    "Contacts": "Contatos"
 }

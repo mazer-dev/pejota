@@ -12,9 +12,11 @@ use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -222,9 +224,49 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 }),
                         ]),
 
+                    Tab::make('Billing')
+                        ->translateLabel()
+                        ->schema([
+                            TextInput::make(CompanySettingsEnum::BILLING_EMAIL_SUBJECT->value)
+                                ->label('Email subject')
+                                ->translateLabel()
+                                ->hintAction(
+                                    FormAction::make('billing_variables_help')
+                                        ->icon('heroicon-o-question-mark-circle')
+                                        ->label('')
+                                        ->modalHeading(__('Available variables'))
+                                        ->modalContent(new HtmlString(self::billingVariablesHelp()))
+                                ),
+                            RichEditor::make(CompanySettingsEnum::BILLING_EMAIL_BODY->value)
+                                ->label('Email body')
+                                ->translateLabel(),
+                            RichEditor::make(CompanySettingsEnum::BILLING_EMAIL_SIGNATURE->value)
+                                ->label('Email signature')
+                                ->translateLabel(),
+                            Textarea::make(CompanySettingsEnum::BILLING_WHATSAPP_TEMPLATE->value)
+                                ->label('WhatsApp template')
+                                ->translateLabel()
+                                ->rows(4),
+                        ]),
+
                 ]),
 
             ]);
+    }
+
+    public static function billingVariablesHelp(): string
+    {
+        $vars = [
+            'invoice.number', 'invoice.title', 'invoice.total', 'invoice.currency',
+            'invoice.due_date', 'invoice.due_month',
+            'client.name', 'client.tradename', 'company.name', 'user.name',
+        ];
+
+        $items = collect($vars)
+            ->map(fn (string $v): string => '<li><code>{{ '.$v.' }}</code></li>')
+            ->implode('');
+
+        return '<ul class="space-y-1 text-sm">'.$items.'</ul>';
     }
 
     /**
