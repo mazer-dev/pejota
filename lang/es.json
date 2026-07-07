@@ -333,5 +333,21 @@
     "Email signature": "Firma del correo",
     "WhatsApp template": "Plantilla de WhatsApp",
     "Available variables": "Variables disponibles",
-    "Contacts": "Contactos"
+    "Contacts": "Contactos",
+    "Send": "Enviar",
+    "CC": "CC",
+    "Attach invoice PDF": "Adjuntar PDF de la factura",
+    "Attach timesheet": "Adjuntar timesheet",
+    "Timesheet from": "Timesheet desde",
+    "Timesheet to": "Timesheet hasta",
+    "Timesheet layout": "Diseño del timesheet",
+    "Attach a file": "Adjuntar un archivo",
+    "Invoice send queued": "Envío de la factura en cola",
+    "Invoice sent": "Factura enviada",
+    "Invoice send failed": "Fallo al enviar la factura",
+    "Invoice :number was sent.": "La factura :number fue enviada.",
+    "Deliveries": "Envíos",
+    "Attachments": "Adjuntos",
+    "Queued": "En cola",
+    "Failed": "Falló"
 }

@@ -110,6 +110,7 @@ class CompanyMailSettings extends Page implements HasForms
                     ->label(__('Reply-to'))
                     ->email(),
             ])
+            ->columns(3)
             ->statePath('data');
     }
 
