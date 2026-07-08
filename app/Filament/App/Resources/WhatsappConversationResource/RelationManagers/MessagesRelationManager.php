@@ -6,6 +6,7 @@ use App\Helpers\PejotaHelper;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use App\Services\Evolution\EvolutionApiClient;
+use App\Services\Evolution\WhatsappConversationSyncService;
 use App\Services\Evolution\WhatsappConversationTokenService;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -47,6 +48,10 @@ class MessagesRelationManager extends RelationManager
                     ->placeholder('-'),
             ])
             ->headerActions([
+                Action::make('syncMessages')
+                    ->label('Sincronizar mensagens')
+                    ->icon('heroicon-o-arrow-path')
+                    ->action(fn () => $this->syncMessages()),
                 Action::make('sendMessage')
                     ->label(__('Send message'))
                     ->icon('heroicon-o-paper-airplane')
@@ -58,6 +63,19 @@ class MessagesRelationManager extends RelationManager
                     ])
                     ->action(fn (array $data) => $this->sendMessage((string) $data['message'])),
             ]);
+    }
+
+    private function syncMessages(): void
+    {
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+        $count = app(WhatsappConversationSyncService::class)->sync($conversation);
+
+        Notification::make()
+            ->title('Mensagens sincronizadas')
+            ->body(trans_choice('{0} Nenhuma mensagem foi importada.|{1} 1 mensagem foi importada.|[2,*] :count mensagens foram importadas.', $count, ['count' => $count]))
+            ->success()
+            ->send();
     }
 
     private function sendMessage(string $text): void

@@ -99,6 +99,51 @@ class EvolutionApiClient
         return $options;
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function findMessages(string $instance, string $remoteJid, int $limit = 50): array
+    {
+        try {
+            $response = Http::timeout($this->timeout())
+                ->withHeaders(['apikey' => $this->apiKey()])
+                ->post($this->endpoint('/chat/findMessages/'.$this->instance($instance)), [
+                    'where' => [
+                        'key' => [
+                            'remoteJid' => $remoteJid,
+                        ],
+                    ],
+                    'limit' => $limit,
+                ]);
+
+            $response->throw();
+
+            $records = data_get($response->json(), 'messages.records');
+
+            return is_array($records) ? array_filter($records, 'is_array') : [];
+        } catch (RequestException $exception) {
+            $message = $exception->response?->body() ?: $exception->getMessage();
+
+            throw new RuntimeException("Falha ao buscar mensagens da Evolution API: {$message}", previous: $exception);
+        }
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function findChats(string $instance): array
+    {
+        return $this->findChatRecords('/chat/findChats/'.$this->instance($instance), 'chats');
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function findContacts(string $instance): array
+    {
+        return $this->findChatRecords('/chat/findContacts/'.$this->instance($instance), 'contacts');
+    }
+
     public function setWebhook(string $url, bool $base64 = true): array
     {
         try {
@@ -131,6 +176,33 @@ class EvolutionApiClient
     private function endpoint(string $path): string
     {
         return rtrim((string) config('services.evolution.base_url'), '/').$path;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function findChatRecords(string $path, string $collectionKey): array
+    {
+        try {
+            $response = Http::timeout($this->timeout())
+                ->withHeaders(['apikey' => $this->apiKey()])
+                ->post($this->endpoint($path), [
+                    'where' => (object) [],
+                ]);
+
+            $response->throw();
+
+            $data = $response->json();
+            $records = is_array($data) && array_is_list($data)
+                ? $data
+                : data_get($data, $collectionKey.'.records', data_get($data, $collectionKey, data_get($data, 'records', [])));
+
+            return is_array($records) ? array_filter($records, 'is_array') : [];
+        } catch (RequestException $exception) {
+            $message = $exception->response?->body() ?: $exception->getMessage();
+
+            throw new RuntimeException("Falha ao buscar registros de chat da Evolution API: {$message}", previous: $exception);
+        }
     }
 
     private function apiKey(): string
