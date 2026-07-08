@@ -4,12 +4,12 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
-use App\Filament\App\Resources\WhatsappConversationResource;
 use App\Filament\App\Resources\ClientResource\Pages\CreateClient;
 use App\Filament\App\Resources\ClientResource\Pages\EditClient;
 use App\Filament\App\Resources\ClientResource\Pages\ListClients;
 use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
 use App\Helpers\PejotaHelper;
+use App\Jobs\GenerateClientAnalysis;
 use App\Models\Client;
 use App\Models\Currency;
 use Filament\Forms\Components\Select;
@@ -25,6 +25,7 @@ use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
@@ -36,6 +37,7 @@ use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 use Parallax\FilamentComments\Tables\Actions\CommentsAction;
 
@@ -154,6 +156,38 @@ class ClientResource extends Resource
                                     ->icon('heroicon-o-sparkles'),
 
                             ]),
+
+                            Section::make(__('AI relationship analysis'))
+                                ->key('aiAnalysisSection')
+                                ->collapsible()
+                                ->headerActions([
+                                    Action::make('generateAnalysis')
+                                        ->label(__('Generate new analysis'))
+                                        ->icon('heroicon-o-sparkles')
+                                        ->action(function (Client $record): void {
+                                            GenerateClientAnalysis::dispatch($record, auth()->user());
+
+                                            Notification::make()
+                                                ->title(__('Analysis queued. You will be notified when it is ready.'))
+                                                ->success()
+                                                ->send();
+                                        }),
+                                ])
+                                ->schema([
+                                    TextEntry::make('latestAnalysis.created_at')
+                                        ->label(__('Generated'))
+                                        ->badge()
+                                        ->color(Color::Gray)
+                                        ->formatStateUsing(fn ($state): string => __('Analysis generated :time', [
+                                            'time' => Carbon::parse($state)->locale(PejotaHelper::getUserLocate())->diffForHumans(),
+                                        ]))
+                                        ->visible(fn (Client $record): bool => $record->latestAnalysis !== null),
+
+                                    TextEntry::make('latestAnalysis.content')
+                                        ->hiddenLabel()
+                                        ->markdown()
+                                        ->placeholder(__('No analysis generated yet.')),
+                                ]),
 
                             Section::make('Comments')
                                 ->translateLabel()

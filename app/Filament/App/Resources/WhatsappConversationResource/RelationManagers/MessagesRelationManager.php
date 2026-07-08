@@ -33,10 +33,36 @@ class MessagesRelationManager extends RelationManager
 
     public ?string $aiSuggestion = null;
 
+    public string $aiInstruction = '';
+
     /**
      * @var TemporaryUploadedFile|null
      */
     public $composerAttachment = null;
+
+    /**
+     * Session key used to hand a drafted message to this conversation's
+     * composer (e.g. from the Task "Draft message" AI action). Stored with
+     * session()->put() and consumed with session()->pull() on mount, so it
+     * survives lazy-loading of the relation manager.
+     */
+    public static function draftSessionKey(WhatsappConversation|int $conversation): string
+    {
+        $id = $conversation instanceof WhatsappConversation ? $conversation->getKey() : $conversation;
+
+        return "whatsapp_draft_{$id}";
+    }
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        $draft = session()->pull(self::draftSessionKey($this->getOwnerRecord()->getKey()));
+
+        if (is_string($draft) && trim($draft) !== '') {
+            $this->composerMessage = $draft;
+        }
+    }
 
     public function table(Table $table): Table
     {
@@ -88,6 +114,43 @@ class MessagesRelationManager extends RelationManager
         } catch (Throwable $exception) {
             Notification::make()
                 ->title('Falha ao gerar sugestão de IA')
+                ->body($exception->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    public function generateAiFromInstruction(): void
+    {
+        $instruction = trim($this->aiInstruction);
+
+        if ($instruction === '') {
+            Notification::make()
+                ->title('Descreva o que você quer comunicar ao cliente')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+
+        try {
+            $suggestion = app(CliWhatsappMessageSuggester::class)
+                ->suggest($conversation, $this->composerMessage, $instruction);
+
+            $this->composerMessage = $suggestion;
+            $this->aiSuggestion = $suggestion;
+            $this->aiInstruction = '';
+
+            Notification::make()
+                ->title('Mensagem gerada, revise antes de enviar')
+                ->success()
+                ->send();
+        } catch (Throwable $exception) {
+            Notification::make()
+                ->title('Falha ao gerar mensagem com IA')
                 ->body($exception->getMessage())
                 ->danger()
                 ->send();

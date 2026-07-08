@@ -42,6 +42,21 @@ return [
             'synchronous' => null,
         ],
 
+        /*
+         * Read-only mirror of the default SQLite database, used exclusively
+         * by the AI chat assistant. The file is opened with
+         * SQLITE_OPEN_READONLY, so any write attempt fails at the SQLite
+         * level regardless of what SQL reaches this connection.
+         */
+        'sqlite_readonly' => [
+            'driver' => 'sqlite',
+            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'prefix' => '',
+            'options' => extension_loaded('pdo_sqlite') ? [
+                PDO::SQLITE_ATTR_OPEN_FLAGS => PDO::SQLITE_OPEN_READONLY,
+            ] : [],
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),

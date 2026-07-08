@@ -60,6 +60,12 @@ return [
         'image_max_mb' => (int) env('AI_IMAGE_MAX_MB', 10),
     ],
 
+    'assistant' => [
+        'db_connection' => env('ASSISTANT_DB_CONNECTION', 'sqlite_readonly'),
+        'max_iterations' => (int) env('ASSISTANT_MAX_ITERATIONS', 5),
+        'max_rows' => (int) env('ASSISTANT_MAX_ROWS', 200),
+    ],
+
     'evolution' => [
         'base_url' => env('EVOLUTION_API_URL', 'http://127.0.0.1:8085'),
         'api_key' => env('EVOLUTION_API_KEY'),

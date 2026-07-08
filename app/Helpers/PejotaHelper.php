@@ -54,6 +54,33 @@ class PejotaHelper
         return auth()->user()->company->settings()->get(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value) ?? [];
     }
 
+    /**
+     * Auth-safe variants of the getters above, for code that may run
+     * outside an authenticated request (queue jobs, webhooks, console
+     * commands processing data for a company that isn't the current
+     * session's user), falling back to a sensible default instead of
+     * fataling on a null authenticated user.
+     */
+    public static function getUserTimeZoneOrDefault(string $default = 'UTC'): string
+    {
+        return auth()->check() ? (self::getUserTimeZone() ?? $default) : $default;
+    }
+
+    public static function getUserDateFormatOrDefault(string $default = 'Y-m-d'): string
+    {
+        return auth()->check() ? self::getUserDateFormat() : $default;
+    }
+
+    public static function getUserLocateOrDefault(string $default = 'en'): string
+    {
+        return auth()->check() ? self::getUserLocate() : $default;
+    }
+
+    public static function getUserCurrencyOrDefault(string $default = 'USD'): string
+    {
+        return auth()->check() ? self::getUserCurrency() : $default;
+    }
+
     public static function isMobile(): bool
     {
         return (new MobileDetect)->isMobile();

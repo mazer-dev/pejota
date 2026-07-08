@@ -15,21 +15,29 @@ use App\Filament\App\Resources\TaskResource\Pages\CreateTask;
 use App\Filament\App\Resources\TaskResource\Pages\EditTask;
 use App\Filament\App\Resources\TaskResource\Pages\ListTasks;
 use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
+use App\Filament\App\Resources\WhatsappConversationResource\Pages\ViewWhatsappConversation;
+use App\Filament\App\Resources\WhatsappConversationResource\RelationManagers\MessagesRelationManager;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Filament\App\Resources\WorkSessionResource\Pages\ViewWorkSession;
 use App\Helpers\PejotaHelper;
+use App\Models\Client;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
+use App\Models\WhatsappConversation;
 use App\Models\WorkSession;
+use App\Services\Ai\TaskAiService;
 use App\Services\DailyCheckService;
 use App\Services\RecurrenceService;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieTagsInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
@@ -243,7 +251,31 @@ class TaskResource extends Resource
                             )
                             ->fileAttachmentsDisk('tasks')
                             ->fileAttachmentsDirectory(auth()->user()->company->id)
-                            ->fileAttachmentsVisibility('private'),
+                            ->fileAttachmentsVisibility('private')
+                            ->hintAction(
+                                FormAction::make('suggestDescription')
+                                    ->label(__('Suggest with AI'))
+                                    ->icon('heroicon-o-sparkles')
+                                    ->action(function (Get $get, Set $set): void {
+                                        $title = $get('title');
+
+                                        if (blank($title)) {
+                                            Notification::make()
+                                                ->warning()
+                                                ->title(__('Enter a title first'))
+                                                ->send();
+
+                                            return;
+                                        }
+
+                                        $client = $get('client') ? Client::find($get('client')) : null;
+                                        $project = $get('project') ? Project::find($get('project')) : null;
+
+                                        $description = app(TaskAiService::class)->suggestDescription($title, $client, $project);
+
+                                        $set('description', '<p>'.e($description).'</p>');
+                                    })
+                            ),
 
                     ]),
 
@@ -784,46 +816,46 @@ class TaskResource extends Resource
                                         ->contained(false)
                                         ->hiddenLabel()
                                         ->schema([
-                                             Split::make([
-                                                 Actions::make([
-                                                     Action::make('checkCompleted')
-                                                         ->icon(fn ($component) => self::getStateCompleted($component) ? 'heroicon-o-check' : 'heroicon-o-stop')
-                                                         ->color(fn ($component) => self::getStateCompleted($component) ? Color::Green : Color::Gray)
-                                                         ->action(function (Model $record, $component, $livewire) {
-                                                             $statePath = $component->getContainer()->getStatePath();
-                                                             $parts = explode('.', $statePath);
-                                                             $index = null;
-                                                             foreach ($parts as $part) {
-                                                                 if (is_numeric($part)) {
-                                                                     $index = (int) $part;
-                                                                     break;
-                                                                 }
-                                                             }
+                                            Split::make([
+                                                Actions::make([
+                                                    Action::make('checkCompleted')
+                                                        ->icon(fn ($component) => self::getStateCompleted($component) ? 'heroicon-o-check' : 'heroicon-o-stop')
+                                                        ->color(fn ($component) => self::getStateCompleted($component) ? Color::Green : Color::Gray)
+                                                        ->action(function (Model $record, $component, $livewire) {
+                                                            $statePath = $component->getContainer()->getStatePath();
+                                                            $parts = explode('.', $statePath);
+                                                            $index = null;
+                                                            foreach ($parts as $part) {
+                                                                if (is_numeric($part)) {
+                                                                    $index = (int) $part;
+                                                                    break;
+                                                                }
+                                                            }
 
-                                                             if ($index !== null) {
-                                                                 $checklist = $record->checklist;
-                                                                 $checklist[$index]['completed'] = ! ($checklist[$index]['completed'] ?? false);
-                                                                 $record->checklist = $checklist;
-                                                                 $record->save();
+                                                            if ($index !== null) {
+                                                                $checklist = $record->checklist;
+                                                                $checklist[$index]['completed'] = ! ($checklist[$index]['completed'] ?? false);
+                                                                $record->checklist = $checklist;
+                                                                $record->save();
 
-                                                                 if (method_exists($livewire, 'getRecord')) {
-                                                                     $livewire->getRecord()->refresh();
-                                                                 } elseif (property_exists($livewire, 'record') && $livewire->record) {
-                                                                     $livewire->record->refresh();
-                                                                 }
-                                                             }
-                                                         })
-                                                 ])->grow(false),
-                                                 TextEntry::make('item')
-                                                     ->hiddenLabel()
-                                                     ->formatStateUsing(function ($state, $component): HtmlString {
-                                                          if (self::getStateCompleted($component)) {
-                                                              $state = '<s>'.$state.'</s>';
-                                                          }
+                                                                if (method_exists($livewire, 'getRecord')) {
+                                                                    $livewire->getRecord()->refresh();
+                                                                } elseif (property_exists($livewire, 'record') && $livewire->record) {
+                                                                    $livewire->record->refresh();
+                                                                }
+                                                            }
+                                                        }),
+                                                ])->grow(false),
+                                                TextEntry::make('item')
+                                                    ->hiddenLabel()
+                                                    ->formatStateUsing(function ($state, $component): HtmlString {
+                                                        if (self::getStateCompleted($component)) {
+                                                            $state = '<s>'.$state.'</s>';
+                                                        }
 
-                                                          return new HtmlString($state);
-                                                     })
-                                             ]),
+                                                        return new HtmlString($state);
+                                                    }),
+                                            ]),
                                         ]),
                                 ]),
 
@@ -1135,7 +1167,120 @@ class TaskResource extends Resource
                                 ->url(fn ($record) => CreateWorkSession::getUrl([
                                     'task' => $record->id,
                                 ])),
-                        ]),
+                        ])->key('taskSidebarActions'),
+
+                        Section::make(__('AI actions'))
+                            ->key('taskAiActions')
+                            ->headerActions([
+                                Action::make('aiSummary')
+                                    ->label(__('AI summary for client'))
+                                    ->icon('heroicon-o-sparkles')
+                                    ->color(Color::Indigo)
+                                    ->form([
+                                        Textarea::make('summary')
+                                            ->hiddenLabel()
+                                            ->rows(10)
+                                            ->readOnly(),
+                                    ])
+                                    ->fillForm(fn (Task $record): array => [
+                                        'summary' => app(TaskAiService::class)->summaryForClient($record),
+                                    ])
+                                    ->modalSubmitAction(false)
+                                    ->modalCancelActionLabel(__('Close')),
+
+                                Action::make('aiDraftMessage')
+                                    ->label(__('Draft WhatsApp message'))
+                                    ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                                    ->color(Color::Indigo)
+                                    ->visible(fn (Task $record): bool => $record->client_id !== null)
+                                    ->form([
+                                        Textarea::make('draft')
+                                            ->hiddenLabel()
+                                            ->rows(8)
+                                            ->helperText(__('Review and adjust before opening the conversation. Nothing is sent automatically.')),
+                                        Toggle::make('mark_waiting')
+                                            ->label(__('Mark as waiting on client'))
+                                            ->default(true),
+                                    ])
+                                    ->fillForm(fn (Task $record): array => [
+                                        'draft' => app(TaskAiService::class)->draftClientMessage($record),
+                                        'mark_waiting' => true,
+                                    ])
+                                    ->modalSubmitActionLabel(fn (Task $record): string => self::latestClientConversation($record)
+                                        ? __('Open conversation')
+                                        : __('Done'))
+                                    ->action(function (Task $record, array $data) {
+                                        if ($data['mark_waiting'] ?? false) {
+                                            $record->attachTag(Task::TAG_WAITING_CLIENT);
+                                        }
+
+                                        $conversation = self::latestClientConversation($record);
+                                        $draft = trim((string) ($data['draft'] ?? ''));
+
+                                        if (! $conversation || $draft === '') {
+                                            return null;
+                                        }
+
+                                        session()->put(
+                                            MessagesRelationManager::draftSessionKey($conversation),
+                                            $draft,
+                                        );
+
+                                        return redirect(ViewWhatsappConversation::getUrl([$conversation->id]));
+                                    }),
+
+                                Action::make('aiSubtasks')
+                                    ->label(__('Break into subtasks'))
+                                    ->icon('heroicon-o-squares-2x2')
+                                    ->color(Color::Indigo)
+                                    ->form([
+                                        Forms\Components\Hidden::make('suggestions'),
+                                        CheckboxList::make('selected')
+                                            ->hiddenLabel()
+                                            ->options(fn (Get $get): array => self::subtaskOptions($get('suggestions')))
+                                            ->columns(1),
+                                    ])
+                                    ->fillForm(function (Task $record): array {
+                                        $suggestions = app(TaskAiService::class)->suggestSubtasks($record);
+
+                                        return [
+                                            'suggestions' => json_encode($suggestions),
+                                            'selected' => array_keys($suggestions),
+                                        ];
+                                    })
+                                    ->action(function (Task $record, array $data): void {
+                                        $suggestions = json_decode((string) ($data['suggestions'] ?? '[]'), true) ?: [];
+                                        $defaultStatusId = Status::orderBy('sort_order')->first()?->id;
+
+                                        foreach (($data['selected'] ?? []) as $index) {
+                                            $item = $suggestions[$index] ?? null;
+
+                                            if (! is_array($item) || blank($item['title'] ?? null)) {
+                                                continue;
+                                            }
+
+                                            $subtask = Task::create([
+                                                'title' => $item['title'],
+                                                'description' => filled($item['description'] ?? null) ? '<p>'.e($item['description']).'</p>' : null,
+                                                'parent_id' => $record->id,
+                                                'client_id' => $record->client_id,
+                                                'project_id' => $record->project_id,
+                                                'status_id' => $defaultStatusId,
+                                                'company_id' => $record->company_id,
+                                            ]);
+
+                                            if (($item['kind'] ?? null) === Task::AI_KIND_COMMUNICATION) {
+                                                $subtask->attachTag(Task::TAG_COMMUNICATION);
+                                            }
+                                        }
+
+                                        Notification::make()
+                                            ->title(__('Subtasks created'))
+                                            ->success()
+                                            ->send();
+                                    }),
+                            ])
+                            ->schema([]),
                     ])
                         ->grow(false), // Section at right
                 ])
@@ -1167,6 +1312,37 @@ class TaskResource extends Resource
         $state = $component->getContainer()->getState();
 
         return is_array($state) ? ($state['completed'] ?? false) : false;
+    }
+
+    /**
+     * @return array<int|string, string>
+     */
+    protected static function subtaskOptions(mixed $suggestionsJson): array
+    {
+        $suggestions = json_decode((string) ($suggestionsJson ?? '[]'), true) ?: [];
+
+        return collect($suggestions)
+            ->mapWithKeys(function (array $item, int $index): array {
+                $prefix = ($item['kind'] ?? null) === Task::AI_KIND_COMMUNICATION ? '💬 ' : '';
+
+                return [
+                    $index => $prefix.$item['title'].(filled($item['description'] ?? null) ? ' — '.$item['description'] : ''),
+                ];
+            })
+            ->all();
+    }
+
+    public static function latestClientConversation(Task $task): ?WhatsappConversation
+    {
+        if (! $task->client_id) {
+            return null;
+        }
+
+        return WhatsappConversation::query()
+            ->where('client_id', $task->client_id)
+            ->orderByDesc('last_message_at')
+            ->orderByDesc('id')
+            ->first();
     }
 
     protected static function getPostponeActions($field): array

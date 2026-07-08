@@ -53,6 +53,14 @@ class Task extends Model
 
     public const LOG_EVENT_STATUS_CHANGED = 'status_changed';
 
+    public const TAG_WAITING_CLIENT = 'aguardando-cliente';
+
+    public const TAG_COMMUNICATION = 'comunicacao';
+
+    public const AI_KIND_TECHNICAL = 'tecnica';
+
+    public const AI_KIND_COMMUNICATION = 'comunicacao';
+
     protected $guarded = ['id'];
 
     protected static function boot()
@@ -71,6 +79,7 @@ class Task extends Model
 
         static::updated(function (Task $model) {
             self::handleRecurrenceOnCompletion($model);
+            self::removeWaitingClientTagOnCompletion($model);
         });
     }
 
@@ -140,6 +149,26 @@ class Task extends Model
                 $model->actual_end = $model->actual_end ?? now()->format('Y-m-d');
             }
         }
+    }
+
+    /**
+     * A task waiting on the client stops waiting the moment it is closed:
+     * when the status moves to the CLOSED phase, the "aguardando-cliente"
+     * tag is detached automatically.
+     */
+    protected static function removeWaitingClientTagOnCompletion(Task $model): void
+    {
+        if (! $model->wasChanged('status_id')) {
+            return;
+        }
+
+        $status = Status::find($model->status_id);
+
+        if (! $status || $status->phase !== StatusPhaseEnum::CLOSED->value) {
+            return;
+        }
+
+        $model->detachTag(self::TAG_WAITING_CLIENT);
     }
 
     protected static function handleRecurrenceOnCompletion(Task $model): void

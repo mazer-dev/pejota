@@ -161,8 +161,37 @@
         @endif
     </div>
 
-    <form wire:submit.prevent="sendComposerMessage" class="sticky bottom-0 z-20 border-t border-gray-200 bg-white px-4 py-4 shadow-lg dark:border-white/10 dark:bg-gray-900 sm:px-6">
+    <form wire:submit.prevent="sendComposerMessage" x-data="{ dictate: false }" class="sticky bottom-0 z-20 border-t border-gray-200 bg-white px-4 py-4 shadow-lg dark:border-white/10 dark:bg-gray-900 sm:px-6">
         <div class="flex flex-col gap-3">
+            <div
+                x-show="dictate"
+                x-cloak
+                x-transition
+                class="flex flex-col gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-white/5"
+            >
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Diga à IA o que você quer comunicar ao cliente:
+                </label>
+                <textarea
+                    wire:model="aiInstruction"
+                    rows="2"
+                    placeholder="Ex.: avisar que a entrega vai atrasar 2 dias e propor nova data na sexta"
+                    class="block w-full resize-y rounded-lg border-gray-300 bg-white text-sm text-gray-950 shadow-sm transition duration-75 placeholder:text-gray-400 focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-gray-950 dark:text-white dark:placeholder:text-gray-500"
+                ></textarea>
+                <div>
+                    <button
+                        type="button"
+                        wire:click="generateAiFromInstruction"
+                        wire:loading.attr="disabled"
+                        wire:target="generateAiFromInstruction"
+                        class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 disabled:opacity-60"
+                    >
+                        <x-heroicon-o-sparkles class="h-4 w-4" />
+                        <span wire:loading.remove wire:target="generateAiFromInstruction">Gerar mensagem</span>
+                        <span wire:loading wire:target="generateAiFromInstruction">Gerando...</span>
+                    </button>
+                </div>
+            </div>
             <textarea
                 wire:model.live.debounce.500ms="composerMessage"
                 rows="3"
@@ -202,6 +231,15 @@
                         <x-heroicon-o-sparkles class="h-4 w-4" />
                         <span wire:loading.remove wire:target="generateAiSuggestion">Sugerir resposta</span>
                         <span wire:loading wire:target="generateAiSuggestion">Gerando...</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        @click="dictate = ! dictate"
+                        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5"
+                    >
+                        <x-heroicon-o-pencil-square class="h-4 w-4" />
+                        <span x-text="dictate ? 'Fechar ditado' : 'Ditar mensagem'">Ditar mensagem</span>
                     </button>
                 </div>
 

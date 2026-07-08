@@ -73,8 +73,13 @@ class AppPanelProvider extends PanelProvider
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn () => Blade::render('@livewire(\'work-sessions-top-nav\')')
             )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => auth()->check() ? Blade::render('@livewire(\'assistant-chat\')') : ''
+            )
             ->maxContentWidth(MaxWidth::Full)
             ->sidebarCollapsibleOnDesktop()
+            ->databaseNotifications()
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')
             ->pages([
