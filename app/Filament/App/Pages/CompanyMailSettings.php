@@ -9,6 +9,7 @@ use App\Mail\TestMail;
 use App\Models\Company;
 use App\Models\CompanyMailConfig;
 use App\Services\Mail\CompanyMailerFactory;
+use App\Support\Help\HelpAction;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -127,6 +128,7 @@ class CompanyMailSettings extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            HelpAction::page('gmail-smtp'),
             Action::make('sendTest')
                 ->label(__('Send test email'))
                 ->icon('heroicon-o-paper-airplane')

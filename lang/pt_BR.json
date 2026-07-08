@@ -349,5 +349,9 @@
     "Deliveries": "Envios",
     "Attachments": "Anexos",
     "Queued": "Enfileirado",
-    "Failed": "Falhou"
+    "Failed": "Falhou",
+    "Help": "Ajuda",
+    "This content isn't available in your language yet — showing it in :locale.": "Este conteúdo ainda não está disponível no seu idioma — exibindo em :locale.",
+    "Help article ':slug' was not found.": "Artigo de ajuda ':slug' não encontrado.",
+    "Close": "Fechar"
 }

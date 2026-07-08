@@ -7,6 +7,7 @@ use App\Enums\MenuGroupsEnum;
 use App\Filament\App\Resources\TaskResource;
 use App\Helpers\PejotaHelper;
 use App\Models\Currency;
+use App\Support\Help\HelpAction;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Checkbox;
@@ -174,43 +175,7 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->default(fn () => 'ym000')
                                 ->live()
                                 ->hintAction(
-                                    FormAction::make('format_help')
-                                        ->icon('heroicon-o-question-mark-circle')
-                                        ->label('')
-                                        ->modalHeading(__('Invoice Number Format'))
-                                        ->modalContent(new HtmlString('
-                                            <div class="space-y-4 text-sm">
-                                                <p>'.__('Build the invoice number using date tokens and zero-padding for the sequence.').'</p>
-                                                <table class="w-full text-left border-collapse">
-                                                    <thead>
-                                                        <tr class="border-b dark:border-gray-700">
-                                                            <th class="py-2 pr-4 font-semibold">'.__('Token').'</th>
-                                                            <th class="py-2 pr-4 font-semibold">'.__('Meaning').'</th>
-                                                            <th class="py-2 font-semibold">'.__('Example').'</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody class="divide-y dark:divide-gray-700">
-                                                        <tr><td class="py-2 pr-4 font-mono">y</td><td class="py-2 pr-4">'.__('2-digit year').'</td><td class="py-2 font-mono">26</td></tr>
-                                                        <tr><td class="py-2 pr-4 font-mono">Y</td><td class="py-2 pr-4">'.__('4-digit year').'</td><td class="py-2 font-mono">2026</td></tr>
-                                                        <tr><td class="py-2 pr-4 font-mono">m</td><td class="py-2 pr-4">'.__('Month (01–12)').'</td><td class="py-2 font-mono">03</td></tr>
-                                                        <tr><td class="py-2 pr-4 font-mono">d</td><td class="py-2 pr-4">'.__('Day (01–31)').'</td><td class="py-2 font-mono">07</td></tr>
-                                                        <tr><td class="py-2 pr-4 font-mono">000</td><td class="py-2 pr-4">'.__('3-digit sequence (use as many zeros as needed)').'</td><td class="py-2 font-mono">001</td></tr>
-                                                    </tbody>
-                                                </table>
-                                                <div class="space-y-1 pt-2">
-                                                    <p class="font-semibold">'.__('Examples').'</p>
-                                                    <ul class="space-y-1 font-mono text-gray-600 dark:text-gray-400">
-                                                        <li>ym000 → 2603001 <span class="font-sans text-xs">('.__('resets monthly').')</span></li>
-                                                        <li>Ym000 → 202603001 <span class="font-sans text-xs">('.__('resets monthly, 4-digit year').')</span></li>
-                                                        <li>Y000 → 2026001 <span class="font-sans text-xs">('.__('resets yearly').')</span></li>
-                                                        <li>ymd00 → 26030701 <span class="font-sans text-xs">('.__('resets daily').')</span></li>
-                                                    </ul>
-                                                </div>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400 pt-2">'.__('The sequence resets to 1 automatically when the date period changes.').'</p>
-                                            </div>
-                                        '))
-                                        ->modalSubmitAction(false)
-                                        ->modalCancelActionLabel(__('Close'))
+                                    HelpAction::form('invoice-number')->label('')
                                 ),
                             Placeholder::make('format_preview')
                                 ->label(__('Preview'))

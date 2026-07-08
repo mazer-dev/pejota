@@ -92,4 +92,12 @@ class CompanyMailSettingsTest extends TestCase
         Livewire::test(CompanyMailSettings::class)
             ->assertSet('data.password', null);
     }
+
+    public function test_shows_gmail_help_action(): void
+    {
+        Livewire::test(CompanyMailSettings::class)
+            ->assertActionExists('gmail-smtp')
+            ->mountAction('gmail-smtp')
+            ->assertSee('smtp.gmail.com');
+    }
 }
