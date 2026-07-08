@@ -15,7 +15,7 @@
             </div>
         @endif
 
-        <div class="prose dark:prose-invert max-w-none">
+        <div class="prose dark:prose-invert max-w-none" style="font-size: 0.85em">
             {!! $article->html() !!}
         </div>
     @endif
