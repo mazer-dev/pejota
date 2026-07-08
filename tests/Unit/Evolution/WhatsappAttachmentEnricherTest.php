@@ -3,8 +3,8 @@
 namespace Tests\Unit\Evolution;
 
 use App\Models\WhatsappAttachment;
+use App\Services\Ai\CliImageDescriber;
 use App\Services\Ai\OpenAiAudioTranscriber;
-use App\Services\Ai\OpenAiImageDescriber;
 use App\Services\Documents\AttachmentTextExtractor;
 use App\Services\Evolution\WhatsappAttachmentEnricher;
 use Mockery;
@@ -26,7 +26,7 @@ class WhatsappAttachmentEnricherTest extends TestCase
         $enricher = new WhatsappAttachmentEnricher(
             Mockery::mock(AttachmentTextExtractor::class),
             $transcriber,
-            Mockery::mock(OpenAiImageDescriber::class),
+            Mockery::mock(CliImageDescriber::class),
         );
 
         $attachment = new WhatsappAttachment([

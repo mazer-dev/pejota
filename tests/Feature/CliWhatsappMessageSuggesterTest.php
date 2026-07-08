@@ -8,38 +8,37 @@ use App\Models\User;
 use App\Models\WhatsappAttachment;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
-use App\Services\Ai\OpenAiWhatsappMessageSuggester;
+use App\Services\Ai\AiCliRunner;
+use App\Services\Ai\CliWhatsappMessageSuggester;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
+use Mockery;
 use Tests\TestCase;
 
-class OpenAiWhatsappMessageSuggesterTest extends TestCase
+class CliWhatsappMessageSuggesterTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_sends_client_project_messages_and_processed_attachments_to_openai(): void
+    public function test_it_sends_client_project_messages_and_processed_attachments_to_ai_cli(): void
     {
         $user = User::factory()->create();
         $companyId = $user->company->id;
         $this->actingAs($user);
 
-        config([
-            'services.openai.api_key' => 'openai-secret',
-            'services.openai.base_url' => 'http://openai.test',
-            'services.openai.chat_model' => 'gpt-4o-mini',
-        ]);
+        $runner = Mockery::mock(AiCliRunner::class);
+        $runner->shouldReceive('complete')
+            ->once()
+            ->with(Mockery::on(function (string $prompt): bool {
+                return str_contains($prompt, 'Veio da 99freelas')
+                    && str_contains($prompt, 'Confirmar escopo antes de prometer prazo')
+                    && str_contains($prompt, 'Transcrição: preciso confirmar os e-mails')
+                    && str_contains($prompt, 'PDF: existem 19 e-mails')
+                    && str_contains($prompt, 'Imagem: tela de assinatura do Claude Max')
+                    && str_contains($prompt, 'rascunho atual')
+                    && str_contains($prompt, 'Retorne somente o texto da mensagem');
+            }))
+            ->andReturn('Claro, vou conferir isso e te retorno com a confirmação.');
 
-        Http::fake([
-            'http://openai.test/chat/completions' => Http::response([
-                'choices' => [
-                    [
-                        'message' => [
-                            'content' => 'Claro, vou conferir isso e te retorno com a confirmação.',
-                        ],
-                    ],
-                ],
-            ]),
-        ]);
+        $this->instance(AiCliRunner::class, $runner);
 
         $client = Client::create([
             'company_id' => $companyId,
@@ -107,20 +106,8 @@ class OpenAiWhatsappMessageSuggesterTest extends TestCase
             'status' => 'stored',
         ]);
 
-        $suggestion = app(OpenAiWhatsappMessageSuggester::class)->suggest($conversation, 'rascunho atual');
+        $suggestion = app(CliWhatsappMessageSuggester::class)->suggest($conversation, 'rascunho atual');
 
         $this->assertSame('Claro, vou conferir isso e te retorno com a confirmação.', $suggestion);
-        Http::assertSent(function ($request): bool {
-            $content = $request['messages'][1]['content'];
-
-            return $request->url() === 'http://openai.test/chat/completions'
-                && $request['model'] === 'gpt-4o-mini'
-                && str_contains($content, 'Veio da 99freelas')
-                && str_contains($content, 'Confirmar escopo antes de prometer prazo')
-                && str_contains($content, 'Transcrição: preciso confirmar os e-mails')
-                && str_contains($content, 'PDF: existem 19 e-mails')
-                && str_contains($content, 'Imagem: tela de assinatura do Claude Max')
-                && str_contains($content, 'rascunho atual');
-        });
     }
 }

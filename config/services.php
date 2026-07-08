@@ -43,10 +43,21 @@ return [
         'audio_transcription_model' => env('OPENAI_AUDIO_TRANSCRIPTION_MODEL', 'gpt-4o-transcribe'),
         'audio_transcription_prompt' => env('OPENAI_AUDIO_TRANSCRIPTION_PROMPT', 'Transcreva em português do Brasil, preservando nomes próprios, termos técnicos, valores e prazos quando forem mencionados.'),
         'audio_transcription_language' => env('OPENAI_AUDIO_TRANSCRIPTION_LANGUAGE', 'pt'),
-        'chat_model' => env('OPENAI_CHAT_MODEL', 'gpt-4o-mini'),
-        'image_model' => env('OPENAI_IMAGE_MODEL', env('OPENAI_CHAT_MODEL', 'gpt-4o-mini')),
-        'image_max_mb' => (int) env('OPENAI_IMAGE_MAX_MB', 10),
-        'describe_images' => (bool) env('OPENAI_DESCRIBE_IMAGES', true),
+    ],
+
+    'ai_cli' => [
+        'codex_bin' => env('AI_CODEX_BIN', 'codex'),
+        'agy_bin' => env('AI_AGY_BIN', 'agy'),
+        'codex_model' => env('AI_CODEX_MODEL'),
+        'agy_model' => env('AI_AGY_MODEL'),
+        'timeout' => (int) env('AI_CLI_TIMEOUT', 300),
+        'workdir' => env('AI_CLI_WORKDIR') ?: base_path(),
+        'use_sudo' => filter_var(env('AI_CLI_USE_SUDO', false), FILTER_VALIDATE_BOOLEAN),
+        'sudo_bin' => env('AI_CLI_SUDO_BIN', 'sudo'),
+        'sudo_user' => env('AI_CLI_SUDO_USER', 'root'),
+        'agy_skip_permissions' => filter_var(env('AI_AGY_SKIP_PERMISSIONS', false), FILTER_VALIDATE_BOOLEAN),
+        'describe_images' => filter_var(env('AI_DESCRIBE_IMAGES', true), FILTER_VALIDATE_BOOLEAN),
+        'image_max_mb' => (int) env('AI_IMAGE_MAX_MB', 10),
     ],
 
     'evolution' => [

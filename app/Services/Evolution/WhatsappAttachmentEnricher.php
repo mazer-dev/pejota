@@ -4,8 +4,8 @@ namespace App\Services\Evolution;
 
 use App\Models\WhatsappAttachment;
 use App\Models\WhatsappMessage;
+use App\Services\Ai\CliImageDescriber;
 use App\Services\Ai\OpenAiAudioTranscriber;
-use App\Services\Ai\OpenAiImageDescriber;
 use App\Services\Documents\AttachmentTextExtractor;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -16,7 +16,7 @@ class WhatsappAttachmentEnricher
     public function __construct(
         private readonly AttachmentTextExtractor $extractor,
         private readonly OpenAiAudioTranscriber $transcriber,
-        private readonly OpenAiImageDescriber $imageDescriber,
+        private readonly CliImageDescriber $imageDescriber,
     ) {}
 
     public function enrich(WhatsappAttachment $attachment, string $filePath, ?WhatsappMessage $message = null): void
@@ -33,7 +33,7 @@ class WhatsappAttachmentEnricher
                 return;
             }
 
-            if (str_starts_with((string) $attachment->mime_type, 'image/') && (bool) config('services.openai.describe_images', true)) {
+            if (str_starts_with((string) $attachment->mime_type, 'image/') && (bool) config('services.ai_cli.describe_images', true)) {
                 $attachment->extracted_text = $this->imageDescriber->describe($filePath, $attachment->mime_type);
                 $this->markAsProcessed($attachment);
 

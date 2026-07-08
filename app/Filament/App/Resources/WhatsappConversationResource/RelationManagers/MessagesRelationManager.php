@@ -5,7 +5,7 @@ namespace App\Filament\App\Resources\WhatsappConversationResource\RelationManage
 use App\Models\WhatsappAttachment;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
-use App\Services\Ai\OpenAiWhatsappMessageSuggester;
+use App\Services\Ai\CliWhatsappMessageSuggester;
 use App\Services\Evolution\EvolutionApiClient;
 use App\Services\Evolution\WhatsappAttachmentEnricher;
 use App\Services\Evolution\WhatsappConversationSyncService;
@@ -76,7 +76,7 @@ class MessagesRelationManager extends RelationManager
         $conversation = $this->getOwnerRecord();
 
         try {
-            $suggestion = app(OpenAiWhatsappMessageSuggester::class)->suggest($conversation, $this->composerMessage);
+            $suggestion = app(CliWhatsappMessageSuggester::class)->suggest($conversation, $this->composerMessage);
 
             $this->composerMessage = $suggestion;
             $this->aiSuggestion = $suggestion;
