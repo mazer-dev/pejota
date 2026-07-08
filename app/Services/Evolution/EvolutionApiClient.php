@@ -236,8 +236,8 @@ class EvolutionApiClient
                     'webhook' => [
                         'enabled' => true,
                         'url' => $url,
-                        'webhookByEvents' => false,
-                        'webhookBase64' => $base64,
+                        'byEvents' => false,
+                        'base64' => $base64,
                         'events' => [
                             'MESSAGES_UPSERT',
                             'MESSAGES_UPDATE',

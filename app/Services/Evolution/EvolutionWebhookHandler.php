@@ -158,6 +158,11 @@ class EvolutionWebhookHandler
     {
         $attachment = $message->attachments()->first();
         if ($attachment?->path) {
+            if ($this->needsEnrichment($attachment)) {
+                $this->enrichAttachment($attachment, storage_path('app/'.$attachment->path), $message);
+                $attachment->save();
+            }
+
             return;
         }
 
@@ -208,6 +213,13 @@ class EvolutionWebhookHandler
     private function enrichAttachment(WhatsappAttachment $attachment, string $filePath, WhatsappMessage $message): void
     {
         $this->attachmentEnricher->enrich($attachment, $filePath, $message);
+    }
+
+    private function needsEnrichment(WhatsappAttachment $attachment): bool
+    {
+        return blank($attachment->transcription_text)
+            && blank($attachment->extracted_text)
+            && blank($attachment->error);
     }
 
     private function messages(array $payload): array

@@ -133,4 +133,34 @@ class EvolutionApiClientTest extends TestCase
             'data' => 'ZmFrZQ==',
         ], $media);
     }
+
+    public function test_it_configures_webhook_with_evolution_payload_keys(): void
+    {
+        config([
+            'services.evolution.base_url' => 'http://evolution.test',
+            'services.evolution.api_key' => 'secret',
+            'services.evolution.instance' => 'client_instance',
+        ]);
+
+        Http::fake([
+            'http://evolution.test/webhook/set/client_instance' => Http::response([
+                'enabled' => true,
+                'webhookBase64' => true,
+            ]),
+        ]);
+
+        app(EvolutionApiClient::class)->setWebhook('https://pejota.test/webhooks/evolution?token=abc', true);
+
+        Http::assertSent(fn ($request) => $request->url() === 'http://evolution.test/webhook/set/client_instance'
+            && $request->hasHeader('apikey', 'secret')
+            && $request['webhook']['enabled'] === true
+            && $request['webhook']['url'] === 'https://pejota.test/webhooks/evolution?token=abc'
+            && $request['webhook']['byEvents'] === false
+            && $request['webhook']['base64'] === true
+            && $request['webhook']['events'] === [
+                'MESSAGES_UPSERT',
+                'MESSAGES_UPDATE',
+                'SEND_MESSAGE',
+            ]);
+    }
 }
