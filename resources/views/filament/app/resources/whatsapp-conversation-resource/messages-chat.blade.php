@@ -11,88 +11,229 @@
     $timezone = PejotaHelper::getUserTimeZone();
 @endphp
 
-<div class="bg-gray-50 px-4 py-5 dark:bg-gray-950 sm:px-6">
-    @if ($messages->isEmpty())
-        <div class="flex min-h-32 items-center justify-center rounded-lg border border-dashed border-gray-300 px-6 py-10 text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
-            Nenhuma mensagem sincronizada.
-        </div>
-    @else
-        <div class="flex flex-col gap-3">
-            @foreach ($messages as $message)
-                @php
-                    $isSent = (bool) $message->from_me;
-                    $text = trim((string) $message->text);
-                    $sentAt = $message->sent_at?->copy()->timezone($timezone)->format('d/m/Y H:i');
-                    $type = $message->message_type ? str($message->message_type)->replace('_', ' ')->headline() : null;
-                    $attachmentsCount = $message->relationLoaded('attachments') ? $message->attachments->count() : 0;
-                @endphp
+<div wire:poll.10s.visible="refreshMessages" class="bg-gray-50 dark:bg-gray-950">
+    <div class="px-4 py-5 sm:px-6">
+        @if ($messages->isEmpty())
+            <div class="flex min-h-32 items-center justify-center rounded-lg border border-dashed border-gray-300 px-6 py-10 text-sm text-gray-500 dark:border-white/10 dark:text-gray-300">
+                Nenhuma mensagem sincronizada.
+            </div>
+        @else
+            <div class="flex flex-col gap-3">
+                @foreach ($messages as $message)
+                    @php
+                        $isSent = (bool) $message->from_me;
+                        $attachments = $message->relationLoaded('attachments') ? $message->attachments : collect();
+                        $transcriptionText = trim((string) $attachments->pluck('transcription_text')->filter()->implode("\n\n"));
+                        $extractedText = trim((string) $attachments->pluck('extracted_text')->filter()->implode("\n\n"));
+                        $text = trim((string) $message->text);
+                        $displayText = $text !== '' ? $text : ($transcriptionText !== '' ? $transcriptionText : '');
+                        $sentAt = $message->sent_at?->copy()->timezone($timezone)->format('d/m/Y H:i');
+                        $type = $message->message_type ? str($message->message_type)->replace('_', ' ')->headline() : null;
+                    @endphp
 
-                <div @class([
-                    'flex w-full',
-                    'justify-end' => $isSent,
-                    'justify-start' => ! $isSent,
-                ])>
-                    <div
-                        @class([
-                            'max-w-2xl rounded-lg px-4 py-3 shadow-sm',
-                            'bg-primary-600 text-white' => $isSent,
-                            'bg-white text-gray-950 ring-1 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10' => ! $isSent,
-                        ])
-                    >
-                        <div @class([
-                            'mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs',
-                            'text-primary-100' => $isSent,
-                            'text-gray-500 dark:text-gray-400' => ! $isSent,
-                        ])>
-                            <span class="font-medium">
-                                {{ $isSent ? 'Você' : 'Cliente' }}
-                            </span>
-
-                            @if ($sentAt)
-                                <span>{{ $sentAt }}</span>
-                            @endif
-                        </div>
-
-                        @if ($text !== '')
-                            <div class="whitespace-pre-wrap break-words text-sm leading-6">
-                                {{ $text }}
-                            </div>
-                        @else
+                    <div @class([
+                        'flex w-full',
+                        'justify-end' => $isSent,
+                        'justify-start' => ! $isSent,
+                    ])>
+                        <div
+                            @class([
+                                'max-w-2xl rounded-lg px-4 py-3 shadow-sm',
+                                'bg-primary-600 text-white' => $isSent,
+                                'bg-gray-800 text-gray-50 ring-1 ring-white/10' => ! $isSent,
+                            ])
+                        >
                             <div @class([
-                                'text-sm italic',
+                                'mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs',
                                 'text-primary-100' => $isSent,
-                                'text-gray-500 dark:text-gray-400' => ! $isSent,
+                                'text-gray-300' => ! $isSent,
                             ])>
-                                Mensagem sem texto.
-                            </div>
-                        @endif
+                                <span class="font-medium">
+                                    {{ $isSent ? 'Você' : 'Cliente' }}
+                                </span>
 
-                        @if ($attachmentsCount > 0)
+                                @if ($sentAt)
+                                    <span>{{ $sentAt }}</span>
+                                @endif
+                            </div>
+
+                            @foreach ($attachments as $attachment)
+                                @php
+                                    $isImage = str_starts_with((string) $attachment->mime_type, 'image/') && filled($attachment->path);
+                                    $isAudio = str_starts_with((string) $attachment->mime_type, 'audio/') && filled($attachment->path);
+                                    $isStored = filled($attachment->path);
+                                @endphp
+
+                                @if ($isImage)
+                                    <a href="{{ route('whatsapp.attachments.show', $attachment) }}" target="_blank" class="mb-3 block overflow-hidden rounded-md ring-1 ring-black/10 dark:ring-white/10">
+                                        <img
+                                            src="{{ route('whatsapp.attachments.show', $attachment) }}"
+                                            alt="{{ $attachment->original_filename ?: 'Imagem enviada no WhatsApp' }}"
+                                            class="max-h-96 w-full object-contain"
+                                            style="max-height: 24rem;"
+                                            loading="lazy"
+                                        >
+                                    </a>
+                                @elseif ($isAudio)
+                                    <audio controls preload="none" class="mb-3 w-full">
+                                        <source src="{{ route('whatsapp.attachments.show', $attachment) }}" type="{{ $attachment->mime_type }}">
+                                    </audio>
+                                @elseif ($isStored)
+                                    <a
+                                        href="{{ route('whatsapp.attachments.show', $attachment) }}"
+                                        target="_blank"
+                                        @class([
+                                            'mb-3 inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium ring-1',
+                                            'bg-white/10 text-white ring-white/20 hover:bg-white/15' => $isSent,
+                                            'bg-white/10 text-gray-100 ring-white/15 hover:bg-white/15' => ! $isSent,
+                                        ])
+                                    >
+                                        <x-heroicon-o-document-arrow-down class="h-4 w-4" />
+                                        {{ $attachment->original_filename ?: 'Baixar anexo' }}
+                                    </a>
+                                @endif
+                            @endforeach
+
+                            @if ($displayText !== '')
+                                <div class="whitespace-pre-wrap break-words text-sm leading-6">
+                                    {{ $displayText }}
+                                </div>
+                            @else
+                                <div @class([
+                                    'text-sm italic',
+                                    'text-primary-100' => $isSent,
+                                    'text-gray-300' => ! $isSent,
+                                ])>
+                                    Mensagem sem texto.
+                                </div>
+                            @endif
+
+                            @if ($text === '' && $transcriptionText !== '')
+                                <div @class([
+                                    'mt-2 text-xs',
+                                    'text-primary-100' => $isSent,
+                                    'text-gray-300' => ! $isSent,
+                                ])>
+                                    Transcrição de áudio
+                                </div>
+                            @endif
+
+                            @if ($attachments->count() > 0)
+                                <div @class([
+                                    'mt-2 text-xs',
+                                    'text-primary-100' => $isSent,
+                                    'text-gray-300' => ! $isSent,
+                                ])>
+                                    {{ trans_choice('{1} :count anexo|[2,*] :count anexos', $attachments->count(), ['count' => $attachments->count()]) }}
+                                </div>
+                            @endif
+
+                            @if ($extractedText !== '')
+                                <details @class([
+                                    'mt-2 text-xs',
+                                    'text-primary-100' => $isSent,
+                                    'text-gray-300' => ! $isSent,
+                                ])>
+                                    <summary class="cursor-pointer font-medium">Conteúdo processado do anexo</summary>
+                                    <div class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-black/10 p-2">
+                                        {{ $extractedText }}
+                                    </div>
+                                </details>
+                            @endif
+
                             <div @class([
-                                'mt-2 text-xs',
+                                'mt-2 flex flex-wrap items-center gap-2 text-xs',
                                 'text-primary-100' => $isSent,
-                                'text-gray-500 dark:text-gray-400' => ! $isSent,
+                                'text-gray-300' => ! $isSent,
                             ])>
-                                {{ trans_choice('{1} :count anexo|[2,*] :count anexos', $attachmentsCount, ['count' => $attachmentsCount]) }}
+                                @if ($type)
+                                    <span>{{ $type }}</span>
+                                @endif
+
+                                @if ($message->status)
+                                    <span>{{ $message->status }}</span>
+                                @endif
                             </div>
-                        @endif
-
-                        <div @class([
-                            'mt-2 flex flex-wrap items-center gap-2 text-xs',
-                            'text-primary-100' => $isSent,
-                            'text-gray-500 dark:text-gray-400' => ! $isSent,
-                        ])>
-                            @if ($type)
-                                <span>{{ $type }}</span>
-                            @endif
-
-                            @if ($message->status)
-                                <span>{{ $message->status }}</span>
-                            @endif
                         </div>
                     </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
+    <form wire:submit.prevent="sendComposerMessage" class="sticky bottom-0 z-20 border-t border-gray-200 bg-white px-4 py-4 shadow-lg dark:border-white/10 dark:bg-gray-900 sm:px-6">
+        <div class="flex flex-col gap-3">
+            <textarea
+                wire:model.live.debounce.500ms="composerMessage"
+                rows="3"
+                placeholder="Escreva uma mensagem ou gere uma sugestão com IA..."
+                class="block w-full resize-y rounded-lg border-gray-300 bg-white text-sm text-gray-950 shadow-sm transition duration-75 placeholder:text-gray-400 focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-gray-950 dark:text-white dark:placeholder:text-gray-500"
+            ></textarea>
+
+            @error('composerMessage')
+                <p class="text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
+            @enderror
+
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div x-data class="flex flex-wrap items-center gap-2">
+                    <input
+                        x-ref="attachment"
+                        wire:model="composerAttachment"
+                        type="file"
+                        class="hidden"
+                    >
+
+                    <button
+                        type="button"
+                        x-on:click="$refs.attachment.click()"
+                        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5"
+                    >
+                        <x-heroicon-o-paper-clip class="h-4 w-4" />
+                        Anexo
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="generateAiSuggestion"
+                        wire:loading.attr="disabled"
+                        wire:target="generateAiSuggestion"
+                        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5"
+                    >
+                        <x-heroicon-o-sparkles class="h-4 w-4" />
+                        <span wire:loading.remove wire:target="generateAiSuggestion">Sugerir resposta</span>
+                        <span wire:loading wire:target="generateAiSuggestion">Gerando...</span>
+                    </button>
                 </div>
-            @endforeach
+
+                <button
+                    type="submit"
+                    wire:loading.attr="disabled"
+                    wire:target="sendComposerMessage,composerAttachment"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 disabled:opacity-60"
+                >
+                    <x-heroicon-o-paper-airplane class="h-4 w-4" />
+                    <span wire:loading.remove wire:target="sendComposerMessage">Enviar</span>
+                    <span wire:loading wire:target="sendComposerMessage">Enviando...</span>
+                </button>
+            </div>
+
+            <div wire:loading wire:target="composerAttachment" class="text-sm text-gray-500 dark:text-gray-400">
+                Anexando arquivo...
+            </div>
+
+            @if ($this->composerAttachment)
+                <div class="flex flex-wrap items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 dark:bg-white/5 dark:text-gray-200">
+                    <x-heroicon-o-paper-clip class="h-4 w-4" />
+                    <span class="break-all">{{ $this->composerAttachment->getClientOriginalName() }}</span>
+                    <button type="button" wire:click="removeComposerAttachment" class="font-medium text-danger-600 hover:underline dark:text-danger-400">
+                        Remover
+                    </button>
+                </div>
+            @endif
+
+            @error('composerAttachment')
+                <p class="text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
+            @enderror
         </div>
-    @endif
+    </form>
 </div>

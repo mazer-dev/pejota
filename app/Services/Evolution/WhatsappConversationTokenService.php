@@ -64,10 +64,28 @@ class WhatsappConversationTokenService
     private function attachmentText(WhatsappMessage $message): ?string
     {
         $text = $message->attachments
-            ->map(fn (WhatsappAttachment $attachment): ?string => $attachment->transcription_text ?: $attachment->extracted_text)
+            ->map(fn (WhatsappAttachment $attachment): ?string => $this->attachmentContext($attachment))
             ->filter()
             ->implode("\n");
 
         return $text === '' ? null : $text;
+    }
+
+    private function attachmentContext(WhatsappAttachment $attachment): ?string
+    {
+        if (filled($attachment->transcription_text)) {
+            return 'Transcrição de áudio: '.$attachment->transcription_text;
+        }
+
+        if (filled($attachment->extracted_text)) {
+            return 'Conteúdo processado de anexo: '.$attachment->extracted_text;
+        }
+
+        $label = collect([
+            $attachment->original_filename,
+            $attachment->mime_type,
+        ])->filter()->implode(' - ');
+
+        return $label !== '' ? "Anexo sem texto extraído: {$label}" : null;
     }
 }

@@ -69,4 +69,68 @@ class EvolutionApiClientTest extends TestCase
             && $request['number'] === '5511999990000'
             && $request['text'] === 'Oi');
     }
+
+    public function test_it_sends_media_using_conversation_instance(): void
+    {
+        $user = User::factory()->create();
+        $companyId = $user->company->id;
+
+        config([
+            'services.evolution.base_url' => 'http://evolution.test',
+            'services.evolution.api_key' => 'secret',
+            'services.evolution.instance' => 'fallback_instance',
+        ]);
+
+        Http::fake([
+            'http://evolution.test/message/sendMedia/client_instance' => Http::response([
+                'key' => ['id' => 'MEDIA123'],
+            ]),
+        ]);
+
+        $conversation = WhatsappConversation::create([
+            'company_id' => $companyId,
+            'evolution_instance' => 'client_instance',
+            'remote_jid' => '5511999990000@s.whatsapp.net',
+            'phone_number' => '5511999990000',
+            'status' => 'open',
+        ]);
+
+        app(EvolutionApiClient::class)->sendMedia($conversation, 'ZmFrZQ==', 'image/png', 'foto.png', 'Legenda');
+
+        Http::assertSent(fn ($request) => $request->url() === 'http://evolution.test/message/sendMedia/client_instance'
+            && $request->hasHeader('apikey', 'secret')
+            && $request['number'] === '5511999990000'
+            && $request['mediatype'] === 'image'
+            && $request['mimetype'] === 'image/png'
+            && $request['caption'] === 'Legenda'
+            && $request['media'] === 'ZmFrZQ=='
+            && $request['fileName'] === 'foto.png');
+    }
+
+    public function test_it_downloads_media_base64_from_message(): void
+    {
+        config([
+            'services.evolution.base_url' => 'http://evolution.test',
+            'services.evolution.api_key' => 'secret',
+            'services.evolution.instance' => 'fallback_instance',
+        ]);
+
+        Http::fake([
+            'http://evolution.test/chat/getBase64FromMediaMessage/client_instance' => Http::response([
+                'base64' => 'data:image/png;base64,ZmFrZQ==',
+            ]),
+        ]);
+
+        $media = app(EvolutionApiClient::class)->getBase64FromMediaMessage('client_instance', [
+            'key' => [
+                'id' => 'MEDIA123',
+                'remoteJid' => '5511999990000@s.whatsapp.net',
+            ],
+        ]);
+
+        $this->assertSame([
+            'mime_type' => 'image/png',
+            'data' => 'ZmFrZQ==',
+        ], $media);
+    }
 }

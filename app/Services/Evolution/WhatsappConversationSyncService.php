@@ -12,11 +12,11 @@ class WhatsappConversationSyncService
         private readonly EvolutionWebhookHandler $handler,
     ) {}
 
-    public function sync(WhatsappConversation $conversation, int $limit = 50): int
+    public function sync(WhatsappConversation $conversation, int $limit = 50, bool $discoverCandidates = true): int
     {
         $conversation->loadMissing('client');
 
-        foreach ($this->candidates($conversation) as $candidate) {
+        foreach ($this->candidates($conversation, $discoverCandidates) as $candidate) {
             $records = $this->client->findMessages(
                 $conversation->evolution_instance,
                 $candidate['remote_jid'],
@@ -50,7 +50,7 @@ class WhatsappConversationSyncService
     /**
      * @return array<int, array{remote_jid: string, score: int, phone_number: ?string, push_name: ?string}>
      */
-    private function candidates(WhatsappConversation $conversation): array
+    private function candidates(WhatsappConversation $conversation, bool $discoverCandidates = true): array
     {
         $candidates = collect();
 
@@ -61,6 +61,10 @@ class WhatsappConversationSyncService
                 'phone_number' => $this->phoneFromJid($conversation->remote_jid),
                 'push_name' => $conversation->push_name,
             ]);
+        }
+
+        if (! $discoverCandidates) {
+            return $candidates->values()->all();
         }
 
         $rows = [

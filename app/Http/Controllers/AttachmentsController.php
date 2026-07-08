@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\WhatsappAttachment;
 use Illuminate\Support\Facades\Storage;
 
 class AttachmentsController extends Controller
@@ -17,5 +18,21 @@ class AttachmentsController extends Controller
         }
 
         abort(404);
+    }
+
+    public function getWhatsappAttachment(WhatsappAttachment $attachment)
+    {
+        if (auth()->user()?->company?->id !== $attachment->company_id) {
+            abort(404);
+        }
+
+        if (! $attachment->path || ! Storage::disk($attachment->disk)->exists($attachment->path)) {
+            abort(404);
+        }
+
+        return Storage::disk($attachment->disk)->response(
+            $attachment->path,
+            $attachment->original_filename
+        );
     }
 }

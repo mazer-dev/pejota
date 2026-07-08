@@ -125,4 +125,38 @@ class WhatsappConversationSyncServiceTest extends TestCase
             'text' => 'Enquanto isso, vou analisando.',
         ]);
     }
+
+    public function test_it_can_skip_candidate_discovery_for_light_polling(): void
+    {
+        $user = User::factory()->create();
+
+        config([
+            'services.evolution.base_url' => 'http://evolution.test',
+            'services.evolution.api_key' => 'secret',
+            'services.evolution.instance' => 'client_instance',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'http://evolution.test/chat/findMessages/client_instance' => Http::response([
+                'messages' => [
+                    'records' => [],
+                ],
+            ]),
+        ]);
+
+        $conversation = WhatsappConversation::create([
+            'company_id' => $user->company->id,
+            'evolution_instance' => 'client_instance',
+            'remote_jid' => '5511999990000@s.whatsapp.net',
+            'phone_number' => '5511999990000',
+            'status' => 'open',
+        ]);
+
+        $count = app(WhatsappConversationSyncService::class)->sync($conversation, discoverCandidates: false);
+
+        $this->assertSame(0, $count);
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => $request->url() === 'http://evolution.test/chat/findMessages/client_instance');
+    }
 }

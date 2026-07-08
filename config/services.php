@@ -43,6 +43,10 @@ return [
         'audio_transcription_model' => env('OPENAI_AUDIO_TRANSCRIPTION_MODEL', 'gpt-4o-transcribe'),
         'audio_transcription_prompt' => env('OPENAI_AUDIO_TRANSCRIPTION_PROMPT', 'Transcreva em português do Brasil, preservando nomes próprios, termos técnicos, valores e prazos quando forem mencionados.'),
         'audio_transcription_language' => env('OPENAI_AUDIO_TRANSCRIPTION_LANGUAGE', 'pt'),
+        'chat_model' => env('OPENAI_CHAT_MODEL', 'gpt-4o-mini'),
+        'image_model' => env('OPENAI_IMAGE_MODEL', env('OPENAI_CHAT_MODEL', 'gpt-4o-mini')),
+        'image_max_mb' => (int) env('OPENAI_IMAGE_MAX_MB', 10),
+        'describe_images' => (bool) env('OPENAI_DESCRIBE_IMAGES', true),
     ],
 
     'evolution' => [

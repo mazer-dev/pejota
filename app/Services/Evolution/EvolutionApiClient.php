@@ -37,6 +37,41 @@ class EvolutionApiClient
         }
     }
 
+    public function sendMedia(
+        WhatsappConversation $conversation,
+        string $base64,
+        string $mimeType,
+        string $fileName,
+        ?string $caption = null,
+    ): array {
+        $number = $conversation->phone_number ?: $this->numberFromJid($conversation->remote_jid);
+        if ($number === null) {
+            throw new RuntimeException('Não foi possível identificar o número do WhatsApp desta conversa.');
+        }
+
+        try {
+            $response = Http::timeout($this->timeout())
+                ->withHeaders(['apikey' => $this->apiKey()])
+                ->post($this->endpoint('/message/sendMedia/'.$this->instance($conversation->evolution_instance)), array_filter([
+                    'number' => $number,
+                    'mediatype' => $this->mediaTypeFromMime($mimeType),
+                    'mimetype' => $mimeType,
+                    'caption' => filled($caption) ? trim((string) $caption) : null,
+                    'media' => $base64,
+                    'fileName' => $fileName,
+                    'delay' => 1000,
+                ], fn ($value): bool => $value !== null));
+
+            $response->throw();
+
+            return $response->json() ?? [];
+        } catch (RequestException $exception) {
+            $message = $exception->response?->body() ?: $exception->getMessage();
+
+            throw new RuntimeException("Falha ao enviar anexo pela Evolution API: {$message}", previous: $exception);
+        }
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -125,6 +160,54 @@ class EvolutionApiClient
             $message = $exception->response?->body() ?: $exception->getMessage();
 
             throw new RuntimeException("Falha ao buscar mensagens da Evolution API: {$message}", previous: $exception);
+        }
+    }
+
+    /**
+     * @return array{mime_type: ?string, data: string}|null
+     */
+    public function getBase64FromMediaMessage(string $instance, array $messageData): ?array
+    {
+        try {
+            $response = Http::timeout($this->timeout())
+                ->withHeaders(['apikey' => $this->apiKey()])
+                ->post($this->endpoint('/chat/getBase64FromMediaMessage/'.$this->instance($instance)), [
+                    'message' => $messageData,
+                    'convertToMp4' => false,
+                ]);
+
+            $response->throw();
+
+            $data = $response->json();
+            $raw = data_get($data, 'base64')
+                ?: data_get($data, 'data.base64')
+                ?: data_get($data, 'data')
+                ?: data_get($data, 'media');
+
+            if (! is_string($raw) || trim($raw) === '') {
+                return null;
+            }
+
+            $mimeType = data_get($data, 'mimetype')
+                ?: data_get($data, 'mimeType')
+                ?: data_get($data, 'data.mimetype')
+                ?: data_get($data, 'data.mimeType');
+
+            if (preg_match('/^data:(?<mime>[^;]+);base64,(?<data>.+)$/s', trim($raw), $matches)) {
+                return [
+                    'mime_type' => $matches['mime'] ?: (is_string($mimeType) ? $mimeType : null),
+                    'data' => trim($matches['data']),
+                ];
+            }
+
+            return [
+                'mime_type' => is_string($mimeType) ? $mimeType : null,
+                'data' => trim($raw),
+            ];
+        } catch (RequestException $exception) {
+            $message = $exception->response?->body() ?: $exception->getMessage();
+
+            throw new RuntimeException("Falha ao baixar mídia da Evolution API: {$message}", previous: $exception);
         }
     }
 
@@ -228,6 +311,16 @@ class EvolutionApiClient
     private function timeout(): int
     {
         return (int) config('services.evolution.timeout', 30);
+    }
+
+    private function mediaTypeFromMime(string $mimeType): string
+    {
+        return match (true) {
+            str_starts_with($mimeType, 'image/') => 'image',
+            str_starts_with($mimeType, 'video/') => 'video',
+            str_starts_with($mimeType, 'audio/') => 'audio',
+            default => 'document',
+        };
     }
 
     private function numberFromJid(?string $jid): ?string

@@ -6,18 +6,17 @@ use App\Models\Company;
 use App\Models\WhatsappAttachment;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
-use App\Services\Ai\OpenAiAudioTranscriber;
-use App\Services\Documents\AttachmentTextExtractor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 class EvolutionWebhookHandler
 {
     public function __construct(
-        private readonly AttachmentTextExtractor $extractor,
-        private readonly OpenAiAudioTranscriber $transcriber,
+        private readonly EvolutionApiClient $client,
+        private readonly WhatsappAttachmentEnricher $attachmentEnricher,
         private readonly WhatsappConversationMatcher $matcher,
         private readonly WhatsappConversationTokenService $tokenService,
     ) {}
@@ -157,7 +156,8 @@ class EvolutionWebhookHandler
 
     private function storeAttachment(WhatsappMessage $message, array $messageData): void
     {
-        if ($message->attachments()->exists()) {
+        $attachment = $message->attachments()->first();
+        if ($attachment?->path) {
             return;
         }
 
@@ -166,15 +166,22 @@ class EvolutionWebhookHandler
             return;
         }
 
-        $base64 = $this->base64($messageData);
-        $attachment = new WhatsappAttachment([
+        $base64 = $this->base64($messageData) ?: $this->downloadBase64($message, $messageData);
+        $mimeType = $media['mime_type'] ?? $base64['mime_type'] ?? $attachment?->mime_type;
+        $extension = $media['extension'] ?? $attachment?->extension ?? $this->extensionFromMime($mimeType);
+        $attachment ??= new WhatsappAttachment([
             'company_id' => $message->company_id,
             'whatsapp_message_id' => $message->id,
-            'original_filename' => $media['filename'] ?? null,
-            'mime_type' => $media['mime_type'] ?? $base64['mime_type'] ?? null,
-            'extension' => $media['extension'] ?? $this->extensionFromMime($media['mime_type'] ?? $base64['mime_type'] ?? null),
-            'status' => $base64 ? 'stored' : 'metadata_only',
-            'payload' => $media,
+        ]);
+
+        $attachment->fill([
+            'company_id' => $message->company_id,
+            'whatsapp_message_id' => $message->id,
+            'original_filename' => $media['filename'] ?? $attachment->original_filename,
+            'mime_type' => $mimeType,
+            'extension' => $extension,
+            'status' => $base64 ? 'stored' : ($attachment->status ?: 'metadata_only'),
+            'payload' => $media ?: $attachment->payload,
         ]);
 
         if ($base64) {
@@ -200,24 +207,7 @@ class EvolutionWebhookHandler
 
     private function enrichAttachment(WhatsappAttachment $attachment, string $filePath, WhatsappMessage $message): void
     {
-        try {
-            if (str_starts_with((string) $attachment->mime_type, 'audio/') && (bool) config('services.evolution.transcribe_audio', true)) {
-                $attachment->transcription_text = $this->transcriber->transcribe($filePath);
-                if (! $message->text) {
-                    $message->forceFill(['text' => $attachment->transcription_text])->save();
-                }
-            } else {
-                $attachment->extracted_text = $this->extractor->extract($filePath, $attachment->mime_type, $attachment->extension);
-            }
-        } catch (\Throwable $exception) {
-            $attachment->status = 'error';
-            $attachment->error = $exception->getMessage();
-
-            Log::warning('Failed to enrich WhatsApp attachment.', [
-                'message_id' => $message->id,
-                'error' => $exception->getMessage(),
-            ]);
-        }
+        $this->attachmentEnricher->enrich($attachment, $filePath, $message);
     }
 
     private function messages(array $payload): array
@@ -366,19 +356,43 @@ class EvolutionWebhookHandler
             ?: data_get($messageData, 'message.videoMessage.base64')
             ?: data_get($messageData, 'message.documentMessage.base64');
 
+        return $this->normaliseBase64($raw);
+    }
+
+    private function downloadBase64(WhatsappMessage $message, array $messageData): ?array
+    {
+        try {
+            return $this->client->getBase64FromMediaMessage($message->evolution_instance, $messageData);
+        } catch (Throwable $exception) {
+            Log::info('Evolution did not return media base64 for WhatsApp message.', [
+                'message_id' => $message->id,
+                'remote_message_id' => $message->remote_message_id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * @return array{mime_type: ?string, data: string}|null
+     */
+    private function normaliseBase64(mixed $raw, ?string $mimeType = null): ?array
+    {
         if (! is_string($raw) || trim($raw) === '') {
             return null;
         }
 
+        $raw = trim($raw);
         if (preg_match('/^data:(?<mime>[^;]+);base64,(?<data>.+)$/s', $raw, $matches)) {
             return [
-                'mime_type' => $matches['mime'],
-                'data' => $matches['data'],
+                'mime_type' => $matches['mime'] ?: $mimeType,
+                'data' => trim($matches['data']),
             ];
         }
 
         return [
-            'mime_type' => null,
+            'mime_type' => $mimeType,
             'data' => $raw,
         ];
     }
