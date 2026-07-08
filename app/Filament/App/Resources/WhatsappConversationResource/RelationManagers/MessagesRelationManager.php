@@ -2,7 +2,6 @@
 
 namespace App\Filament\App\Resources\WhatsappConversationResource\RelationManagers;
 
-use App\Helpers\PejotaHelper;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use App\Services\Evolution\EvolutionApiClient;
@@ -12,41 +11,26 @@ use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
 
 class MessagesRelationManager extends RelationManager
 {
     protected static string $relationship = 'messages';
 
+    protected static ?string $title = 'Mensagens';
+
     public function table(Table $table): Table
     {
         return $table
             ->recordTitleAttribute('text')
-            ->defaultSort('sent_at', 'desc')
-            ->columns([
-                TextColumn::make('sent_at')
-                    ->label(__('Time'))
-                    ->dateTime()
-                    ->timezone(PejotaHelper::getUserTimeZone())
-                    ->sortable(),
-                TextColumn::make('direction')
-                    ->label(__('Direction'))
-                    ->badge(),
-                TextColumn::make('message_type')
-                    ->label(__('Type'))
-                    ->badge(),
-                TextColumn::make('text')
-                    ->label(__('Message'))
-                    ->wrap()
-                    ->limit(180)
-                    ->placeholder('-'),
-                TextColumn::make('status')
-                    ->label(__('Status'))
-                    ->badge()
-                    ->placeholder('-'),
-            ])
+            ->defaultSort(fn ($query) => $query->reorder()->orderByDesc('sent_at')->orderByDesc('id'))
+            ->defaultPaginationPageOption(50)
+            ->paginated([50, 100, 'all'])
+            ->poll('20s')
+            ->modifyQueryUsing(fn ($query) => $query->with('attachments'))
+            ->content(fn (): View => view('filament.app.resources.whatsapp-conversation-resource.messages-chat'))
             ->headerActions([
                 Action::make('syncMessages')
                     ->label('Sincronizar mensagens')
