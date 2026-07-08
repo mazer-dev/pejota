@@ -77,8 +77,11 @@ class WhatsappConversationResource extends Resource
                     ->label(__('Name')),
                 TextInput::make('phone_number')
                     ->label(__('Phone')),
-                TextInput::make('evolution_instance')
+                Select::make('evolution_instance')
                     ->label(__('Evolution instance'))
+                    ->options(fn () => app(EvolutionApiClient::class)->instanceOptions())
+                    ->searchable()
+                    ->preload()
                     ->required()
                     ->default(config('services.evolution.instance')),
                 TextInput::make('remote_jid')
@@ -108,6 +111,11 @@ class WhatsappConversationResource extends Resource
                 TextColumn::make('display_name')
                     ->label(__('Conversation'))
                     ->searchable(['push_name', 'phone_number', 'remote_jid']),
+                TextColumn::make('evolution_instance')
+                    ->label(__('Evolution instance'))
+                    ->badge()
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('client.name')
                     ->label(__('Client'))
                     ->searchable()
@@ -178,6 +186,8 @@ class WhatsappConversationResource extends Resource
                         TextEntry::make('phone_number')
                             ->label(__('Phone'))
                             ->placeholder('-'),
+                        TextEntry::make('evolution_instance')
+                            ->label(__('Evolution instance')),
                         TextEntry::make('context_tokens')
                             ->label(__('Context tokens'))
                             ->badge(),

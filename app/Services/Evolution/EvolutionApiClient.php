@@ -6,6 +6,7 @@ use App\Models\WhatsappConversation;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 class EvolutionApiClient
 {
@@ -19,7 +20,7 @@ class EvolutionApiClient
         try {
             $response = Http::timeout($this->timeout())
                 ->withHeaders(['apikey' => $this->apiKey()])
-                ->post($this->endpoint('/message/sendText/'.$this->instance()), [
+                ->post($this->endpoint('/message/sendText/'.$this->instance($conversation->evolution_instance)), [
                     'number' => $number,
                     'text' => $text,
                     'delay' => 1000,
@@ -34,6 +35,68 @@ class EvolutionApiClient
 
             throw new RuntimeException("Falha ao enviar mensagem pela Evolution API: {$message}", previous: $exception);
         }
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function fetchInstances(): array
+    {
+        try {
+            $response = Http::timeout($this->timeout())
+                ->withHeaders(['apikey' => $this->apiKey()])
+                ->get($this->endpoint('/instance/fetchInstances'));
+
+            $response->throw();
+
+            $instances = $response->json();
+
+            return is_array($instances) ? $instances : [];
+        } catch (RequestException $exception) {
+            $message = $exception->response?->body() ?: $exception->getMessage();
+
+            throw new RuntimeException("Falha ao listar instâncias da Evolution API: {$message}", previous: $exception);
+        }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function instanceOptions(): array
+    {
+        $options = [];
+
+        try {
+            foreach ($this->fetchInstances() as $instance) {
+                $name = data_get($instance, 'name')
+                    ?: data_get($instance, 'instanceName')
+                    ?: data_get($instance, 'instance.instanceName');
+
+                if (! is_string($name) || trim($name) === '') {
+                    continue;
+                }
+
+                $status = data_get($instance, 'connectionStatus')
+                    ?: data_get($instance, 'state')
+                    ?: data_get($instance, 'instance.state');
+
+                $profile = data_get($instance, 'profileName');
+                $details = collect([$profile, $status])
+                    ->filter(fn ($value) => is_string($value) && trim($value) !== '')
+                    ->implode(' - ');
+
+                $options[$name] = $details === '' ? $name : "{$name} ({$details})";
+            }
+        } catch (Throwable) {
+            $options = [];
+        }
+
+        $configured = config('services.evolution.instance');
+        if (is_string($configured) && trim($configured) !== '' && ! array_key_exists($configured, $options)) {
+            $options[$configured] = $configured;
+        }
+
+        return $options;
     }
 
     public function setWebhook(string $url, bool $base64 = true): array
@@ -80,9 +143,9 @@ class EvolutionApiClient
         return $apiKey;
     }
 
-    private function instance(): string
+    private function instance(?string $instanceName = null): string
     {
-        $instance = config('services.evolution.instance');
+        $instance = $instanceName ?: config('services.evolution.instance');
         if (! is_string($instance) || trim($instance) === '') {
             throw new RuntimeException('EVOLUTION_INSTANCE não configurada.');
         }
