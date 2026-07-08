@@ -12,6 +12,7 @@ use App\Helpers\PejotaHelper;
 use App\Models\Client;
 use App\Models\Currency;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
@@ -141,6 +142,11 @@ class ClientResource extends Resource
                                     ->hiddenLabel()
                                     ->icon('heroicon-o-phone'),
 
+                                TextEntry::make('ai_context')
+                                    ->label(__('Client conversation context'))
+                                    ->placeholder(__('No AI context registered.'))
+                                    ->icon('heroicon-o-sparkles'),
+
                             ]),
 
                             Section::make('Comments')
@@ -231,6 +237,11 @@ class ClientResource extends Resource
                 ->translateLabel()
                 ->default(true)
                 ->helperText(__('New work sessions for this client are billable by default')),
+            Textarea::make('ai_context')
+                ->label(__('Client conversation context'))
+                ->helperText(__('Background used by AI suggestions when writing to this client. Include how the relationship started, WhatsApp agreements, preferences and important constraints.'))
+                ->rows(8)
+                ->columnSpanFull(),
         ];
     }
 }

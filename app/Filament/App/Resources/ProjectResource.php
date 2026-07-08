@@ -14,6 +14,7 @@ use App\Models\Project;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieTagsInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
@@ -149,6 +150,11 @@ class ProjectResource extends Resource
                             ->label('')
                             ->icon('heroicon-o-document-text'),
 
+                        TextEntry::make('ai_context')
+                            ->label(__('Project context'))
+                            ->placeholder(__('No AI context registered.'))
+                            ->icon('heroicon-o-sparkles'),
+
                     ]),
 
                     Section::make([
@@ -235,6 +241,11 @@ class ProjectResource extends Resource
                 ->fileAttachmentsDisk('projects')
                 ->fileAttachmentsDirectory(auth()->user()->company->id)
                 ->fileAttachmentsVisibility('private'),
+            Textarea::make('ai_context')
+                ->label(__('Project context'))
+                ->helperText(__('Project-specific background used by AI suggestions. Include scope, agreements, deadlines, expectations and terms that matter in client messages.'))
+                ->rows(8)
+                ->columnSpanFull(),
             SpatieTagsInput::make('tags'),
             Toggle::make('active')
                 ->translateLabel()
