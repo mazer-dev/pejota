@@ -416,10 +416,15 @@ class EvolutionWebhookHandler
 
     private function extensionFromMime(?string $mime): ?string
     {
+        $mime = str((string) $mime)->before(';')->lower()->trim()->toString();
+
         return match ($mime) {
-            'audio/ogg', 'audio/opus' => 'ogg',
+            'audio/ogg', 'audio/opus', 'application/ogg' => 'ogg',
             'audio/mpeg' => 'mp3',
+            'audio/mp4', 'audio/m4a', 'audio/x-m4a' => 'm4a',
             'audio/wav', 'audio/x-wav' => 'wav',
+            'audio/webm' => 'webm',
+            'audio/flac' => 'flac',
             'image/jpeg' => 'jpg',
             'image/png' => 'png',
             'image/webp' => 'webp',
