@@ -18,6 +18,15 @@ class EditWhatsappConversation extends EditRecord
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return WhatsappConversationResource::prepareConversationData($data);
+    }
+
     protected function afterSave(): void
     {
         app(WhatsappConversationTokenService::class)->refresh($this->record);

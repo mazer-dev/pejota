@@ -10,15 +10,19 @@ use App\Filament\App\Resources\WhatsappConversationResource\Pages\ViewWhatsappCo
 use App\Filament\App\Resources\WhatsappConversationResource\RelationManagers\MessagesRelationManager;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
+use App\Models\Project;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use App\Services\Evolution\EvolutionApiClient;
 use App\Services\Evolution\WhatsappConversationMatcher;
 use App\Services\Evolution\WhatsappConversationTokenService;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -67,16 +71,40 @@ class WhatsappConversationResource extends Resource
                     ->label(__('Client'))
                     ->relationship('client', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, ?int $state): void {
+                        $set('project_id', null);
+
+                        if (! $state) {
+                            return;
+                        }
+
+                        $client = Client::find($state);
+                        if (! $client) {
+                            return;
+                        }
+
+                        $set('push_name', $client->name ?: $client->tradename);
+                        $set('phone_number', $client->phone);
+                        $set('remote_jid', self::remoteJidFromPhone($client->phone));
+                    }),
                 Select::make('project_id')
                     ->label(__('Project'))
-                    ->relationship('project', 'name')
+                    ->options(fn (Get $get): array => self::projectOptions($get('client_id')))
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->disabled(fn (Get $get): bool => blank($get('client_id'))),
                 TextInput::make('push_name')
                     ->label(__('Name')),
                 TextInput::make('phone_number')
-                    ->label(__('Phone')),
+                    ->label(__('Phone'))
+                    ->tel()
+                    ->required()
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function (Set $set, ?string $state): void {
+                        $set('remote_jid', self::remoteJidFromPhone($state));
+                    }),
                 Select::make('evolution_instance')
                     ->label(__('Evolution instance'))
                     ->options(fn () => app(EvolutionApiClient::class)->instanceOptions())
@@ -84,9 +112,8 @@ class WhatsappConversationResource extends Resource
                     ->preload()
                     ->required()
                     ->default(config('services.evolution.instance')),
-                TextInput::make('remote_jid')
-                    ->label(__('WhatsApp remote id'))
-                    ->required(),
+                Hidden::make('remote_jid')
+                    ->dehydrateStateUsing(fn (?string $state, Get $get): ?string => $state ?: self::remoteJidFromPhone($get('phone_number'))),
                 Select::make('status')
                     ->label(__('Status'))
                     ->options([
@@ -211,6 +238,50 @@ class WhatsappConversationResource extends Resource
         return [
             MessagesRelationManager::class,
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function projectOptions(null|int|string $clientId): array
+    {
+        if (blank($clientId)) {
+            return [];
+        }
+
+        return Project::query()
+            ->where('client_id', $clientId)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function prepareConversationData(array $data): array
+    {
+        $client = null;
+        if (! empty($data['client_id'])) {
+            $client = Client::find($data['client_id']);
+        }
+
+        if ($client) {
+            $data['push_name'] = $data['push_name'] ?: ($client->name ?: $client->tradename);
+            $data['phone_number'] = $data['phone_number'] ?: $client->phone;
+        }
+
+        $data['remote_jid'] = $data['remote_jid'] ?: self::remoteJidFromPhone($data['phone_number'] ?? null);
+
+        return $data;
+    }
+
+    public static function remoteJidFromPhone(?string $phone): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $phone);
+
+        return $digits ? "{$digits}@s.whatsapp.net" : null;
     }
 
     public static function getPages(): array
