@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttachmentsController;
+use App\Http\Controllers\Webhooks\EvolutionWebhookController;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Support\Facades\Route;
 
@@ -12,3 +13,6 @@ Route::get(
     ->middleware(Authenticate::class);
 
 Route::redirect('/', '/app');
+
+Route::post('/webhooks/evolution', EvolutionWebhookController::class)
+    ->name('webhooks.evolution');

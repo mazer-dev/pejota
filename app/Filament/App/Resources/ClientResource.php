@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
+use App\Filament\App\Resources\WhatsappConversationResource;
 use App\Filament\App\Resources\ClientResource\Pages\CreateClient;
 use App\Filament\App\Resources\ClientResource\Pages\EditClient;
 use App\Filament\App\Resources\ClientResource\Pages\ListClients;
@@ -27,6 +28,7 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
+use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
@@ -105,6 +107,10 @@ class ClientResource extends Resource
             ->actions([
                 ViewAction::make()
                     ->iconButton(),
+                TableAction::make('linkWhatsapp')
+                    ->label(__('Link WhatsApp'))
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->action(fn (Client $record) => WhatsappConversationResource::linkClientFromClientRecord($record)),
                 CommentsAction::make()
                     ->iconButton(),
                 EditAction::make(),

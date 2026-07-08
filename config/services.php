@@ -45,4 +45,16 @@ return [
         'audio_transcription_language' => env('OPENAI_AUDIO_TRANSCRIPTION_LANGUAGE', 'pt'),
     ],
 
+    'evolution' => [
+        'base_url' => env('EVOLUTION_API_URL', 'http://127.0.0.1:8085'),
+        'api_key' => env('EVOLUTION_API_KEY'),
+        'instance' => env('EVOLUTION_INSTANCE'),
+        'timeout' => (int) env('EVOLUTION_TIMEOUT', 30),
+        'default_company_id' => env('EVOLUTION_DEFAULT_COMPANY_ID'),
+        'webhook_token' => env('EVOLUTION_WEBHOOK_TOKEN'),
+        'webhook_verify_api_key' => (bool) env('EVOLUTION_WEBHOOK_VERIFY_API_KEY', true),
+        'webhook_forward_url' => env('EVOLUTION_WEBHOOK_FORWARD_URL'),
+        'transcribe_audio' => (bool) env('EVOLUTION_TRANSCRIBE_AUDIO', true),
+    ],
+
 ];
