@@ -24,6 +24,7 @@ class WhatsappAttachmentEnricher
         try {
             if (str_starts_with((string) $attachment->mime_type, 'audio/') && (bool) config('services.evolution.transcribe_audio', true)) {
                 $attachment->transcription_text = $this->transcribeAudio($attachment, $filePath);
+                $this->markAsProcessed($attachment);
 
                 if ($message && ! $message->text) {
                     $message->forceFill(['text' => $attachment->transcription_text])->save();
@@ -34,11 +35,13 @@ class WhatsappAttachmentEnricher
 
             if (str_starts_with((string) $attachment->mime_type, 'image/') && (bool) config('services.openai.describe_images', true)) {
                 $attachment->extracted_text = $this->imageDescriber->describe($filePath, $attachment->mime_type);
+                $this->markAsProcessed($attachment);
 
                 return;
             }
 
             $attachment->extracted_text = $this->extractor->extract($filePath, $attachment->mime_type, $attachment->extension);
+            $this->markAsProcessed($attachment);
         } catch (Throwable $exception) {
             $attachment->status = 'error';
             $attachment->error = $exception->getMessage();
@@ -95,5 +98,11 @@ class WhatsappAttachmentEnricher
             'audio/flac' => 'flac',
             default => null,
         };
+    }
+
+    private function markAsProcessed(WhatsappAttachment $attachment): void
+    {
+        $attachment->status = 'stored';
+        $attachment->error = null;
     }
 }
