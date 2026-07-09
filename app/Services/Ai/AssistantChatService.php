@@ -2,6 +2,7 @@
 
 namespace App\Services\Ai;
 
+use App\Helpers\PejotaHelper;
 use App\Models\AssistantConversation;
 use App\Models\AssistantMessage;
 use App\Services\Ai\Context\PromptGuard;
@@ -27,10 +28,16 @@ class AssistantChatService
         private readonly AiCliRunner $cliRunner,
         private readonly SchemaSnapshotService $schemaSnapshot,
         private readonly ReadOnlySelectValidator $validator,
+        private readonly AssistantInvoiceService $invoiceService,
     ) {}
 
     public function respond(AssistantConversation $conversation): string
     {
+        $confirmation = $this->invoiceService->handleConfirmation($conversation, $this->lastUserMessage($conversation));
+        if ($confirmation !== null) {
+            return $confirmation;
+        }
+
         $prompt = $this->basePrompt($conversation);
         $maxIterations = max(1, (int) config('services.assistant.max_iterations', 5));
 
@@ -53,6 +60,19 @@ class AssistantChatService
                 continue;
             }
 
+            if (is_array($decoded) && is_array($decoded['invoice'] ?? null)) {
+                [$draft, $errors] = $this->invoiceService->validateDraft($decoded['invoice'], (int) $conversation->company_id);
+
+                if ($draft === null) {
+                    $prompt .= "\n\nRascunho de fatura rejeitado pelo sistema:\n- ".implode("\n- ", $errors)
+                        ."\n\nCorrija (consultando o banco se precisar) e envie {\"invoice\": {...}} novamente, ou responda {\"say\": \"...\"} perguntando ao Luiz o que faltar.";
+
+                    continue;
+                }
+
+                return $this->invoiceService->beginConfirmation($conversation, $draft);
+            }
+
             if ($response !== '' && ! $this->looksLikeActionJson($response)) {
                 return $response;
             }
@@ -65,16 +85,22 @@ class AssistantChatService
 
     private function basePrompt(AssistantConversation $conversation): string
     {
+        $timezone = PejotaHelper::getUserTimeZoneOrDefault();
+        $today = now($timezone)->locale('pt_BR');
+
         $instructions = implode("\n", [
             'Você é o assistente de dados do PeJota, o ERP do Luiz (freelancer solo). Você responde perguntas consultando o banco de dados SQLite dele.',
-            'Você tem acesso SOMENTE LEITURA. Nunca tente alterar dados; qualquer escrita falhará.',
+            'Hoje é '.$today->isoFormat('dddd, DD/MM/YYYY')." (fuso {$timezone}). Use esta data para resolver datas relativas ditas pelo Luiz (hoje, amanhã, \"próxima quinta\", \"dia 20\", datas por extenso ou no formato dd/mm/aaaa).",
+            'Seu acesso ao banco é SOMENTE LEITURA. Nunca tente alterar dados via SQL; qualquer escrita falhará.',
             'Responda SEMPRE com um único objeto JSON, sem texto fora do JSON e sem cercas de código:',
             '- {"say": "resposta final em português do Brasil"} quando já souber responder;',
-            '- {"query": "SELECT ..."} quando precisar consultar o banco.',
+            '- {"query": "SELECT ..."} quando precisar consultar o banco;',
+            '- {"invoice": {...}} quando o Luiz pedir para CRIAR UMA FATURA e você já tiver todos os dados (veja as regras abaixo).',
             'Regras para consultas: um único statement SELECT por vez (CTE "WITH ... SELECT" é permitido), dialeto SQLite, sem PRAGMA/ATTACH ou qualquer escrita.',
             "TODA consulta a tabelas marcadas como tenant DEVE filtrar por company_id = {$conversation->company_id}.",
             'Unidades: work_sessions.duration está em MINUTOS (nunca segundos) e valores monetários (total, price, discount, rate, value, hourly_rate) estão em CENTAVOS — converta antes de responder.',
             'Os resultados são truncados em '.((int) config('services.assistant.max_rows', 200)).' linhas; use agregações e LIMIT quando fizer sentido.',
+            $this->invoiceInstructions($conversation),
             PromptGuard::instruction(),
         ]);
 
@@ -86,6 +112,32 @@ class AssistantChatService
         ];
 
         return implode("\n\n", $sections);
+    }
+
+    private function invoiceInstructions(AssistantConversation $conversation): string
+    {
+        $lines = [
+            'Criação de fatura (única escrita permitida, SEMPRE via o fluxo abaixo):',
+            '- Formato: {"invoice": {"client_id": int, "project_id": int|null, "title": "string", "due_date": "YYYY-MM-DD", "items": [{"name": "descrição na fatura", "quantity": número, "price_cents": inteiro em centavos, "product_id": int|null, "unit_id": int|null, "obs": "string|null"}], "discount_cents": int|null, "extra_info": "string|null", "obs_internal": "string|null"}}.',
+            '- due_date é OBRIGATÓRIA e o Luiz precisa tê-la dito (resolva datas relativas com a data de hoje). Se ele ainda não informou o vencimento, responda {"say": "..."} PERGUNTANDO a data — nunca invente.',
+            '- Consulte clients/projects/products/units para obter ids reais. product_id/unit_id podem ser omitidos se houver padrão configurado; se o sistema rejeitar por falta deles, consulte as tabelas e escolha o mais adequado.',
+            '- Ao enviar {"invoice": ...} o SISTEMA (não você) mostra o resumo ao Luiz e gera uma palavra-passe; a fatura só é criada quando ele digitá-la exatamente. NUNCA diga que a fatura foi criada e NUNCA invente palavra-passe você mesmo.',
+        ];
+
+        $pending = $this->invoiceService->pending($conversation);
+        if ($pending !== null) {
+            $lines[] = '- ATENÇÃO: já existe um rascunho de fatura aguardando a palavra-passe ("'.$pending['draft']['title'].'", cliente '.$pending['draft']['client_name'].'). Se o Luiz pedir ajustes, envie um novo {"invoice": ...} completo (substitui o rascunho pendente). Não repita a palavra-passe na conversa.';
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function lastUserMessage(AssistantConversation $conversation): ?string
+    {
+        return $conversation->messages()
+            ->where('role', AssistantMessage::ROLE_USER)
+            ->latest('id')
+            ->value('content');
     }
 
     private function history(AssistantConversation $conversation): string
@@ -214,7 +266,9 @@ class AssistantChatService
 
     private function looksLikeActionJson(string $response): bool
     {
-        return str_contains($response, '"say"') || str_contains($response, '"query"');
+        return str_contains($response, '"say"')
+            || str_contains($response, '"query"')
+            || str_contains($response, '"invoice');
     }
 
     private function stripCodeFences(string $response): string

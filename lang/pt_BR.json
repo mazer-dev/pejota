@@ -349,8 +349,6 @@
     "Previous conversations": "Conversas anteriores",
     "No previous conversations.": "Nenhuma conversa anterior.",
     "New conversation": "Nova conversa",
-    "Conversation": "Conversa",
-    "Ask anything about your clients, tasks, invoices and sessions. The assistant only reads data, it never changes anything.": "Pergunte qualquer coisa sobre seus clientes, tarefas, faturas e sessões. O assistente apenas lê os dados, nunca altera nada.",
     "Thinking...": "Pensando...",
     "Ask about your data...": "Pergunte sobre seus dados...",
     "What is on for today?": "O que tenho pra hoje?",
@@ -371,5 +369,7 @@
     "Review and adjust before opening the conversation. Nothing is sent automatically.": "Revise e ajuste antes de abrir a conversa. Nada é enviado automaticamente.",
     "Mark as waiting on client": "Marcar como aguardando cliente",
     "Open conversation": "Abrir conversa",
-    "Done": "Concluir"
+    "Done": "Concluir",
+    "read-only + invoices": "somente leitura + faturas com confirmação",
+    "Ask anything about your clients, tasks, invoices and sessions. The assistant reads your data and can create an invoice, but only after you confirm it with a passphrase.": "Pergunte qualquer coisa sobre seus clientes, tarefas, faturas e sessões. O assistente lê seus dados e pode criar uma fatura, mas só depois que você confirmar com uma palavra-passe."
 }

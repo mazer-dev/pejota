@@ -27,7 +27,7 @@
         <div class="flex items-center justify-between gap-2 border-b border-gray-100 px-3 py-2 dark:border-white/10">
             <h3 class="truncate text-sm font-semibold text-gray-700 dark:text-gray-200">
                 @lang('Data assistant')
-                <span class="ms-1 text-xs font-normal text-gray-400">@lang('read-only')</span>
+                <span class="ms-1 text-xs font-normal text-gray-400">@lang('read-only + invoices')</span>
             </h3>
 
             <div class="flex items-center gap-1" x-data="{ history: false }">
@@ -106,7 +106,7 @@
                 @endif
             @empty
                 <p class="p-2 text-center text-xs text-gray-400">
-                    @lang('Ask anything about your clients, tasks, invoices and sessions. The assistant only reads data, it never changes anything.')
+                    @lang('Ask anything about your clients, tasks, invoices and sessions. The assistant reads your data and can create an invoice, but only after you confirm it with a passphrase.')
                 </p>
             @endforelse
 

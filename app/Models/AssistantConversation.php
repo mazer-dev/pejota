@@ -24,4 +24,11 @@ class AssistantConversation extends Model
     {
         return $this->hasMany(AssistantMessage::class)->oldest('id');
     }
+
+    protected function casts(): array
+    {
+        return [
+            'pending_action' => 'array',
+        ];
+    }
 }
