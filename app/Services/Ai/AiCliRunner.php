@@ -34,10 +34,19 @@ class AiCliRunner
      */
     private function runCodex(string $prompt, array $images): string
     {
-        $outputFile = tempnam(sys_get_temp_dir(), 'pejota-codex-');
-        if ($outputFile === false) {
-            throw new RuntimeException('Não foi possível criar arquivo temporário para saída do Codex.');
+        /**
+         * The output file must NOT be pre-created with tempnam(): it would be
+         * owned by www-data in the sticky /tmp, and fs.protected_regular then
+         * denies the write when codex runs as root via sudo. Point codex at a
+         * fresh path inside storage/ so it creates the file itself.
+         */
+        $outputDirectory = storage_path('app/ai-cli');
+
+        if (! is_dir($outputDirectory) && ! @mkdir($outputDirectory, 0775, true) && ! is_dir($outputDirectory)) {
+            throw new RuntimeException('Não foi possível criar o diretório para saída do Codex.');
         }
+
+        $outputFile = $outputDirectory.'/codex-'.bin2hex(random_bytes(16)).'.txt';
 
         $command = [
             ...$this->sudoPrefix(),

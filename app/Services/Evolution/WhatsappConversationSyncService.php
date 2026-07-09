@@ -41,7 +41,7 @@ class WhatsappConversationSyncService
                 'sender' => $candidate['remote_jid'],
                 'date_time' => now()->toISOString(),
                 'data' => $records,
-            ]);
+            ], dispatchSuggestions: false);
         }
 
         return 0;

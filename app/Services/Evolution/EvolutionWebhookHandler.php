@@ -2,6 +2,7 @@
 
 namespace App\Services\Evolution;
 
+use App\Jobs\AnalyzeWhatsappConversation;
 use App\Models\Company;
 use App\Models\WhatsappAttachment;
 use App\Models\WhatsappConversation;
@@ -21,7 +22,12 @@ class EvolutionWebhookHandler
         private readonly WhatsappConversationTokenService $tokenService,
     ) {}
 
-    public function handle(array $payload): int
+    /**
+     * @param  bool  $dispatchSuggestions  Real-time webhook ingestion schedules the AI
+     *                                     suggestion analysis; bulk imports (manual sync
+     *                                     of historical messages) must pass false.
+     */
+    public function handle(array $payload, bool $dispatchSuggestions = true): int
     {
         $event = $this->event($payload);
 
@@ -37,7 +43,7 @@ class EvolutionWebhookHandler
         $count = 0;
 
         foreach ($messages as $messageData) {
-            if ($this->storeMessage($payload, $messageData)) {
+            if ($this->storeMessage($payload, $messageData, $dispatchSuggestions)) {
                 $count++;
             }
         }
@@ -45,7 +51,7 @@ class EvolutionWebhookHandler
         return $count;
     }
 
-    private function storeMessage(array $payload, array $messageData): ?WhatsappMessage
+    private function storeMessage(array $payload, array $messageData, bool $dispatchSuggestions = true): ?WhatsappMessage
     {
         $companyId = $this->companyId();
         $instance = (string) ($payload['instance'] ?? config('services.evolution.instance') ?? 'default');
@@ -122,7 +128,25 @@ class EvolutionWebhookHandler
         $this->storeAttachment($message, $messageData);
         $this->tokenService->refresh($conversation);
 
+        if ($dispatchSuggestions) {
+            $this->dispatchSuggestionAnalysis($conversation, $message, $isNew, $fromMe);
+        }
+
         return $message;
+    }
+
+    /**
+     * Inbound client messages schedule an AI suggestion analysis with a
+     * delay, so a burst of messages is analyzed once by the last job.
+     */
+    private function dispatchSuggestionAnalysis(WhatsappConversation $conversation, WhatsappMessage $message, bool $isNew, bool $fromMe): void
+    {
+        if (! $isNew || $fromMe || ! config('services.ai_whatsapp_suggestions', true)) {
+            return;
+        }
+
+        AnalyzeWhatsappConversation::dispatch($conversation, $message)
+            ->delay(now()->addMinutes(2));
     }
 
     private function handleMessageUpdate(array $payload): int

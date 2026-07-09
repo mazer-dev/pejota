@@ -17,6 +17,11 @@ class WhatsappConversation extends Model
 
     protected $guarded = ['id'];
 
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
@@ -37,6 +42,16 @@ class WhatsappConversation extends Model
         return $this->hasOne(WhatsappMessage::class)->latestOfMany('sent_at');
     }
 
+    public function suggestions(): HasMany
+    {
+        return $this->hasMany(WhatsappSuggestion::class);
+    }
+
+    public function lastSuggestedMessage(): BelongsTo
+    {
+        return $this->belongsTo(WhatsappMessage::class, 'last_suggested_message_id');
+    }
+
     public function displayName(): Attribute
     {
         return Attribute::make(
@@ -51,6 +66,7 @@ class WhatsappConversation extends Model
             'context_updated_at' => 'datetime',
             'unread_count' => 'integer',
             'context_tokens' => 'integer',
+            'last_suggested_message_id' => 'integer',
         ];
     }
 }

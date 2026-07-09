@@ -20,6 +20,14 @@ class GenerateClientAnalysis implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * The AI CLI call may take a few minutes; the worker's default 60s
+     * timeout would kill the job (and the worker) before it finishes.
+     */
+    public int $timeout = 420;
+
+    public int $tries = 1;
+
     public function __construct(
         public readonly Client $client,
         public readonly User $user,
@@ -57,6 +65,19 @@ class GenerateClientAnalysis implements ShouldQueue
                     ->url(ViewClient::getUrl([$this->client->id]))
                     ->markAsRead(),
             ])
+            ->sendToDatabase($this->user);
+    }
+
+    /**
+     * Runs when the job dies without reaching handle()'s own error
+     * notification (e.g. worker timeout), so the user still hears back.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        Notification::make()
+            ->danger()
+            ->title(__('Failed to generate analysis for :client', ['client' => $this->client->name]))
+            ->body($exception?->getMessage() ?? __('The job timed out.'))
             ->sendToDatabase($this->user);
     }
 }

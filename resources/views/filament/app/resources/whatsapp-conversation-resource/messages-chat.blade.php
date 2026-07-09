@@ -11,7 +11,82 @@
     $timezone = PejotaHelper::getUserTimeZone();
 @endphp
 
+@php
+    $pendingSuggestions = $this->pendingSuggestions();
+@endphp
+
 <div wire:poll.10s.visible="refreshMessages" class="bg-gray-50 dark:bg-gray-950">
+    @if ($pendingSuggestions->isNotEmpty())
+        <div class="px-4 pt-5 sm:px-6">
+            <div class="rounded-lg border border-primary-300 bg-primary-50 p-4 shadow-sm dark:border-primary-500/30 dark:bg-primary-500/10">
+                <div class="mb-3 flex items-center gap-2">
+                    <x-heroicon-o-sparkles class="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                    <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                        Sugestões da IA
+                    </span>
+                    <span class="inline-flex items-center rounded-full bg-primary-600 px-2 py-0.5 text-xs font-semibold text-white">
+                        {{ $pendingSuggestions->count() }}
+                    </span>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    @foreach ($pendingSuggestions as $suggestion)
+                        <div
+                            wire:key="whatsapp-suggestion-{{ $suggestion->id }}"
+                            class="rounded-lg bg-white p-3 ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-white/10"
+                        >
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div class="min-w-0">
+                                    <div class="mb-1 flex flex-wrap items-center gap-2">
+                                        <span class="inline-flex items-center gap-1 rounded-md bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20 dark:bg-primary-400/10 dark:text-primary-300 dark:ring-primary-400/30">
+                                            @if ($suggestion->type === \App\Enums\WhatsappSuggestionTypeEnum::Task)
+                                                <x-heroicon-o-clipboard-document-check class="h-3.5 w-3.5" />
+                                            @else
+                                                <x-heroicon-o-document-text class="h-3.5 w-3.5" />
+                                            @endif
+                                            {{ $suggestion->type->getLabel() }}
+                                        </span>
+                                        <span class="break-words text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $suggestion->title }}
+                                        </span>
+                                    </div>
+
+                                    <p class="whitespace-pre-wrap break-words text-sm text-gray-600 dark:text-gray-300">
+                                        {{ $suggestion->content }}
+                                    </p>
+                                </div>
+
+                                <div class="flex shrink-0 items-center gap-2">
+                                    <button
+                                        type="button"
+                                        wire:click="acceptSuggestion({{ $suggestion->id }})"
+                                        wire:loading.attr="disabled"
+                                        wire:target="acceptSuggestion,dismissSuggestion"
+                                        class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 disabled:opacity-60"
+                                    >
+                                        <x-heroicon-o-check class="h-4 w-4" />
+                                        Aceitar
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        wire:click="dismissSuggestion({{ $suggestion->id }})"
+                                        wire:loading.attr="disabled"
+                                        wire:target="acceptSuggestion,dismissSuggestion"
+                                        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5"
+                                    >
+                                        <x-heroicon-o-x-mark class="h-4 w-4" />
+                                        Descartar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="px-4 py-5 sm:px-6">
         @if ($messages->isEmpty())
             <div class="flex min-h-32 items-center justify-center rounded-lg border border-dashed border-gray-300 px-6 py-10 text-sm text-gray-500 dark:border-white/10 dark:text-gray-300">

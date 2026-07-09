@@ -2,23 +2,35 @@
 
 namespace App\Filament\App\Resources\WhatsappConversationResource\RelationManagers;
 
+use App\Enums\StatusPhaseEnum;
+use App\Enums\WhatsappSuggestionStatusEnum;
+use App\Enums\WhatsappSuggestionTypeEnum;
+use App\Filament\App\Resources\NoteResource;
+use App\Filament\App\Resources\TaskResource;
+use App\Models\Note;
+use App\Models\Status;
+use App\Models\Task;
 use App\Models\WhatsappAttachment;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
+use App\Models\WhatsappSuggestion;
 use App\Services\Ai\CliWhatsappMessageSuggester;
 use App\Services\Evolution\EvolutionApiClient;
 use App\Services\Evolution\WhatsappAttachmentEnricher;
 use App\Services\Evolution\WhatsappConversationSyncService;
 use App\Services\Evolution\WhatsappConversationTokenService;
+use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use RuntimeException;
 use Throwable;
 
 class MessagesRelationManager extends RelationManager
@@ -78,6 +90,170 @@ class MessagesRelationManager extends RelationManager
                     ->icon('heroicon-o-arrow-path')
                     ->action(fn () => $this->syncMessages()),
             ]);
+    }
+
+    /**
+     * @return Collection<int, WhatsappSuggestion>
+     */
+    public function pendingSuggestions(): Collection
+    {
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+
+        return WhatsappSuggestion::query()
+            ->where('company_id', $conversation->company_id)
+            ->where('whatsapp_conversation_id', $conversation->id)
+            ->pending()
+            ->orderBy('id')
+            ->get();
+    }
+
+    public function acceptSuggestion(int $suggestionId): void
+    {
+        $suggestion = $this->findPendingSuggestion($suggestionId);
+
+        if (! $suggestion) {
+            Notification::make()
+                ->title('Sugestão não encontrada ou já resolvida')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        try {
+            if ($suggestion->type === WhatsappSuggestionTypeEnum::Task) {
+                $task = $this->createTaskFromSuggestion($suggestion);
+
+                $suggestion->forceFill([
+                    'status' => WhatsappSuggestionStatusEnum::Accepted,
+                    'accepted_at' => now(),
+                    'task_id' => $task->id,
+                ])->save();
+
+                $title = 'Tarefa criada a partir da sugestão';
+                $url = TaskResource::getUrl('edit', [$task]);
+                $label = 'Ver tarefa';
+            } else {
+                $note = $this->createNoteFromSuggestion($suggestion);
+
+                $suggestion->forceFill([
+                    'status' => WhatsappSuggestionStatusEnum::Accepted,
+                    'accepted_at' => now(),
+                    'note_id' => $note->id,
+                ])->save();
+
+                $title = 'Anotação criada a partir da sugestão';
+                $url = NoteResource::getUrl('view', [$note]);
+                $label = 'Ver anotação';
+            }
+        } catch (Throwable $exception) {
+            Notification::make()
+                ->title('Falha ao aceitar a sugestão')
+                ->body($exception->getMessage())
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title($title)
+            ->body($suggestion->title)
+            ->success()
+            ->actions([
+                NotificationAction::make('view')
+                    ->label($label)
+                    ->url($url),
+            ])
+            ->send();
+    }
+
+    public function dismissSuggestion(int $suggestionId): void
+    {
+        $suggestion = $this->findPendingSuggestion($suggestionId);
+
+        if (! $suggestion) {
+            Notification::make()
+                ->title('Sugestão não encontrada ou já resolvida')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $suggestion->forceFill([
+            'status' => WhatsappSuggestionStatusEnum::Dismissed,
+            'dismissed_at' => now(),
+        ])->save();
+
+        Notification::make()
+            ->title('Sugestão descartada')
+            ->success()
+            ->send();
+    }
+
+    private function findPendingSuggestion(int $suggestionId): ?WhatsappSuggestion
+    {
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+
+        return WhatsappSuggestion::query()
+            ->where('company_id', $conversation->company_id)
+            ->where('whatsapp_conversation_id', $conversation->id)
+            ->pending()
+            ->find($suggestionId);
+    }
+
+    private function createTaskFromSuggestion(WhatsappSuggestion $suggestion): Task
+    {
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+
+        $statusId = Status::query()
+            ->where('phase', StatusPhaseEnum::TODO->value)
+            ->orderBy('sort_order')
+            ->value('id')
+            ?? Status::query()->orderBy('sort_order')->value('id');
+
+        if (! $statusId) {
+            throw new RuntimeException('Cadastre ao menos um status de tarefa antes de aceitar sugestões.');
+        }
+
+        return Task::create([
+            'title' => $suggestion->title,
+            'description' => '<p>'.nl2br(e($suggestion->content)).'</p><p>'.e($this->suggestionOrigin($conversation)).'</p>',
+            'client_id' => $conversation->client_id ?: $suggestion->client_id,
+            'project_id' => $conversation->project_id ?: $suggestion->project_id,
+            'status_id' => $statusId,
+            'company_id' => $conversation->company_id,
+        ]);
+    }
+
+    private function createNoteFromSuggestion(WhatsappSuggestion $suggestion): Note
+    {
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+
+        return Note::create([
+            'title' => $suggestion->title,
+            'content' => [
+                [
+                    'type' => 'text',
+                    'data' => [
+                        'content' => $suggestion->content."\n\n".$this->suggestionOrigin($conversation),
+                    ],
+                ],
+            ],
+            'client_id' => $conversation->client_id ?: $suggestion->client_id,
+            'project_id' => $conversation->project_id ?: $suggestion->project_id,
+            'company_id' => $conversation->company_id,
+        ]);
+    }
+
+    private function suggestionOrigin(WhatsappConversation $conversation): string
+    {
+        return 'Origem: conversa de WhatsApp com '.$conversation->display_name.' (#'.$conversation->id.').';
     }
 
     public function refreshMessages(): void

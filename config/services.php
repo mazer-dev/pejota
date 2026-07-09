@@ -60,6 +60,8 @@ return [
         'image_max_mb' => (int) env('AI_IMAGE_MAX_MB', 10),
     ],
 
+    'ai_whatsapp_suggestions' => filter_var(env('AI_WHATSAPP_SUGGESTIONS', true), FILTER_VALIDATE_BOOLEAN),
+
     'assistant' => [
         'db_connection' => env('ASSISTANT_DB_CONNECTION', 'sqlite_readonly'),
         'max_iterations' => (int) env('ASSISTANT_MAX_ITERATIONS', 5),
