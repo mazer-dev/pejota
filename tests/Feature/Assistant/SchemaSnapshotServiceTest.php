@@ -23,6 +23,15 @@ class SchemaSnapshotServiceTest extends TestCase
         $this->assertStringNotContainsString('Tabela jobs', $snapshot);
     }
 
+    public function test_it_documents_duration_and_money_units(): void
+    {
+        $snapshot = app(SchemaSnapshotService::class)->snapshot();
+
+        $this->assertStringContainsString('duração em MINUTOS', $snapshot);
+        $this->assertMatchesRegularExpression('/- total [^\n]*CENTAVOS/', $snapshot);
+        $this->assertMatchesRegularExpression('/- hourly_rate [^\n]*CENTAVOS/', $snapshot);
+    }
+
     public function test_it_caches_the_snapshot_and_forget_invalidates_it(): void
     {
         $service = app(SchemaSnapshotService::class);

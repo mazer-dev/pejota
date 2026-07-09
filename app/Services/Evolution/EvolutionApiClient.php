@@ -3,6 +3,7 @@
 namespace App\Services\Evolution;
 
 use App\Models\WhatsappConversation;
+use App\Models\WhatsappMessage;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -69,6 +70,57 @@ class EvolutionApiClient
             $message = $exception->response?->body() ?: $exception->getMessage();
 
             throw new RuntimeException("Falha ao enviar anexo pela Evolution API: {$message}", previous: $exception);
+        }
+    }
+
+    public function updateMessage(WhatsappConversation $conversation, WhatsappMessage $message, string $text): array
+    {
+        $number = $conversation->phone_number ?: $this->numberFromJid($conversation->remote_jid);
+        if ($number === null) {
+            throw new RuntimeException('Não foi possível identificar o número do WhatsApp desta conversa.');
+        }
+
+        try {
+            $response = Http::timeout($this->timeout())
+                ->withHeaders(['apikey' => $this->apiKey()])
+                ->post($this->endpoint('/chat/updateMessage/'.$this->instance($conversation->evolution_instance)), [
+                    'number' => $number,
+                    'key' => [
+                        'remoteJid' => $message->remote_jid,
+                        'fromMe' => (bool) $message->from_me,
+                        'id' => $message->remote_message_id,
+                    ],
+                    'text' => $text,
+                ]);
+
+            $response->throw();
+
+            return $response->json() ?? [];
+        } catch (RequestException $exception) {
+            $message = $exception->response?->body() ?: $exception->getMessage();
+
+            throw new RuntimeException("Falha ao editar mensagem pela Evolution API: {$message}", previous: $exception);
+        }
+    }
+
+    public function deleteMessageForEveryone(WhatsappConversation $conversation, WhatsappMessage $message): array
+    {
+        try {
+            $response = Http::timeout($this->timeout())
+                ->withHeaders(['apikey' => $this->apiKey()])
+                ->delete($this->endpoint('/chat/deleteMessageForEveryone/'.$this->instance($conversation->evolution_instance)), [
+                    'id' => $message->remote_message_id,
+                    'remoteJid' => $message->remote_jid,
+                    'fromMe' => (bool) $message->from_me,
+                ]);
+
+            $response->throw();
+
+            return $response->json() ?? [];
+        } catch (RequestException $exception) {
+            $message = $exception->response?->body() ?: $exception->getMessage();
+
+            throw new RuntimeException("Falha ao excluir mensagem pela Evolution API: {$message}", previous: $exception);
         }
     }
 

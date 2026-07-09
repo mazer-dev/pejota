@@ -8,7 +8,7 @@
         : collect($records);
 
     $messages = $messages->reverse()->values();
-    $timezone = PejotaHelper::getUserTimeZone();
+    $timezone = PejotaHelper::getUserTimeZoneOrDefault(config('app.timezone', 'UTC'));
 @endphp
 
 @php
@@ -106,7 +106,7 @@
                         $type = $message->message_type ? str($message->message_type)->replace('_', ' ')->headline() : null;
                     @endphp
 
-                    <div @class([
+                    <div wire:key="whatsapp-message-{{ $message->id }}" @class([
                         'flex w-full',
                         'justify-end' => $isSent,
                         'justify-start' => ! $isSent,
@@ -129,6 +129,31 @@
 
                                 @if ($sentAt)
                                     <span>{{ $sentAt }}</span>
+                                @endif
+
+                                @if ($isSent)
+                                    <span class="ml-auto inline-flex items-center gap-1">
+                                        @if ($text !== '')
+                                            <button
+                                                type="button"
+                                                wire:click="startEditingMessage({{ $message->id }})"
+                                                title="Editar mensagem no WhatsApp"
+                                                class="rounded p-1 transition hover:bg-white/20"
+                                            >
+                                                <x-heroicon-o-pencil class="h-3.5 w-3.5" />
+                                            </button>
+                                        @endif
+
+                                        <button
+                                            type="button"
+                                            wire:click="deleteMessage({{ $message->id }})"
+                                            wire:confirm="Excluir esta mensagem para todos no WhatsApp? Esta ação não pode ser desfeita."
+                                            title="Excluir mensagem para todos"
+                                            class="rounded p-1 transition hover:bg-white/20"
+                                        >
+                                            <x-heroicon-o-trash class="h-3.5 w-3.5" />
+                                        </button>
+                                    </span>
                                 @endif
                             </div>
 
@@ -169,10 +194,42 @@
                                 @endif
                             @endforeach
 
-                            @if ($displayText !== '')
-                                <div class="whitespace-pre-wrap break-words text-sm leading-6">
-                                    {{ $displayText }}
+                            @if ($this->editingMessageId === $message->id)
+                                <div class="flex flex-col gap-2">
+                                    <textarea
+                                        wire:model="editingMessageText"
+                                        rows="3"
+                                        class="block w-full resize-y rounded-lg border-0 bg-white/95 text-sm text-gray-950 shadow-sm focus:ring-2 focus:ring-white"
+                                    ></textarea>
+
+                                    @error('editingMessageText')
+                                        <p class="text-xs font-medium text-white">{{ $message }}</p>
+                                    @enderror
+
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            wire:click="saveEditedMessage"
+                                            wire:loading.attr="disabled"
+                                            wire:target="saveEditedMessage"
+                                            class="inline-flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-primary-700 shadow-sm transition hover:bg-primary-50 disabled:opacity-60"
+                                        >
+                                            <x-heroicon-o-check class="h-3.5 w-3.5" />
+                                            <span wire:loading.remove wire:target="saveEditedMessage">Salvar edição</span>
+                                            <span wire:loading wire:target="saveEditedMessage">Salvando...</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            wire:click="cancelEditingMessage"
+                                            class="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/40 transition hover:bg-white/10"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
                                 </div>
+                            @elseif ($displayText !== '')
+                                <div class="whitespace-pre-wrap break-words text-sm leading-6">{{ $displayText }}</div>
                             @else
                                 <div @class([
                                     'text-sm italic',
@@ -210,9 +267,7 @@
                                     'text-gray-300' => ! $isSent,
                                 ])>
                                     <summary class="cursor-pointer font-medium">Conteúdo processado do anexo</summary>
-                                    <div class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-black/10 p-2">
-                                        {{ $extractedText }}
-                                    </div>
+                                    <div class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-black/10 p-2">{{ $extractedText }}</div>
                                 </details>
                             @endif
 

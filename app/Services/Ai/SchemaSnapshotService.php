@@ -15,6 +15,34 @@ use Illuminate\Support\Facades\Schema;
 class SchemaSnapshotService
 {
     /**
+     * Bump when the snapshot format changes (hints, layout), since the cache
+     * key otherwise only invalidates when migrations change.
+     */
+    private const VERSION = 2;
+
+    /**
+     * Unit hints appended to columns whose raw values the model would
+     * otherwise misread: durations are stored in minutes and every
+     * MoneyCast column in cents.
+     */
+    private const COLUMN_HINTS = [
+        'work_sessions.duration' => 'duração em MINUTOS (não segundos); divida por 60 para horas',
+        'work_sessions.rate' => 'valor por hora em CENTAVOS; divida por 100',
+        'work_sessions.value' => 'valor em CENTAVOS; divida por 100',
+        'invoices.total' => 'valor em CENTAVOS; divida por 100',
+        'invoices.discount' => 'valor em CENTAVOS; divida por 100',
+        'invoice_items.price' => 'valor em CENTAVOS; divida por 100',
+        'invoice_items.total' => 'valor em CENTAVOS; divida por 100',
+        'invoice_items.discount' => 'valor em CENTAVOS; divida por 100',
+        'contracts.total' => 'valor em CENTAVOS; divida por 100',
+        'projects.hourly_rate' => 'valor em CENTAVOS; divida por 100',
+        'clients.default_hourly_rate' => 'valor em CENTAVOS; divida por 100',
+        'tasks.hourly_rate' => 'valor em CENTAVOS; divida por 100',
+        'subscriptions.price' => 'valor em CENTAVOS; divida por 100',
+        'accounts.initial_balance_at' => 'valor em CENTAVOS; divida por 100',
+    ];
+
+    /**
      * Framework/infrastructure tables that add prompt noise without being
      * useful for answering questions about the user's business data.
      */
@@ -50,7 +78,7 @@ class SchemaSnapshotService
             ->sort()
             ->implode('|');
 
-        return 'assistant-schema-'.md5($migrations);
+        return 'assistant-schema-v'.self::VERSION.'-'.md5($migrations);
     }
 
     private function buildSnapshot(): string
@@ -75,7 +103,11 @@ class SchemaSnapshotService
             $lines = [$header.':'];
 
             foreach ($columns as $column) {
-                $lines[] = '- '.$column['name'].' '.$column['type'].($column['nullable'] ? ' (nullable)' : '');
+                $hint = self::COLUMN_HINTS[$name.'.'.$column['name']] ?? null;
+
+                $lines[] = '- '.$column['name'].' '.$column['type']
+                    .($column['nullable'] ? ' (nullable)' : '')
+                    .($hint ? ' — '.$hint : '');
             }
 
             foreach (Schema::getForeignKeys($name) as $foreignKey) {

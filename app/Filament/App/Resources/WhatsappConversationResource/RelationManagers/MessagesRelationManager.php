@@ -47,6 +47,10 @@ class MessagesRelationManager extends RelationManager
 
     public string $aiInstruction = '';
 
+    public ?int $editingMessageId = null;
+
+    public string $editingMessageText = '';
+
     /**
      * @var TemporaryUploadedFile|null
      */
@@ -256,13 +260,19 @@ class MessagesRelationManager extends RelationManager
         return 'Origem: conversa de WhatsApp com '.$conversation->display_name.' (#'.$conversation->id.').';
     }
 
+    /**
+     * Runs on wire:poll inside the web request, so it must stay light:
+     * withMedia false skips media downloads and AI enrichment (full sync
+     * with media stays on the manual "Sincronizar mensagens" action).
+     */
     public function refreshMessages(): void
     {
         /** @var WhatsappConversation $conversation */
         $conversation = $this->getOwnerRecord();
 
         try {
-            $newMessages = app(WhatsappConversationSyncService::class)->sync($conversation, discoverCandidates: false);
+            $newMessages = app(WhatsappConversationSyncService::class)
+                ->sync($conversation, discoverCandidates: false, withMedia: false);
 
             if ($newMessages > 0) {
                 $this->resetTable();
@@ -270,6 +280,162 @@ class MessagesRelationManager extends RelationManager
         } catch (Throwable $exception) {
             report($exception);
         }
+    }
+
+    public function startEditingMessage(int $messageId): void
+    {
+        $message = $this->findOwnMessage($messageId);
+
+        if (! $message) {
+            return;
+        }
+
+        if ($this->hasLocalOnlyRemoteId($message)) {
+            Notification::make()
+                ->title('Esta mensagem não pode ser editada')
+                ->body('Ela não possui identificador do WhatsApp, então a edição não refletiria no aparelho do cliente.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        if ($message->sent_at && $message->sent_at->diffInMinutes(now()) > 15) {
+            Notification::make()
+                ->title('Fora da janela de edição do WhatsApp')
+                ->body('O WhatsApp só permite editar mensagens nos primeiros 15 minutos após o envio.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $this->editingMessageId = $message->id;
+        $this->editingMessageText = (string) $message->text;
+    }
+
+    public function cancelEditingMessage(): void
+    {
+        $this->reset(['editingMessageId', 'editingMessageText']);
+    }
+
+    public function saveEditedMessage(): void
+    {
+        $this->validate([
+            'editingMessageText' => ['required', 'string', 'max:12000'],
+        ], attributes: ['editingMessageText' => 'mensagem']);
+
+        $message = $this->editingMessageId ? $this->findOwnMessage($this->editingMessageId) : null;
+
+        if (! $message) {
+            $this->cancelEditingMessage();
+
+            return;
+        }
+
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+        $text = trim($this->editingMessageText);
+
+        try {
+            app(EvolutionApiClient::class)->updateMessage($conversation, $message, $text);
+        } catch (Throwable $exception) {
+            Notification::make()
+                ->title('O WhatsApp recusou a edição')
+                ->body($exception->getMessage())
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $message->forceFill(['text' => $text])->save();
+        app(WhatsappConversationTokenService::class)->refresh($conversation);
+
+        $this->cancelEditingMessage();
+        $this->resetTable();
+
+        Notification::make()
+            ->title('Mensagem editada no WhatsApp')
+            ->success()
+            ->send();
+    }
+
+    public function deleteMessage(int $messageId): void
+    {
+        $message = $this->findOwnMessage($messageId);
+
+        if (! $message) {
+            return;
+        }
+
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+
+        if (! $this->hasLocalOnlyRemoteId($message)) {
+            try {
+                app(EvolutionApiClient::class)->deleteMessageForEveryone($conversation, $message);
+            } catch (Throwable $exception) {
+                Notification::make()
+                    ->title('O WhatsApp recusou a exclusão')
+                    ->body('Provavelmente a janela de exclusão para todos já expirou. Detalhe: '.$exception->getMessage())
+                    ->danger()
+                    ->send();
+
+                return;
+            }
+        }
+
+        foreach ($message->attachments as $attachment) {
+            if ($attachment->path && Storage::disk($attachment->disk ?: 'local')->exists($attachment->path)) {
+                Storage::disk($attachment->disk ?: 'local')->delete($attachment->path);
+            }
+
+            $attachment->delete();
+        }
+
+        $message->delete();
+        app(WhatsappConversationTokenService::class)->refresh($conversation);
+
+        $this->resetTable();
+
+        Notification::make()
+            ->title('Mensagem excluída para todos no WhatsApp')
+            ->success()
+            ->send();
+    }
+
+    private function findOwnMessage(int $messageId): ?WhatsappMessage
+    {
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+
+        $message = WhatsappMessage::query()
+            ->where('company_id', $conversation->company_id)
+            ->where('whatsapp_conversation_id', $conversation->id)
+            ->where('from_me', true)
+            ->find($messageId);
+
+        if (! $message) {
+            Notification::make()
+                ->title('Mensagem não encontrada ou não é sua')
+                ->body('Só é possível editar ou excluir mensagens enviadas por você.')
+                ->warning()
+                ->send();
+
+            return null;
+        }
+
+        return $message;
+    }
+
+    /**
+     * Messages saved without a WhatsApp id (Evolution response missing key.id)
+     * get a "local-" uuid; they cannot be edited/revoked remotely.
+     */
+    private function hasLocalOnlyRemoteId(WhatsappMessage $message): bool
+    {
+        return blank($message->remote_message_id) || str_starts_with((string) $message->remote_message_id, 'local-');
     }
 
     public function generateAiSuggestion(): void

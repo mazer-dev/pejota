@@ -26,8 +26,11 @@ class EvolutionWebhookHandler
      * @param  bool  $dispatchSuggestions  Real-time webhook ingestion schedules the AI
      *                                     suggestion analysis; bulk imports (manual sync
      *                                     of historical messages) must pass false.
+     * @param  bool  $withMedia  When false, skips media downloads and AI enrichment —
+     *                           required on request-bound paths (chat polling), where the
+     *                           extra HTTP calls and AI CLI runs exhaust memory/time.
      */
-    public function handle(array $payload, bool $dispatchSuggestions = true): int
+    public function handle(array $payload, bool $dispatchSuggestions = true, bool $withMedia = true): int
     {
         $event = $this->event($payload);
 
@@ -41,17 +44,23 @@ class EvolutionWebhookHandler
 
         $messages = $this->messages($payload);
         $count = 0;
+        $conversations = [];
 
         foreach ($messages as $messageData) {
-            if ($this->storeMessage($payload, $messageData, $dispatchSuggestions)) {
+            if ($message = $this->storeMessage($payload, $messageData, $dispatchSuggestions, $withMedia)) {
                 $count++;
+                $conversations[$message->whatsapp_conversation_id] = $message->conversation;
             }
+        }
+
+        foreach ($conversations as $conversation) {
+            $this->tokenService->refresh($conversation);
         }
 
         return $count;
     }
 
-    private function storeMessage(array $payload, array $messageData, bool $dispatchSuggestions = true): ?WhatsappMessage
+    private function storeMessage(array $payload, array $messageData, bool $dispatchSuggestions = true, bool $withMedia = true): ?WhatsappMessage
     {
         $companyId = $this->companyId();
         $instance = (string) ($payload['instance'] ?? config('services.evolution.instance') ?? 'default');
@@ -79,7 +88,7 @@ class EvolutionWebhookHandler
         $conversation->fill([
             'client_id' => $conversation->client_id ?: ($matchedClient->id ?? null),
             'phone_number' => $conversation->phone_number ?: $phoneNumber,
-            'push_name' => $this->pushName($messageData) ?: $conversation->push_name,
+            'push_name' => ($fromMe ? null : $this->pushName($messageData)) ?: $conversation->push_name,
             'last_message_at' => $sentAt,
             'status' => $conversation->status ?: 'open',
         ]);
@@ -110,12 +119,13 @@ class EvolutionWebhookHandler
             'text' => $this->messageText($messageData),
             'status' => data_get($messageData, 'status'),
             'sent_at' => $sentAt,
-            'payload' => $payload,
+            'payload' => $this->messagePayload($payload, $messageData),
         ]);
 
         $conversation->save();
         $message->whatsapp_conversation_id = $conversation->id;
         $message->save();
+        $message->setRelation('conversation', $conversation);
 
         if ($isNew && ! $fromMe) {
             $conversation->increment('unread_count');
@@ -125,14 +135,40 @@ class EvolutionWebhookHandler
             'last_message_at' => $sentAt,
         ])->save();
 
-        $this->storeAttachment($message, $messageData);
-        $this->tokenService->refresh($conversation);
+        $this->storeAttachment($message, $messageData, $withMedia);
 
         if ($dispatchSuggestions) {
             $this->dispatchSuggestionAnalysis($conversation, $message, $isNew, $fromMe);
         }
 
         return $message;
+    }
+
+    /**
+     * The sync path batches dozens of records in the payload's data key;
+     * persisting the whole batch on every message exhausted memory and
+     * bloated the table, so each message keeps only its own record. Inline
+     * media base64 is dropped — the binary lives in the attachment file.
+     *
+     * @return array<string, mixed>
+     */
+    private function messagePayload(array $payload, array $messageData): array
+    {
+        unset($messageData['base64']);
+
+        if (is_array($messageData['message'] ?? null)) {
+            unset($messageData['message']['base64']);
+
+            foreach (['audioMessage', 'imageMessage', 'videoMessage', 'documentMessage', 'stickerMessage'] as $key) {
+                if (is_array($messageData['message'][$key] ?? null)) {
+                    unset($messageData['message'][$key]['base64']);
+                }
+            }
+        }
+
+        $payload['data'] = $messageData;
+
+        return $payload;
     }
 
     /**
@@ -178,11 +214,11 @@ class EvolutionWebhookHandler
         return 1;
     }
 
-    private function storeAttachment(WhatsappMessage $message, array $messageData): void
+    private function storeAttachment(WhatsappMessage $message, array $messageData, bool $withMedia = true): void
     {
         $attachment = $message->attachments()->first();
         if ($attachment?->path) {
-            if ($this->needsEnrichment($attachment)) {
+            if ($withMedia && $this->needsEnrichment($attachment)) {
                 $this->enrichAttachment($attachment, storage_path('app/'.$attachment->path), $message);
                 $attachment->save();
             }
@@ -195,7 +231,7 @@ class EvolutionWebhookHandler
             return;
         }
 
-        $base64 = $this->base64($messageData) ?: $this->downloadBase64($message, $messageData);
+        $base64 = $this->base64($messageData) ?: ($withMedia ? $this->downloadBase64($message, $messageData) : null);
         $mimeType = $media['mime_type'] ?? $base64['mime_type'] ?? $attachment?->mime_type;
         $extension = $media['extension'] ?? $attachment?->extension ?? $this->extensionFromMime($mimeType);
         $attachment ??= new WhatsappAttachment([
@@ -227,7 +263,9 @@ class EvolutionWebhookHandler
                     'sha256' => hash('sha256', $bytes),
                 ]);
 
-                $this->enrichAttachment($attachment, storage_path('app/'.$path), $message);
+                if ($withMedia) {
+                    $this->enrichAttachment($attachment, storage_path('app/'.$path), $message);
+                }
             }
         }
 

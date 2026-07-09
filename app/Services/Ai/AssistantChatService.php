@@ -73,6 +73,7 @@ class AssistantChatService
             '- {"query": "SELECT ..."} quando precisar consultar o banco.',
             'Regras para consultas: um único statement SELECT por vez (CTE "WITH ... SELECT" é permitido), dialeto SQLite, sem PRAGMA/ATTACH ou qualquer escrita.',
             "TODA consulta a tabelas marcadas como tenant DEVE filtrar por company_id = {$conversation->company_id}.",
+            'Unidades: work_sessions.duration está em MINUTOS (nunca segundos) e valores monetários (total, price, discount, rate, value, hourly_rate) estão em CENTAVOS — converta antes de responder.',
             'Os resultados são truncados em '.((int) config('services.assistant.max_rows', 200)).' linhas; use agregações e LIMIT quando fizer sentido.',
             PromptGuard::instruction(),
         ]);

@@ -159,4 +159,60 @@ class WhatsappConversationSyncServiceTest extends TestCase
         Http::assertSentCount(1);
         Http::assertSent(fn ($request) => $request->url() === 'http://evolution.test/chat/findMessages/client_instance');
     }
+
+    public function test_light_polling_does_not_download_media_nor_enrich_attachments(): void
+    {
+        $user = User::factory()->create();
+
+        config([
+            'services.evolution.base_url' => 'http://evolution.test',
+            'services.evolution.api_key' => 'secret',
+            'services.evolution.instance' => 'client_instance',
+            'services.evolution.default_company_id' => $user->company->id,
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'http://evolution.test/chat/findMessages/client_instance' => Http::response([
+                'messages' => [
+                    'records' => [
+                        [
+                            'key' => [
+                                'id' => 'AUDIO1',
+                                'fromMe' => false,
+                                'remoteJid' => '5511999990000@s.whatsapp.net',
+                            ],
+                            'pushName' => 'Cliente',
+                            'messageType' => 'audioMessage',
+                            'messageTimestamp' => 100,
+                            'message' => [
+                                'audioMessage' => [
+                                    'mimetype' => 'audio/ogg; codecs=opus',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $conversation = WhatsappConversation::create([
+            'company_id' => $user->company->id,
+            'evolution_instance' => 'client_instance',
+            'remote_jid' => '5511999990000@s.whatsapp.net',
+            'phone_number' => '5511999990000',
+            'status' => 'open',
+        ]);
+
+        $count = app(WhatsappConversationSyncService::class)
+            ->sync($conversation, discoverCandidates: false, withMedia: false);
+
+        $this->assertSame(1, $count);
+        Http::assertSentCount(1);
+        $this->assertDatabaseHas('whatsapp_attachments', [
+            'mime_type' => 'audio/ogg; codecs=opus',
+            'path' => null,
+            'status' => 'metadata_only',
+        ]);
+    }
 }

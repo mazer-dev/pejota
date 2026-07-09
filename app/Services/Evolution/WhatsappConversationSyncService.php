@@ -12,7 +12,7 @@ class WhatsappConversationSyncService
         private readonly EvolutionWebhookHandler $handler,
     ) {}
 
-    public function sync(WhatsappConversation $conversation, int $limit = 50, bool $discoverCandidates = true): int
+    public function sync(WhatsappConversation $conversation, int $limit = 50, bool $discoverCandidates = true, bool $withMedia = true): int
     {
         $conversation->loadMissing('client');
 
@@ -41,7 +41,7 @@ class WhatsappConversationSyncService
                 'sender' => $candidate['remote_jid'],
                 'date_time' => now()->toISOString(),
                 'data' => $records,
-            ], dispatchSuggestions: false);
+            ], dispatchSuggestions: false, withMedia: $withMedia);
         }
 
         return 0;
@@ -162,12 +162,17 @@ class WhatsappConversationSyncService
         return $score;
     }
 
+    /**
+     * Keeps an existing push_name: chat/contact rows can carry the account
+     * owner's own pushName (fromMe last message), which used to rename
+     * conversations to the owner's name.
+     */
     private function applyCandidate(WhatsappConversation $conversation, array $candidate): void
     {
         $conversation->forceFill([
             'remote_jid' => $candidate['remote_jid'],
             'phone_number' => $candidate['phone_number'] ?: $conversation->phone_number,
-            'push_name' => $candidate['push_name'] ?: $conversation->push_name,
+            'push_name' => $conversation->push_name ?: $candidate['push_name'],
         ])->save();
     }
 
