@@ -22,10 +22,8 @@ class BackfillCompanyMembershipsMigrationTest extends TestCase
     public function test_backfills_owner_membership_for_legacy_companies(): void
     {
         $user = User::factory()->create();
-        $company = $user->companies()->wherePivot('role', 'owner')->firstOrFail();
+        $company = $user->companies()->wherePivotNotNull('joined_at')->firstOrFail();
 
-        // Simulate a pre-pivot install: the company exists via companies.user_id
-        // but has no company_user row yet.
         DB::table('company_user')->where('company_id', $company->id)->delete();
 
         $this->runBackfillMigration();
@@ -36,14 +34,13 @@ class BackfillCompanyMembershipsMigrationTest extends TestCase
             ->first();
 
         $this->assertNotNull($membership);
-        $this->assertSame('owner', $membership->role);
         $this->assertNotNull($membership->joined_at);
     }
 
     public function test_is_idempotent_and_does_not_duplicate_existing_memberships(): void
     {
         $user = User::factory()->create();
-        $company = $user->companies()->wherePivot('role', 'owner')->firstOrFail();
+        $company = $user->companies()->wherePivotNotNull('joined_at')->firstOrFail();
 
         $this->runBackfillMigration();
 

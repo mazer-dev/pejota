@@ -22,9 +22,9 @@ class TenancyBridgeTest extends TestCase
     private function twoCompaniesWithClients(): array
     {
         $user = User::factory()->create();
-        $a = $user->companies()->wherePivot('role', 'owner')->firstOrFail();
+        $a = $user->companies()->wherePivotNotNull('joined_at')->firstOrFail();
         $b = Company::create(['name' => 'B', 'email' => 'b@x.com', 'user_id' => $user->id]);
-        $user->companies()->attach($b->id, ['role' => 'owner', 'joined_at' => now()]);
+        $user->companies()->attach($b->id, ['joined_at' => now()]);
 
         // Seed under each tenant so samehouse fills company_id on each client.
         Landlord::addTenant('company_id', $a->id);

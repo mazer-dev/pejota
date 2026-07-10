@@ -11,18 +11,14 @@ class MembershipModelTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_belongs_to_many_companies_with_role(): void
+    public function test_user_belongs_to_many_companies_as_member(): void
     {
         $user = User::factory()->create();
         $company = Company::create(['name' => 'Acme', 'email' => 'acme@x.com', 'user_id' => $user->id]);
 
-        $user->companies()->attach($company->id, [
-            'role' => 'owner',
-            'joined_at' => now(),
-        ]);
+        $user->companies()->attach($company->id, ['joined_at' => now()]);
 
         $this->assertTrue($user->companies->contains($company));
-        $this->assertSame('owner', $user->companies->first()->pivot->role);
         $this->assertTrue($company->hasMember($user));
     }
 }

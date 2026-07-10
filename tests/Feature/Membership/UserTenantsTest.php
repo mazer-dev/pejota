@@ -17,8 +17,8 @@ class UserTenantsTest extends TestCase
         $user = User::factory()->create();
         $joined = Company::create(['name' => 'Joined', 'email' => 'j@x.com', 'user_id' => $user->id]);
         $pending = Company::create(['name' => 'Pending', 'email' => 'p@x.com', 'user_id' => $user->id]);
-        $user->companies()->attach($joined->id, ['role' => 'owner', 'joined_at' => now()]);
-        $user->companies()->attach($pending->id, ['role' => 'member', 'invited_at' => now()]);
+        $user->companies()->attach($joined->id, ['joined_at' => now()]);
+        $user->companies()->attach($pending->id, ['invited_at' => now()]);
 
         $panel = Filament::getPanel('app');
         $tenants = $user->getTenants($panel);
@@ -33,8 +33,8 @@ class UserTenantsTest extends TestCase
         $member = Company::create(['name' => 'M', 'email' => 'm@x.com', 'user_id' => $user->id]);
         $pending = Company::create(['name' => 'P2', 'email' => 'p2@x.com', 'user_id' => $user->id]);
         $stranger = Company::create(['name' => 'S', 'email' => 's@x.com', 'user_id' => $user->id]);
-        $user->companies()->attach($member->id, ['role' => 'member', 'joined_at' => now()]);
-        $user->companies()->attach($pending->id, ['role' => 'member', 'invited_at' => now()]);
+        $user->companies()->attach($member->id, ['joined_at' => now()]);
+        $user->companies()->attach($pending->id, ['invited_at' => now()]);
 
         $this->assertTrue($user->canAccessTenant($member));
         $this->assertFalse($user->canAccessTenant($pending));
