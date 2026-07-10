@@ -6,14 +6,16 @@ use Closure;
 use Filament\Facades\Filament;
 use Illuminate\Http\Request;
 use NunoMazer\Samehouse\Facades\Landlord;
+use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpFoundation\Response;
 
 class ApplyTenantToLandlord
 {
     /**
-     * Feed the Filament-resolved tenant into samehouse. Runs inside tenant
-     * context (panel tenantMiddleware), so a null tenant here means the
-     * request escaped tenant resolution — abort rather than run unscoped.
+     * Feed the Filament-resolved tenant into samehouse, the Filament tenant
+     * context, and the spatie permissions team. Runs inside tenant context
+     * (panel tenantMiddleware), so a null tenant here means the request
+     * escaped tenant resolution — abort rather than run unscoped.
      *
      * Filament eager-boots the scoped resource models while building the panel
      * (before any tenant is resolved), so samehouse defers their global scope.
@@ -32,6 +34,8 @@ class ApplyTenantToLandlord
         // tenant is resolved, so samehouse defers their company_id scope. Flush the
         // deferred scopes now — without this, those models read UNSCOPED (cross-tenant leak).
         Landlord::applyTenantScopesToDeferredModels();
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
 
         return $next($request);
     }

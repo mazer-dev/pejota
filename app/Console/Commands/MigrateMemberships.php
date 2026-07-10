@@ -30,7 +30,6 @@ class MigrateMemberships extends Command
                 }
 
                 $company->users()->attach($company->user_id, [
-                    'role' => 'owner',
                     'joined_at' => now(),
                 ]);
 

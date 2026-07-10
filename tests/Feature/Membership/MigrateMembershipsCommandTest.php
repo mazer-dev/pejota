@@ -24,7 +24,6 @@ class MigrateMembershipsCommandTest extends TestCase
         $this->assertDatabaseHas('company_user', [
             'company_id' => $legacy->id,
             'user_id' => $user->id,
-            'role' => 'owner',
         ]);
     }
 

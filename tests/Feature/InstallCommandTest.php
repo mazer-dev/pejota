@@ -31,7 +31,6 @@ class InstallCommandTest extends TestCase
 
         $this->assertSame('Doe Consulting', $company->name);
         $this->assertSame('contact@doeconsulting.com', $company->email);
-        $this->assertSame('owner', $company->pivot->role);
         $this->assertNotNull($company->pivot->joined_at);
     }
 }

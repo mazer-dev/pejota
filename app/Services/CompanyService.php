@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\CompanyRoleEnum;
 use App\Models\Company;
 use App\Models\User;
+use Spatie\Permission\PermissionRegistrar;
 
 class CompanyService
 {
@@ -16,9 +18,18 @@ class CompanyService
         ]);
 
         $company->users()->attach($user->id, [
-            'role' => 'owner',
             'joined_at' => now(),
         ]);
+
+        $registrar = app(PermissionRegistrar::class);
+        $previousTeamId = $registrar->getPermissionsTeamId();
+
+        try {
+            $registrar->setPermissionsTeamId($company->id);
+            $user->assignRole(CompanyRoleEnum::Owner->value);
+        } finally {
+            $registrar->setPermissionsTeamId($previousTeamId);
+        }
 
         return $company;
     }

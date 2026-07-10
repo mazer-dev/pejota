@@ -32,7 +32,7 @@ class Company extends Model implements HasMedia
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
-            ->withPivot(['role', 'invited_at', 'joined_at'])
+            ->withPivot(['invited_at', 'joined_at'])
             ->withTimestamps();
     }
 

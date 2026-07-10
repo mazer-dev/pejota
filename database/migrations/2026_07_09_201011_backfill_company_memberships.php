@@ -29,7 +29,6 @@ return new class extends Migration
                 DB::table('company_user')->insert([
                     'company_id' => $company->id,
                     'user_id' => $company->user_id,
-                    'role' => 'owner',
                     'joined_at' => now(),
                     'created_at' => now(),
                     'updated_at' => now(),

@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\User;
 use Filament\Facades\Filament;
 use NunoMazer\Samehouse\Facades\Landlord;
+use Spatie\Permission\PermissionRegistrar;
 
 trait ActsInCompany
 {
@@ -18,6 +19,7 @@ trait ActsInCompany
         Filament::setTenant($company);
         Landlord::addTenant('company_id', $company->getKey());
         Landlord::applyTenantScopesToDeferredModels();
+        app(PermissionRegistrar::class)->setPermissionsTeamId($company->getKey());
 
         return $company;
     }

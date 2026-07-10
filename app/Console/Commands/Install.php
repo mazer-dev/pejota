@@ -2,10 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\PlatformRoleEnum;
 use App\Models\User;
 use Database\Seeders\CurrencySeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
 
 class Install extends Command
 {
@@ -53,6 +55,11 @@ class Install extends Command
         ]);
 
         $this->info('Company configured successfully');
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformRoleEnum::TeamId);
+        $user->assignRole(PlatformRoleEnum::SuperAdmin->value);
+
+        $this->info('Super-admin platform role granted');
 
         $this->call('db:seed', [
             '--class' => CurrencySeeder::class,
