@@ -8,16 +8,17 @@ use App\Models\Currency;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class CompanySettingsCurrencyTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     public function test_base_currency_options_include_active_currencies_and_exclude_inactive(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
+        $this->actingInCompany($user);
 
         Currency::factory()->create(['code' => 'BRL', 'name' => 'Brazilian Real', 'symbol' => 'R$', 'is_active' => true]);
         Currency::factory()->create(['code' => 'JPY', 'name' => 'Japanese Yen', 'symbol' => '¥', 'is_active' => false]);
@@ -31,9 +32,9 @@ class CompanySettingsCurrencyTest extends TestCase
     public function test_base_currency_options_include_legacy_saved_value_even_if_inactive(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
+        $company = $this->actingInCompany($user);
 
-        $user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'XAU');
+        $company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'XAU');
         Currency::factory()->create(['code' => 'BRL', 'name' => 'Brazilian Real', 'symbol' => 'R$', 'is_active' => true]);
 
         $options = Livewire::test(CompanySettings::class)->instance()->baseCurrencyOptions();
@@ -44,7 +45,7 @@ class CompanySettingsCurrencyTest extends TestCase
     public function test_saving_persists_an_active_base_currency(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
+        $company = $this->actingInCompany($user);
 
         Currency::factory()->create(['code' => 'BRL', 'name' => 'Brazilian Real', 'symbol' => 'R$', 'is_active' => true]);
 
@@ -55,7 +56,7 @@ class CompanySettingsCurrencyTest extends TestCase
 
         $this->assertSame(
             'BRL',
-            $user->company->refresh()->settings()->get(CompanySettingsEnum::FINANCE_CURRENCY->value),
+            $company->refresh()->settings()->get(CompanySettingsEnum::FINANCE_CURRENCY->value),
         );
     }
 }

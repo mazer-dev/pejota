@@ -6,6 +6,7 @@ use App\Enums\TimesheetDetailLevel;
 use App\Enums\TimesheetGrouping;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
@@ -15,14 +16,16 @@ use App\Services\Timesheet\TimesheetBuilder;
 use App\Services\Timesheet\TimesheetRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class TimesheetBuilderTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     private Client $client;
 
@@ -30,11 +33,10 @@ class TimesheetBuilderTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
         $this->client = Client::create([
             'name' => 'Acme',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'currency' => 'BRL',
             'default_hourly_rate' => 100.00,
             'billable_default' => true,
@@ -45,7 +47,7 @@ class TimesheetBuilderTest extends TestCase
     {
         return WorkSession::create(array_merge([
             'title' => 'Work',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $this->client->id,
             'is_running' => false,
             'rate' => 100.00,
@@ -56,7 +58,7 @@ class TimesheetBuilderTest extends TestCase
     {
         return Status::create([
             'name' => 'To Do', 'phase' => 'todo', 'color' => '#000000',
-            'sort_order' => 1, 'active' => true, 'company_id' => $this->user->company->id,
+            'sort_order' => 1, 'active' => true, 'company_id' => $this->company->id,
         ]);
     }
 
@@ -92,8 +94,8 @@ class TimesheetBuilderTest extends TestCase
 
     public function test_group_by_project(): void
     {
-        $p1 = Project::create(['name' => 'Alpha', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id]);
-        $p2 = Project::create(['name' => 'Beta', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id]);
+        $p1 = Project::create(['name' => 'Alpha', 'company_id' => $this->company->id, 'client_id' => $this->client->id]);
+        $p2 = Project::create(['name' => 'Beta', 'company_id' => $this->company->id, 'client_id' => $this->client->id]);
         $this->makeSession(['start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00', 'project_id' => $p1->id]);
         $this->makeSession(['start' => '2026-06-10 11:00:00', 'end' => '2026-06-10 12:00:00', 'project_id' => $p2->id]);
 
@@ -132,8 +134,8 @@ class TimesheetBuilderTest extends TestCase
     public function test_parent_task_rollup_attributes_subtask_sessions_to_root(): void
     {
         $status = $this->makeStatus();
-        $root = Task::create(['title' => 'Root', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id, 'status_id' => $status->id]);
-        $child = Task::create(['title' => 'Child', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id, 'status_id' => $status->id, 'parent_id' => $root->id]);
+        $root = Task::create(['title' => 'Root', 'company_id' => $this->company->id, 'client_id' => $this->client->id, 'status_id' => $status->id]);
+        $child = Task::create(['title' => 'Child', 'company_id' => $this->company->id, 'client_id' => $this->client->id, 'status_id' => $status->id, 'parent_id' => $root->id]);
         $this->makeSession(['start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00', 'task_id' => $root->id]);
         $this->makeSession(['start' => '2026-06-10 11:00:00', 'end' => '2026-06-10 12:00:00', 'task_id' => $child->id]);
 
@@ -173,7 +175,7 @@ class TimesheetBuilderTest extends TestCase
 
     public function test_currency_falls_back_to_base_when_client_has_none(): void
     {
-        $noCurrency = Client::create(['name' => 'NoCur', 'company_id' => $this->user->company->id]);
+        $noCurrency = Client::create(['name' => 'NoCur', 'company_id' => $this->company->id]);
         $this->makeSession(['client_id' => $noCurrency->id, 'start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00']);
 
         $data = (new TimesheetBuilder)->build($this->request(['clientId' => $noCurrency->id]));
@@ -184,8 +186,8 @@ class TimesheetBuilderTest extends TestCase
     public function test_group_by_task(): void
     {
         $status = $this->makeStatus();
-        $t1 = Task::create(['title' => 'Task One', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id, 'status_id' => $status->id]);
-        $t2 = Task::create(['title' => 'Task Two', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id, 'status_id' => $status->id]);
+        $t1 = Task::create(['title' => 'Task One', 'company_id' => $this->company->id, 'client_id' => $this->client->id, 'status_id' => $status->id]);
+        $t2 = Task::create(['title' => 'Task Two', 'company_id' => $this->company->id, 'client_id' => $this->client->id, 'status_id' => $status->id]);
         $this->makeSession(['start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00', 'task_id' => $t1->id]);
         $this->makeSession(['start' => '2026-06-10 11:00:00', 'end' => '2026-06-10 12:00:00', 'task_id' => $t2->id]);
 

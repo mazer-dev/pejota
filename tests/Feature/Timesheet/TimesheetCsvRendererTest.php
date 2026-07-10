@@ -16,11 +16,12 @@ use App\Services\Timesheet\TimesheetRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class TimesheetCsvRendererTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private function streamContent(StreamedResponse $response): string
     {
@@ -49,14 +50,14 @@ class TimesheetCsvRendererTest extends TestCase
     public function test_detailed_csv_emits_a_subtotal_row_after_entries(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        $client = Client::create(['name' => 'Acme', 'company_id' => $user->company->id, 'currency' => 'BRL']);
+        $company = $this->actingInCompany($user);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $company->id, 'currency' => 'BRL']);
         WorkSession::create([
-            'title' => 'E1', 'company_id' => $user->company->id, 'client_id' => $client->id,
+            'title' => 'E1', 'company_id' => $company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00',
         ]);
         WorkSession::create([
-            'title' => 'E2', 'company_id' => $user->company->id, 'client_id' => $client->id,
+            'title' => 'E2', 'company_id' => $company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-10 11:00:00', 'end' => '2026-06-10 12:00:00',
         ]);
 
@@ -73,10 +74,10 @@ class TimesheetCsvRendererTest extends TestCase
     public function test_csv_has_header_and_one_row_per_entry_with_value(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        $client = Client::create(['name' => 'Acme', 'company_id' => $user->company->id, 'currency' => 'BRL']);
+        $company = $this->actingInCompany($user);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $company->id, 'currency' => 'BRL']);
         WorkSession::create([
-            'title' => 'Did work', 'company_id' => $user->company->id, 'client_id' => $client->id,
+            'title' => 'Did work', 'company_id' => $company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00',
         ]);
 
@@ -92,10 +93,10 @@ class TimesheetCsvRendererTest extends TestCase
     public function test_csv_omits_value_column_when_include_value_false(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        $client = Client::create(['name' => 'Acme', 'company_id' => $user->company->id, 'currency' => 'BRL']);
+        $company = $this->actingInCompany($user);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $company->id, 'currency' => 'BRL']);
         WorkSession::create([
-            'title' => 'Did work', 'company_id' => $user->company->id, 'client_id' => $client->id,
+            'title' => 'Did work', 'company_id' => $company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00',
         ]);
 
@@ -109,10 +110,10 @@ class TimesheetCsvRendererTest extends TestCase
     public function test_group_summary_emits_one_row_per_group(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        $client = Client::create(['name' => 'Acme', 'company_id' => $user->company->id, 'currency' => 'BRL']);
+        $company = $this->actingInCompany($user);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $company->id, 'currency' => 'BRL']);
         WorkSession::create([
-            'title' => 'A', 'company_id' => $user->company->id, 'client_id' => $client->id,
+            'title' => 'A', 'company_id' => $company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 11:00:00',
         ]);
 
@@ -128,16 +129,16 @@ class TimesheetCsvRendererTest extends TestCase
     public function test_internal_layout_grouped_by_project_emits_subtotal_per_group(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        $client = Client::create(['name' => 'Acme', 'company_id' => $user->company->id, 'currency' => 'BRL']);
-        $alpha = Project::create(['name' => 'Alpha', 'company_id' => $user->company->id, 'client_id' => $client->id]);
-        $beta = Project::create(['name' => 'Beta', 'company_id' => $user->company->id, 'client_id' => $client->id]);
+        $company = $this->actingInCompany($user);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $company->id, 'currency' => 'BRL']);
+        $alpha = Project::create(['name' => 'Alpha', 'company_id' => $company->id, 'client_id' => $client->id]);
+        $beta = Project::create(['name' => 'Beta', 'company_id' => $company->id, 'client_id' => $client->id]);
         WorkSession::create([
-            'title' => 'WorkA', 'company_id' => $user->company->id, 'client_id' => $client->id, 'project_id' => $alpha->id,
+            'title' => 'WorkA', 'company_id' => $company->id, 'client_id' => $client->id, 'project_id' => $alpha->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00',
         ]);
         WorkSession::create([
-            'title' => 'WorkB', 'company_id' => $user->company->id, 'client_id' => $client->id, 'project_id' => $beta->id,
+            'title' => 'WorkB', 'company_id' => $company->id, 'client_id' => $client->id, 'project_id' => $beta->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-11 09:00:00', 'end' => '2026-06-11 11:00:00',
         ]);
 

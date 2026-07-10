@@ -4,20 +4,25 @@ namespace Tests\Feature;
 
 use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Resources\InvoiceResource;
+use App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices;
 use App\Filament\App\Widgets\InvoicesOverview;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoiceListTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     private Client $client;
 
@@ -26,11 +31,11 @@ class InvoiceListTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
+        $this->company = $this->actingInCompany($this->user);
 
         $this->client = Client::create([
             'name' => 'Acme',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -44,7 +49,7 @@ class InvoiceListTest extends TestCase
             'due_date' => $dueDate,
             'payment_date' => $paymentDate,
             'total' => $total,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -70,7 +75,7 @@ class InvoiceListTest extends TestCase
         $sent = $this->makeInvoice('S1', InvoiceStatusEnum::SENT, $today->addDays(5)->toDateString());
         $draft = $this->makeInvoice('D1', InvoiceStatusEnum::DRAFT, $today->toDateString());
 
-        Livewire::test(\App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices::class)
+        Livewire::test(ListInvoices::class)
             ->assertOk()
             ->assertSet('activeTab', 'pending')
             ->assertCanSeeTableRecords([$sent])
@@ -84,7 +89,7 @@ class InvoiceListTest extends TestCase
         $overdue = $this->makeInvoice('OD', InvoiceStatusEnum::SENT, $today->subDay()->toDateString());
         $future = $this->makeInvoice('FU', InvoiceStatusEnum::SENT, $today->addDay()->toDateString());
 
-        Livewire::test(\App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices::class)
+        Livewire::test(ListInvoices::class)
             ->set('activeTab', 'overdue')
             ->assertCanSeeTableRecords([$overdue])
             ->assertCanNotSeeTableRecords([$future]);
@@ -97,7 +102,7 @@ class InvoiceListTest extends TestCase
         $unpaid = $this->makeInvoice('U1', InvoiceStatusEnum::UNPAID, $today->toDateString());
         $sent = $this->makeInvoice('S2', InvoiceStatusEnum::SENT, $today->toDateString());
 
-        Livewire::test(\App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices::class)
+        Livewire::test(ListInvoices::class)
             ->set('activeTab', 'delinquent')
             ->assertCanSeeTableRecords([$unpaid])
             ->assertCanNotSeeTableRecords([$sent]);
@@ -110,7 +115,7 @@ class InvoiceListTest extends TestCase
         $sent = $this->makeInvoice('S1', InvoiceStatusEnum::SENT, $today->addDay()->toDateString());
         $paid = $this->makeInvoice('P1', InvoiceStatusEnum::PAID, $today->toDateString(), $today->toDateString());
 
-        Livewire::test(\App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices::class)
+        Livewire::test(ListInvoices::class)
             ->set('activeTab', 'all')
             ->set('tableFilters.status.values', [InvoiceStatusEnum::PAID->value])
             ->assertCanSeeTableRecords([$paid])
@@ -121,16 +126,16 @@ class InvoiceListTest extends TestCase
     {
         $today = CarbonImmutable::now()->startOfDay();
 
-        $other = Client::create(['name' => 'Other', 'company_id' => $this->user->company->id]);
+        $other = Client::create(['name' => 'Other', 'company_id' => $this->company->id]);
 
         $a = $this->makeInvoice('A1', InvoiceStatusEnum::SENT, $today->addDay()->toDateString());
         $b = Invoice::create([
             'number' => 'B1', 'title' => 'B1', 'status' => InvoiceStatusEnum::SENT,
             'client_id' => $other->id, 'due_date' => $today->addDay()->toDateString(),
-            'total' => 100.00, 'company_id' => $this->user->company->id,
+            'total' => 100.00, 'company_id' => $this->company->id,
         ]);
 
-        Livewire::test(\App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices::class)
+        Livewire::test(ListInvoices::class)
             ->set('activeTab', 'all')
             ->set('tableFilters.client.value', $this->client->id)
             ->assertCanSeeTableRecords([$a])
@@ -165,7 +170,7 @@ class InvoiceListTest extends TestCase
 
         $this->assertNotSame($titleA, $titleB, 'The two invoices must fall in different calendar months for this test to be meaningful.');
 
-        Livewire::test(\App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices::class)
+        Livewire::test(ListInvoices::class)
             ->set('activeTab', 'all')
             ->set('tableGrouping', 'due_date')
             ->assertOk()

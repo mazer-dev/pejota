@@ -2,41 +2,43 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PriorityEnum;
 use App\Enums\RecurrenceAnchorFieldEnum;
 use App\Enums\RecurrenceFrequencyEnum;
 use App\Enums\RecurrenceGenerationModeEnum;
-use App\Enums\PriorityEnum;
 use App\Enums\RecurrenceStopTypeEnum;
 use App\Filament\App\Resources\TaskResource\Pages\ListTasks;
 use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
+use App\Models\Company;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\RecurrenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class TaskRecurrenceUiTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function makeStatus(): Status
     {
         return Status::create([
             'name' => 'To Do', 'phase' => 'todo', 'color' => '#000000',
-            'sort_order' => 1, 'active' => true, 'company_id' => $this->user->company->id,
+            'sort_order' => 1, 'active' => true, 'company_id' => $this->company->id,
         ]);
     }
 
@@ -45,7 +47,7 @@ class TaskRecurrenceUiTest extends TestCase
         $status = $this->makeStatus();
         $task = Task::create([
             'title' => 'Invoice client', 'status_id' => $status->id,
-            'company_id' => $this->user->company->id, 'due_date' => '2026-01-15',
+            'company_id' => $this->company->id, 'due_date' => '2026-01-15',
         ]);
 
         Livewire::test(ListTasks::class)
@@ -68,7 +70,7 @@ class TaskRecurrenceUiTest extends TestCase
         $status = $this->makeStatus();
         $task = Task::create([
             'title' => 'Invoice client', 'status_id' => $status->id,
-            'company_id' => $this->user->company->id, 'due_date' => '2026-01-15',
+            'company_id' => $this->company->id, 'due_date' => '2026-01-15',
             'priority' => PriorityEnum::MEDIUM->value,
         ]);
 
@@ -91,7 +93,7 @@ class TaskRecurrenceUiTest extends TestCase
         $status = $this->makeStatus();
         $task = Task::create([
             'title' => 'Recurring', 'status_id' => $status->id,
-            'company_id' => $this->user->company->id, 'due_date' => '2026-01-15',
+            'company_id' => $this->company->id, 'due_date' => '2026-01-15',
         ]);
         $recurrence = app(RecurrenceService::class)->enableForTask($task, [
             'frequency' => RecurrenceFrequencyEnum::Weekly,
@@ -112,7 +114,7 @@ class TaskRecurrenceUiTest extends TestCase
         $status = $this->makeStatus();
         $recurring = Task::create([
             'title' => 'Recurring', 'status_id' => $status->id,
-            'company_id' => $this->user->company->id, 'due_date' => '2026-01-15',
+            'company_id' => $this->company->id, 'due_date' => '2026-01-15',
         ]);
         app(RecurrenceService::class)->enableForTask($recurring, [
             'frequency' => RecurrenceFrequencyEnum::Weekly,
@@ -123,7 +125,7 @@ class TaskRecurrenceUiTest extends TestCase
         ]);
         $plain = Task::create([
             'title' => 'Plain', 'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         Livewire::test(ListTasks::class)

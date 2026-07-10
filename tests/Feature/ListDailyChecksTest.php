@@ -4,19 +4,22 @@ namespace Tests\Feature;
 
 use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
 use App\Filament\App\Widgets\ListDailyChecks;
+use App\Models\Company;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class ListDailyChecksTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     private ?Status $status = null;
 
@@ -24,8 +27,7 @@ class ListDailyChecksTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function makeStatus(): Status
@@ -36,7 +38,7 @@ class ListDailyChecksTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -45,7 +47,7 @@ class ListDailyChecksTest extends TestCase
         return Task::create([
             'title' => $title,
             'status_id' => $this->makeStatus()->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => $continuous,
         ]);

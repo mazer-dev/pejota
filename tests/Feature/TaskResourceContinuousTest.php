@@ -7,27 +7,29 @@ use App\Filament\App\Resources\TaskResource\Pages\CreateTask;
 use App\Filament\App\Resources\TaskResource\Pages\ListTasks;
 use App\Filament\App\Resources\TaskResource\Pages\ViewTask;
 use App\Helpers\PejotaHelper;
+use App\Models\Company;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class TaskResourceContinuousTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     protected function tearDown(): void
@@ -44,7 +46,7 @@ class TaskResourceContinuousTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -76,7 +78,7 @@ class TaskResourceContinuousTest extends TestCase
         $task = Task::create([
             'title' => 'Daily',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'is_continuous' => true,
             'continuous_mode' => ContinuousModeEnum::DailyCheck,
         ]);
@@ -93,13 +95,13 @@ class TaskResourceContinuousTest extends TestCase
         $continuous = Task::create([
             'title' => 'Continuous',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'is_continuous' => true,
         ]);
         $plain = Task::create([
             'title' => 'Plain',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         Livewire::test(ListTasks::class)
@@ -113,14 +115,14 @@ class TaskResourceContinuousTest extends TestCase
         $continuous = Task::create([
             'title' => 'Continuous',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'is_continuous' => true,
             'continuous_mode' => ContinuousModeEnum::Simple,
         ]);
         $plain = Task::create([
             'title' => 'Plain',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         Livewire::test(ListTasks::class)
@@ -135,12 +137,12 @@ class TaskResourceContinuousTest extends TestCase
         $plain = Task::create([
             'title' => 'Apple',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
         $continuous = Task::create([
             'title' => 'Zebra',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'is_continuous' => true,
         ]);
 
@@ -154,12 +156,12 @@ class TaskResourceContinuousTest extends TestCase
         $plain = Task::create([
             'title' => 'Apple',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
         $continuous = Task::create([
             'title' => 'Zebra',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'is_continuous' => true,
         ]);
 
@@ -174,13 +176,13 @@ class TaskResourceContinuousTest extends TestCase
         $continuous = Task::create([
             'title' => 'Continuous',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'is_continuous' => true,
         ]);
         $plain = Task::create([
             'title' => 'Plain',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         Livewire::test(ListTasks::class)
@@ -195,13 +197,13 @@ class TaskResourceContinuousTest extends TestCase
         $continuous = Task::create([
             'title' => 'Continuous',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'is_continuous' => true,
         ]);
         $plain = Task::create([
             'title' => 'Plain',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         Livewire::test(ListTasks::class)
@@ -216,7 +218,7 @@ class TaskResourceContinuousTest extends TestCase
         $task = Task::create([
             'title' => 'Daily habit',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => true,
         ]);
@@ -247,7 +249,7 @@ class TaskResourceContinuousTest extends TestCase
         $task = Task::create([
             'title' => 'Daily habit',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => true,
         ]);
@@ -270,7 +272,7 @@ class TaskResourceContinuousTest extends TestCase
         $task = Task::create([
             'title' => 'Daily habit',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => true,
         ]);
@@ -285,7 +287,7 @@ class TaskResourceContinuousTest extends TestCase
         $continuous = Task::create([
             'title' => 'Continuous',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => true,
         ]);
@@ -302,7 +304,7 @@ class TaskResourceContinuousTest extends TestCase
         $task = Task::create([
             'title' => 'Daily habit',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => true,
         ]);
@@ -319,7 +321,7 @@ class TaskResourceContinuousTest extends TestCase
         $task = Task::create([
             'title' => 'Daily habit',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => true,
         ]);
@@ -338,14 +340,14 @@ class TaskResourceContinuousTest extends TestCase
         $pending = Task::create([
             'title' => 'Pending habit',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => true,
         ]);
         $done = Task::create([
             'title' => 'Done habit',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => true,
         ]);

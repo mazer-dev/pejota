@@ -6,19 +6,18 @@ use App\Filament\App\Pages\CompanySettings;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoiceNumberHelpTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
         $user = User::factory()->create();
-        $this->actingAs($user);
-        Landlord::addTenant('company_id', $user->company->id);
+        $this->actingInCompany($user);
     }
 
     public function test_invoice_number_help_action_shows_markdown_content(): void

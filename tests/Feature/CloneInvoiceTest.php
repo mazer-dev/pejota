@@ -6,6 +6,7 @@ use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Resources\InvoiceResource\Pages\CreateInvoice;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
@@ -13,33 +14,36 @@ use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class CloneInvoiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     public function test_clone_page_loads_with_source_invoice_data(): void
     {
         $client = Client::create([
             'name' => 'Test Client',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         $unit = Unit::create([
             'name' => 'Hour',
             'symbol' => 'h',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         $product = Product::create([
@@ -48,7 +52,7 @@ class CloneInvoiceTest extends TestCase
             'digital' => false,
             'price' => 100.00,
             'unit_id' => $unit->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         $invoice = Invoice::create([
@@ -62,7 +66,7 @@ class CloneInvoiceTest extends TestCase
             'obs_internal' => 'Internal notes',
             'discount' => 10.00,
             'total' => 190.00,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         InvoiceItem::create([
@@ -76,7 +80,7 @@ class CloneInvoiceTest extends TestCase
             'total' => 200.00,
         ]);
 
-        $response = $this->get(route('filament.app.resources.invoices.create', ['clone' => $invoice->id]));
+        $response = $this->get(route('filament.app.resources.invoices.create', ['tenant' => $this->company, 'clone' => $invoice->id]));
         $response->assertOk();
         $response->assertSee('Original Invoice');
         $response->assertSee('Some extra info');
@@ -85,20 +89,20 @@ class CloneInvoiceTest extends TestCase
 
     public function test_clone_page_loads_normally_without_clone_parameter(): void
     {
-        $this->get(route('filament.app.resources.invoices.create'))
+        $this->get(route('filament.app.resources.invoices.create', ['tenant' => $this->company]))
             ->assertOk();
     }
 
     public function test_opening_clone_page_does_not_consume_any_invoice_number(): void
     {
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
             'ym000'
         );
 
         $client = Client::create([
             'name' => 'Test Client',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         $invoice = Invoice::create([
@@ -107,13 +111,13 @@ class CloneInvoiceTest extends TestCase
             'status' => InvoiceStatusEnum::PAID,
             'client_id' => $client->id,
             'total' => 100.00,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
-        $this->get(route('filament.app.resources.invoices.create', ['clone' => $invoice->id]))
+        $this->get(route('filament.app.resources.invoices.create', ['tenant' => $this->company, 'clone' => $invoice->id]))
             ->assertOk();
 
-        $lastNumber = $this->user->company->settings()->get(
+        $lastNumber = $this->company->settings()->get(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value
         );
 
@@ -122,15 +126,15 @@ class CloneInvoiceTest extends TestCase
 
     public function test_opening_create_page_does_not_consume_any_invoice_number(): void
     {
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
             'ym000'
         );
 
-        $this->get(route('filament.app.resources.invoices.create'))
+        $this->get(route('filament.app.resources.invoices.create', ['tenant' => $this->company]))
             ->assertOk();
 
-        $lastNumber = $this->user->company->settings()->get(
+        $lastNumber = $this->company->settings()->get(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value
         );
 
@@ -141,7 +145,7 @@ class CloneInvoiceTest extends TestCase
     {
         $client = Client::create([
             'name' => 'BRL Client',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'currency' => 'BRL',
         ]);
 
@@ -152,7 +156,7 @@ class CloneInvoiceTest extends TestCase
             'client_id' => $client->id,
             'currency' => 'BRL',
             'total' => 1000.00,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         Livewire::withQueryParams(['clone' => $invoice->id])

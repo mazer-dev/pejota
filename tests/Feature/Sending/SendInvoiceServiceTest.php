@@ -4,29 +4,31 @@ namespace Tests\Feature\Sending;
 
 use App\Mail\InvoiceDeliveryMailable;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Services\Invoicing\SendInvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class SendInvoiceServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
 
-        $this->user->company->mailConfig()->create([
+        $this->company->mailConfig()->create([
             'host' => 'smtp.example.test', 'port' => 587, 'username' => 'u', 'password' => 'p',
             'from_address' => 'me@example.test', 'from_name' => 'Me',
         ]);
@@ -34,11 +36,11 @@ class SendInvoiceServiceTest extends TestCase
 
     private function makeInvoice(): Invoice
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
 
         return Invoice::create([
             'number' => 'INV-1', 'title' => 'Consulting', 'client_id' => $client->id,
-            'company_id' => $this->user->company->id, 'total' => 100, 'currency' => 'USD', 'status' => 'draft',
+            'company_id' => $this->company->id, 'total' => 100, 'currency' => 'USD', 'status' => 'draft',
         ]);
     }
 

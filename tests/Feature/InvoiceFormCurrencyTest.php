@@ -8,21 +8,21 @@ use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoiceFormCurrencyTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     public function test_currency_defaults_to_base_then_follows_selected_client(): void
     {
         $user = User::factory()->create();
-        $user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
-        $this->actingAs($user);
+        $company = $this->actingInCompany($user);
+        $company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
 
-        $usdClient = Client::create(['name' => 'US', 'company_id' => $user->company->id, 'currency' => 'USD']);
-        $noneClient = Client::create(['name' => 'NA', 'company_id' => $user->company->id, 'currency' => null]);
+        $usdClient = Client::create(['name' => 'US', 'company_id' => $company->id, 'currency' => 'USD']);
+        $noneClient = Client::create(['name' => 'NA', 'company_id' => $company->id, 'currency' => null]);
 
         Livewire::test(CreateInvoice::class)
             ->assertSet('data.currency', 'BRL')
@@ -35,11 +35,10 @@ class InvoiceFormCurrencyTest extends TestCase
     public function test_creating_invoice_consumes_exactly_one_number_and_assigns_it(): void
     {
         $user = User::factory()->create();
-        $user->company->settings()->set(CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value, 'ym000');
-        $this->actingAs($user);
-        Landlord::addTenant('company_id', $user->company->id);
+        $company = $this->actingInCompany($user);
+        $company->settings()->set(CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value, 'ym000');
 
-        $client = Client::create(['name' => 'ACME', 'company_id' => $user->company->id]);
+        $client = Client::create(['name' => 'ACME', 'company_id' => $company->id]);
 
         $expectedNumber = CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->peekNextDocNumberFormated();
 
@@ -52,13 +51,13 @@ class InvoiceFormCurrencyTest extends TestCase
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('invoices', [
-            'company_id' => $user->company->id,
+            'company_id' => $company->id,
             'number' => $expectedNumber,
         ]);
 
         $this->assertSame(
             1,
-            $user->company->settings()->get(CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value)
+            $company->settings()->get(CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value)
         );
     }
 }

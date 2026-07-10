@@ -4,27 +4,29 @@ namespace Tests\Feature;
 
 use App\Filament\App\Resources\TaskResource\Pages\CreateTask;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class TaskResourceCascadeTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function makeStatus(): Status
@@ -35,17 +37,17 @@ class TaskResourceCascadeTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
     public function test_selecting_project_fills_client(): void
     {
         $this->makeStatus();
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $project = Project::create([
             'name' => 'Apollo',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
             'active' => true,
         ]);
@@ -61,7 +63,7 @@ class TaskResourceCascadeTest extends TestCase
         $parent = Task::create([
             'title' => 'Parent task',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'due_date' => '2026-07-20',
             'planned_end' => '2026-07-15',
         ]);
@@ -74,10 +76,10 @@ class TaskResourceCascadeTest extends TestCase
 
     public function test_selecting_parent_task_fills_project_and_client(): void
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $project = Project::create([
             'name' => 'Apollo',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
             'active' => true,
         ]);
@@ -85,7 +87,7 @@ class TaskResourceCascadeTest extends TestCase
         $parent = Task::create([
             'title' => 'Parent task',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
             'project_id' => $project->id,
         ]);

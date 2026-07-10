@@ -4,17 +4,21 @@ namespace Tests\Feature;
 
 use App\Enums\InvoiceStatusEnum;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoiceScopesTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     private Client $client;
 
@@ -23,11 +27,11 @@ class InvoiceScopesTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
+        $this->company = $this->actingInCompany($this->user);
 
         $this->client = Client::create([
             'name' => 'Acme',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -41,7 +45,7 @@ class InvoiceScopesTest extends TestCase
             'due_date' => $dueDate,
             'payment_date' => $paymentDate,
             'total' => 100.00,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 

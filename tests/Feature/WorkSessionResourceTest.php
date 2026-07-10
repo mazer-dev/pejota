@@ -6,6 +6,7 @@ use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Resources\WorkSessionResource;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
@@ -17,21 +18,22 @@ use App\Models\User;
 use App\Models\WorkSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class WorkSessionResourceTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     public function test_list_page_loads(): void
@@ -44,7 +46,7 @@ class WorkSessionResourceTest extends TestCase
     {
         $client = Client::create([
             'name' => 'Acme',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'currency' => 'BRL',
             'default_hourly_rate' => 90.00,
             'billable_default' => true,
@@ -75,25 +77,25 @@ class WorkSessionResourceTest extends TestCase
     {
         $client = Client::create([
             'name' => 'Clone Client',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
         $unit = Unit::create([
             'name' => 'Hour',
             'symbol' => 'h',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
         $product = Product::create([
             'name' => 'Service',
             'service' => true,
             'digital' => false,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'unit_id' => $unit->id,
         ]);
         $invoice = Invoice::create([
             'number' => 'INV-CLONE',
             'title' => 'Inv',
             'status' => InvoiceStatusEnum::DRAFT,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
             'total' => 10.00,
         ]);
@@ -109,7 +111,7 @@ class WorkSessionResourceTest extends TestCase
         ]);
         $source = WorkSession::create([
             'title' => 'Invoiced source',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'start' => '2026-06-17 09:00:00',
             'end' => '2026-06-17 10:00:00',
             'is_running' => false,
@@ -131,7 +133,7 @@ class WorkSessionResourceTest extends TestCase
     {
         $client = Client::create([
             'name' => 'NonBillable Co',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'currency' => 'BRL',
             'default_hourly_rate' => 40.00,
             'billable_default' => false,
@@ -150,7 +152,7 @@ class WorkSessionResourceTest extends TestCase
     {
         $client = Client::create([
             'name' => 'Billable Co',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'currency' => 'BRL',
             'default_hourly_rate' => 40.00,
             'billable_default' => true,
@@ -177,10 +179,10 @@ class WorkSessionResourceTest extends TestCase
 
     public function test_selecting_project_fills_client_in_the_form(): void
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $project = Project::create([
             'name' => 'Apollo',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
         ]);
 
@@ -191,10 +193,10 @@ class WorkSessionResourceTest extends TestCase
 
     public function test_selecting_task_fills_project_and_client_in_the_form(): void
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $project = Project::create([
             'name' => 'Apollo',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
         ]);
         $status = Status::create([
@@ -203,12 +205,12 @@ class WorkSessionResourceTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
         $task = Task::create([
             'title' => 'Build feature',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
             'project_id' => $project->id,
         ]);
@@ -223,10 +225,10 @@ class WorkSessionResourceTest extends TestCase
 
     public function test_selecting_client_with_single_project_fills_the_project(): void
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $project = Project::create([
             'name' => 'Apollo',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
         ]);
 
@@ -237,15 +239,15 @@ class WorkSessionResourceTest extends TestCase
 
     public function test_selecting_client_with_multiple_projects_does_not_fill_the_project(): void
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         Project::create([
             'name' => 'Apollo',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
         ]);
         Project::create([
             'name' => 'Gemini',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
         ]);
 
@@ -256,10 +258,10 @@ class WorkSessionResourceTest extends TestCase
 
     public function test_selecting_project_with_single_task_fills_the_task(): void
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $project = Project::create([
             'name' => 'Apollo',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
         ]);
         $status = Status::create([
@@ -268,12 +270,12 @@ class WorkSessionResourceTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
         $task = Task::create([
             'title' => 'Only task',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
             'project_id' => $project->id,
         ]);
@@ -285,10 +287,10 @@ class WorkSessionResourceTest extends TestCase
 
     public function test_selecting_client_chains_down_to_single_project_and_task(): void
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $project = Project::create([
             'name' => 'Apollo',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
         ]);
         $status = Status::create([
@@ -297,12 +299,12 @@ class WorkSessionResourceTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
         $task = Task::create([
             'title' => 'Only task',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
             'project_id' => $project->id,
         ]);

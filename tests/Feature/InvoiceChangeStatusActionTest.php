@@ -8,19 +8,23 @@ use App\Filament\App\Resources\InvoiceResource\Pages\ListInvoices;
 use App\Filament\App\Resources\InvoiceResource\Pages\ViewInvoice;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\ExchangeRate;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Number;
 use Livewire\Livewire;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoiceChangeStatusActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     private Client $client;
 
@@ -29,11 +33,11 @@ class InvoiceChangeStatusActionTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
+        $this->company = $this->actingInCompany($this->user);
 
         $this->client = Client::create([
             'name' => 'Acme',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -47,7 +51,7 @@ class InvoiceChangeStatusActionTest extends TestCase
             'due_date' => $dueDate ?? now()->toDateString(),
             'payment_date' => $paymentDate,
             'total' => 100.00,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -128,7 +132,7 @@ class InvoiceChangeStatusActionTest extends TestCase
             'title' => 'Invoice', 'status' => InvoiceStatusEnum::SENT,
             'client_id' => $this->client->id, 'currency' => $currency,
             'due_date' => now()->toDateString(), 'payment_date' => $paymentDate,
-            'total' => 100.00, 'company_id' => $this->user->company->id,
+            'total' => 100.00, 'company_id' => $this->company->id,
         ]);
     }
 
@@ -146,7 +150,7 @@ class InvoiceChangeStatusActionTest extends TestCase
 
     public function test_paying_foreign_invoice_with_quote_freezes_triangulated_rate(): void
     {
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
         ExchangeRate::factory()->forCurrency('BRL')->on(now()->toDateString())->create(['rate' => 4.8]);
         $invoice = $this->makeForeignInvoice('USD');
 
@@ -164,7 +168,7 @@ class InvoiceChangeStatusActionTest extends TestCase
 
     public function test_paying_foreign_invoice_with_manual_rate_freezes_manual_value(): void
     {
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
         $invoice = $this->makeForeignInvoice('USD');
 
         Livewire::test(ListInvoices::class)
@@ -181,7 +185,7 @@ class InvoiceChangeStatusActionTest extends TestCase
 
     public function test_changing_payment_date_recalculates_realized_rate_for_that_date(): void
     {
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
         $early = now()->subDays(20)->toDateString();
         $mid = now()->subDays(5)->toDateString();
         ExchangeRate::factory()->forCurrency('BRL')->on($early)->create(['rate' => 4.0]);
@@ -203,7 +207,7 @@ class InvoiceChangeStatusActionTest extends TestCase
 
     public function test_changing_payment_date_to_uncovered_date_keeps_previous_realized_rate(): void
     {
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
         $covered = now()->subDays(5)->toDateString();
         $uncovered = now()->subDays(30)->toDateString();
         ExchangeRate::factory()->forCurrency('BRL')->on($covered)->create(['rate' => 5.5]);
@@ -221,7 +225,7 @@ class InvoiceChangeStatusActionTest extends TestCase
 
     public function test_base_value_reflects_edited_realized_rate(): void
     {
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
         ExchangeRate::factory()->forCurrency('BRL')->on(now()->toDateString())->create(['rate' => 5.0]);
         $invoice = $this->makeForeignInvoice('USD');
 
@@ -245,7 +249,7 @@ class InvoiceChangeStatusActionTest extends TestCase
 
     public function test_view_page_change_status_to_paid_freezes_realized_rate(): void
     {
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
         $invoice = $this->makeForeignInvoice('USD');
 
         Livewire::test(ViewInvoice::class, ['record' => $invoice->id])
@@ -280,7 +284,7 @@ class InvoiceChangeStatusActionTest extends TestCase
 
     public function test_moving_from_paid_to_partially_paid_clears_rate(): void
     {
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
         ExchangeRate::factory()->forCurrency('BRL')->on(now()->toDateString())->create(['rate' => 5.0]);
         $invoice = $this->makeForeignInvoice('USD', now()->toDateString());
         $invoice->update(['status' => InvoiceStatusEnum::PAID]);

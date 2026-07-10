@@ -4,25 +4,27 @@ namespace Tests\Feature\Mail;
 
 use App\Filament\App\Pages\CompanyMailSettings;
 use App\Mail\TestMail;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class CompanyMailSettingsTestActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     public function test_send_test_email_dispatches_test_mail_to_recipient(): void
@@ -50,7 +52,7 @@ class CompanyMailSettingsTestActionTest extends TestCase
 
     public function test_send_test_email_uses_stored_password_when_form_password_blank(): void
     {
-        $this->user->company->mailConfig()->create([
+        $this->company->mailConfig()->create([
             'host' => 'smtp.example.test',
             'port' => 587,
             'encryption' => 'tls',

@@ -9,22 +9,21 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\InvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoicePdfQuantityTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     public function test_pdf_renders_fractional_quantity(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        Landlord::addTenant('company_id', $user->company->id);
+        $company = $this->actingInCompany($user);
 
-        $client = Client::create(['name' => 'Acme', 'company_id' => $user->company->id, 'currency' => 'BRL']);
-        $unit = Unit::create(['name' => 'Hour', 'symbol' => 'h', 'company_id' => $user->company->id]);
-        $product = Product::create(['name' => 'Consulting', 'symbol' => 'C', 'service' => true, 'digital' => false, 'company_id' => $user->company->id, 'unit_id' => $unit->id, 'price' => 100, 'cost' => 0]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $company->id, 'currency' => 'BRL']);
+        $unit = Unit::create(['name' => 'Hour', 'symbol' => 'h', 'company_id' => $company->id]);
+        $product = Product::create(['name' => 'Consulting', 'symbol' => 'C', 'service' => true, 'digital' => false, 'company_id' => $company->id, 'unit_id' => $unit->id, 'price' => 100, 'cost' => 0]);
 
         $invoice = Invoice::create([
             'number' => 'INV-1', 'title' => 'T', 'client_id' => $client->id, 'currency' => 'BRL', 'total' => 250.00,

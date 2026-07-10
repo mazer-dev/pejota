@@ -15,7 +15,7 @@ class ConfigureUserScopeTest extends TestCase
         $user->id = 7;
         $company = new Company(['name' => 'Acme']);
         $company->id = 42;
-        $user->setRelation('company', $company);
+        $user->setRelation('companies', collect([$company]));
 
         $data = (new ConfigureUserScope)->data($user);
 
@@ -28,7 +28,7 @@ class ConfigureUserScopeTest extends TestCase
     {
         $user = new User(['email' => 'solo@example.com']);
         $user->id = 9;
-        $user->setRelation('company', null);
+        $user->setRelation('companies', collect());
 
         $data = (new ConfigureUserScope)->data($user);
 

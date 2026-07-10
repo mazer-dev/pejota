@@ -6,19 +6,23 @@ use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Widgets\InvoicesOverview;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\ExchangeRate;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use NumberFormatter;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoicesOverviewConsolidationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     private Client $client;
 
@@ -26,9 +30,9 @@ class InvoicesOverviewConsolidationTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
-        $this->actingAs($this->user);
-        $this->client = Client::create(['name' => 'C', 'company_id' => $this->user->company->id]);
+        $this->company = $this->actingInCompany($this->user);
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->client = Client::create(['name' => 'C', 'company_id' => $this->company->id]);
     }
 
     private function invoice(array $attributes): Invoice
@@ -36,7 +40,7 @@ class InvoicesOverviewConsolidationTest extends TestCase
         return Invoice::create(array_merge([
             'number' => 'INV-'.fake()->unique()->numerify('####'),
             'title' => 'x', 'client_id' => $this->client->id,
-            'company_id' => $this->user->company->id, 'total' => 100.00,
+            'company_id' => $this->company->id, 'total' => 100.00,
             'status' => InvoiceStatusEnum::SENT, 'due_date' => now()->addDays(5)->toDateString(),
         ], $attributes));
     }
