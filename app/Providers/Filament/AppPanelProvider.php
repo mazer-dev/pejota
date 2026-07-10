@@ -5,8 +5,9 @@ namespace App\Providers\Filament;
 use App\Enums\MenuGroupsEnum;
 use App\Filament\App\Pages\Dashboard;
 use App\Helpers\PejotaHelper;
+use App\Http\Middleware\ApplyTenantToLandlord;
 use App\Http\Middleware\LocalizationMiddleware;
-use App\Http\Middleware\TenantMiddleware;
+use App\Models\Company;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -37,6 +38,8 @@ class AppPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->login()
             ->passwordReset()
+            ->tenant(Company::class)
+            ->tenantMenu()
             ->brandName('Pejota')
             ->brandLogo(asset('imgs/pejota-logo.svg'))
             ->brandLogoHeight('10em')
@@ -107,7 +110,9 @@ class AppPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-                TenantMiddleware::class,
+            ], isPersistent: true)
+            ->tenantMiddleware([
+                ApplyTenantToLandlord::class,
             ], isPersistent: true);
     }
 }

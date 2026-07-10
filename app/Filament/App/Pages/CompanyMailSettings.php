@@ -5,6 +5,7 @@ namespace App\Filament\App\Pages;
 use App\Enums\MailDriverEnum;
 use App\Enums\MailEncryptionEnum;
 use App\Enums\MenuGroupsEnum;
+use App\Helpers\PejotaHelper;
 use App\Mail\TestMail;
 use App\Models\Company;
 use App\Models\CompanyMailConfig;
@@ -56,7 +57,7 @@ class CompanyMailSettings extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->company = auth()->user()->company;
+        $this->company = PejotaHelper::currentCompany();
         $config = $this->company->mailConfig;
 
         $this->form->fill([

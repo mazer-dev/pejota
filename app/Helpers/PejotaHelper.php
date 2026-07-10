@@ -3,12 +3,19 @@
 namespace App\Helpers;
 
 use App\Enums\CompanySettingsEnum;
+use App\Models\Company;
 use DateTime;
 use Detection\MobileDetect;
 use Exception;
+use Filament\Facades\Filament;
 
 class PejotaHelper
 {
+    public static function currentCompany(): ?Company
+    {
+        return Filament::getTenant();
+    }
+
     /**
      * Format the minutes duration as HH:mm
      */
@@ -26,32 +33,32 @@ class PejotaHelper
 
     public static function getUserTimeZone()
     {
-        return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value);
+        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value);
     }
 
     public static function getUserDateFormat()
     {
-        return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value) ?? 'Y-m-d';
+        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value) ?? 'Y-m-d';
     }
 
     public static function getUserDateTimeFormat()
     {
-        return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value) ?? 'Y-m-d H:i:s';
+        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value) ?? 'Y-m-d H:i:s';
     }
 
     public static function getUserLocate()
     {
-        return auth()->user()->company->settings()->get(CompanySettingsEnum::LOCALIZATION_LOCALE->value) ?? 'en';
+        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::LOCALIZATION_LOCALE->value) ?? 'en';
     }
 
     public static function getUserCurrency()
     {
-        return auth()->user()->company->settings()->get(CompanySettingsEnum::FINANCE_CURRENCY->value) ?? 'USD';
+        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::FINANCE_CURRENCY->value) ?? 'USD';
     }
 
     public static function getUserTaskListDefaultColumns()
     {
-        return auth()->user()->company->settings()->get(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value) ?? [];
+        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value) ?? [];
     }
 
     public static function isMobile(): bool

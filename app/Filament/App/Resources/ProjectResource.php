@@ -233,7 +233,7 @@ class ProjectResource extends Resource
                 ->translateLabel()
                 ->columnSpanFull()
                 ->fileAttachmentsDisk('projects')
-                ->fileAttachmentsDirectory(auth()->user()->company->id)
+                ->fileAttachmentsDirectory(PejotaHelper::currentCompany()->id)
                 ->fileAttachmentsVisibility('private'),
             SpatieTagsInput::make('tags'),
             Toggle::make('active')

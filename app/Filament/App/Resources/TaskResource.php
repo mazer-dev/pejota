@@ -244,7 +244,7 @@ class TaskResource extends Resource
                                 ['style' => 'max-height: 300px; overflow: scroll']
                             )
                             ->fileAttachmentsDisk('tasks')
-                            ->fileAttachmentsDirectory(auth()->user()->company->id)
+                            ->fileAttachmentsDirectory(PejotaHelper::currentCompany()->id)
                             ->fileAttachmentsVisibility('private'),
 
                     ]),

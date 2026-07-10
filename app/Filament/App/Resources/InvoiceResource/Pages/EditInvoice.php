@@ -37,8 +37,8 @@ class EditInvoice extends EditRecord
                     'from' => CarbonImmutable::now(PejotaHelper::getUserTimeZone() ?? 'UTC')->startOfMonth()->format('Y-m-d'),
                     'to' => CarbonImmutable::now(PejotaHelper::getUserTimeZone() ?? 'UTC')->endOfMonth()->format('Y-m-d'),
                     'grouping' => TimesheetGrouping::None->value,
-                    'product_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value),
-                    'unit_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_UNIT->value),
+                    'product_id' => PejotaHelper::currentCompany()->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value),
+                    'unit_id' => PejotaHelper::currentCompany()->settings()->get(CompanySettingsEnum::INVOICE_SESSION_UNIT->value),
                 ])
                 ->form([
                     DatePicker::make('from')->label(__('From'))->required(),

@@ -130,8 +130,8 @@ class ListWorkSessions extends ListRecords
                         'from' => $from,
                         'to' => $to,
                         'grouping' => TimesheetGrouping::None->value,
-                        'product_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value),
-                        'unit_id' => auth()->user()->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_UNIT->value),
+                        'product_id' => PejotaHelper::currentCompany()->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value),
+                        'unit_id' => PejotaHelper::currentCompany()->settings()->get(CompanySettingsEnum::INVOICE_SESSION_UNIT->value),
                         'title' => __('Work sessions :from–:to', ['from' => $from, 'to' => $to]),
                     ];
                 })
@@ -178,8 +178,8 @@ class ListWorkSessions extends ListRecords
                         unitId: (int) $data['unit_id'],
                     );
 
-                    auth()->user()->company->settings()->set(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value, (int) $data['product_id']);
-                    auth()->user()->company->settings()->set(CompanySettingsEnum::INVOICE_SESSION_UNIT->value, (int) $data['unit_id']);
+                    PejotaHelper::currentCompany()->settings()->set(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value, (int) $data['product_id']);
+                    PejotaHelper::currentCompany()->settings()->set(CompanySettingsEnum::INVOICE_SESSION_UNIT->value, (int) $data['unit_id']);
 
                     $invoice = app(SessionInvoiceService::class)->createInvoice($request, ['title' => $data['title']]);
 

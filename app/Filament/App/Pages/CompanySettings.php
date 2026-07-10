@@ -34,7 +34,7 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
 
     public static function getSettingRecord()
     {
-        return auth()->user()->company;
+        return PejotaHelper::currentCompany();
     }
 
     public static function getNavigationLabel(): string
