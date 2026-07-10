@@ -36,6 +36,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Filament\Resources\Resource::scopeToTenant(false);
+
         if ((new MobileDetect)->isMobile() == false) {
             FilamentView::registerRenderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,

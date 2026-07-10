@@ -6,6 +6,7 @@ use App\Enums\RecurrenceAnchorFieldEnum;
 use App\Enums\RecurrenceFrequencyEnum;
 use App\Enums\RecurrenceGenerationModeEnum;
 use App\Enums\RecurrenceStopTypeEnum;
+use App\Models\Company;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\TaskRecurrence;
@@ -13,11 +14,14 @@ use App\Models\User;
 use App\Services\RecurrenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class RecurrenceServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
+
+    private Company $company;
 
     public function test_recurrence_enums_have_expected_values(): void
     {
@@ -40,7 +44,7 @@ class RecurrenceServiceTest extends TestCase
     private function makeUser(): User
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
+        $this->company = $this->actingInCompany($user);
 
         return $user;
     }
@@ -53,7 +57,7 @@ class RecurrenceServiceTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -65,12 +69,12 @@ class RecurrenceServiceTest extends TestCase
         $template = Task::create([
             'title' => 'Template',
             'status_id' => $status->id,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'is_recurrence_template' => true,
         ]);
 
         $recurrence = TaskRecurrence::create([
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'task_id' => $template->id,
             'frequency' => RecurrenceFrequencyEnum::Monthly,
             'generated_count' => 1,
@@ -79,7 +83,7 @@ class RecurrenceServiceTest extends TestCase
         $occurrence = Task::create([
             'title' => 'Occurrence',
             'status_id' => $status->id,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'recurrence_id' => $recurrence->id,
         ]);
 
@@ -120,14 +124,14 @@ class RecurrenceServiceTest extends TestCase
         $template = Task::create([
             'title' => 'Pay rent',
             'status_id' => $status->id,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'is_recurrence_template' => true,
             'priority' => 'high',
             'is_continuous' => true,
         ]);
 
         $recurrence = TaskRecurrence::create([
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'task_id' => $template->id,
             'frequency' => RecurrenceFrequencyEnum::Monthly,
             'anchor_field' => RecurrenceAnchorFieldEnum::Both,
@@ -140,7 +144,7 @@ class RecurrenceServiceTest extends TestCase
 
         $this->assertFalse($occurrence->is_recurrence_template);
         $this->assertSame($recurrence->id, $occurrence->recurrence_id);
-        $this->assertSame($user->company->id, $occurrence->company_id);
+        $this->assertSame($this->company->id, $occurrence->company_id);
         $this->assertSame('Pay rent', $occurrence->title);
         $this->assertSame('high', $occurrence->priority);
         $this->assertSame('2026-02-10', $occurrence->due_date->toDateString());
@@ -157,7 +161,7 @@ class RecurrenceServiceTest extends TestCase
         $task = Task::create([
             'title' => 'Monthly report',
             'status_id' => $status->id,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'due_date' => '2026-01-31',
         ]);
 
@@ -189,7 +193,7 @@ class RecurrenceServiceTest extends TestCase
         $task = Task::create([
             'title' => 'X',
             'status_id' => $status->id,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'due_date' => '2026-01-10',
         ]);
 
@@ -217,13 +221,13 @@ class RecurrenceServiceTest extends TestCase
             'color' => '#000000',
             'sort_order' => 2,
             'active' => true,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
         ]);
 
         $task = Task::create([
             'title' => 'Recurring chore',
             'status_id' => $todo->id,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'due_date' => '2026-01-10',
         ]);
 

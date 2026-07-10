@@ -4,32 +4,34 @@ namespace Tests\Feature\Timesheet;
 
 use App\Filament\App\Resources\WorkSessionResource\Pages\ListWorkSessions;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\User;
 use App\Models\WorkSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class TimesheetActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function clientWithSession(): Client
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id, 'currency' => 'BRL']);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id, 'currency' => 'BRL']);
         WorkSession::create([
-            'title' => 'Work', 'company_id' => $this->user->company->id, 'client_id' => $client->id,
+            'title' => 'Work', 'company_id' => $this->company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => now()->subDays(2), 'end' => now()->subDays(2)->addHour(),
         ]);
 

@@ -4,28 +4,31 @@ namespace Tests\Feature\Billing;
 
 use App\Models\Client;
 use App\Models\ClientContact;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class ClientContactTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function makeClient(): Client
     {
-        return Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        return Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
     }
 
     public function test_client_has_many_contacts(): void
@@ -46,7 +49,7 @@ class ClientContactTest extends TestCase
     {
         $client = Client::create([
             'name' => 'Acme',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'bill_by_email' => 1,
             'bill_by_whatsapp' => 0,
         ]);
@@ -62,7 +65,7 @@ class ClientContactTest extends TestCase
         $client->contacts()->create(['name' => 'A', 'email' => 'a@acme.test']);
 
         $other = User::factory()->create();
-        Landlord::addTenant('company_id', $other->company->id);
+        Landlord::addTenant('company_id', $other->companies()->firstOrFail()->id);
 
         $this->assertSame(0, ClientContact::query()->count());
     }

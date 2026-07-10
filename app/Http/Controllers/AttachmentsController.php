@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use Illuminate\Support\Facades\Storage;
 
 class AttachmentsController extends Controller
@@ -12,7 +13,7 @@ class AttachmentsController extends Controller
             return Storage::disk($module)->response($companyId.'/'.$fileName);
         }
 
-        if (auth()->user()->company->id == $companyId) {
+        if (Company::whereKey($companyId)->first()?->hasMember(auth()->user())) {
             return Storage::disk($module)->response($companyId.'/'.$fileName);
         }
 

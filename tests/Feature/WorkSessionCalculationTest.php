@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\InvoiceStatusEnum;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
@@ -15,25 +16,28 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Models\WorkSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class WorkSessionCalculationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function companyId(): int
     {
-        return $this->user->company->id;
+        return $this->company->id;
     }
 
     public function test_duration_and_value_are_derived_from_start_end_and_rate(): void

@@ -4,34 +4,36 @@ namespace Tests\Feature\Invoicing;
 
 use App\Enums\TimesheetGrouping;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\WorkSession;
 use App\Services\Timesheet\SessionGroupKey;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class SessionGroupKeyTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function makeSession(array $attrs): WorkSession
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id, 'currency' => 'BRL']);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id, 'currency' => 'BRL']);
 
         return WorkSession::create(array_merge([
-            'title' => 'Work', 'company_id' => $this->user->company->id, 'client_id' => $client->id,
+            'title' => 'Work', 'company_id' => $this->company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00,
         ], $attrs));
     }
@@ -54,7 +56,7 @@ class SessionGroupKeyTest extends TestCase
 
     public function test_project_key_uses_project_name(): void
     {
-        $project = Project::create(['name' => 'Alpha', 'company_id' => $this->user->company->id]);
+        $project = Project::create(['name' => 'Alpha', 'company_id' => $this->company->id]);
         $session = $this->makeSession(['start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00', 'project_id' => $project->id]);
         $session->load('project');
 

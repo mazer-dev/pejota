@@ -3,35 +3,37 @@
 namespace Tests\Feature\Messaging;
 
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Services\Messaging\TemplateContextBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class TemplateContextBuilderTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     public function test_builds_expected_tokens_for_invoice(): void
     {
-        $client = Client::create(['name' => 'Acme', 'tradename' => 'Acme Co', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'tradename' => 'Acme Co', 'company_id' => $this->company->id]);
         $invoice = Invoice::create([
             'number' => 'INV-42',
             'title' => 'Consulting',
             'client_id' => $client->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'total' => 1000,
             'currency' => 'USD',
             'due_date' => '2026-05-15',
@@ -55,12 +57,12 @@ class TemplateContextBuilderTest extends TestCase
 
     public function test_null_due_date_yields_empty_strings(): void
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $invoice = Invoice::create([
             'number' => 'INV-43',
             'title' => 'X',
             'client_id' => $client->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'total' => 0,
             'currency' => 'USD',
             'due_date' => null,

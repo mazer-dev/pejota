@@ -5,6 +5,7 @@ namespace Tests\Feature\Invoicing;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\TimesheetGrouping;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Project;
@@ -15,14 +16,16 @@ use App\Services\Invoicing\SessionInvoiceRequest;
 use App\Services\Invoicing\SessionInvoiceService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class SessionInvoiceServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     private Client $client;
 
@@ -34,17 +37,16 @@ class SessionInvoiceServiceTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
-        $this->client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id, 'currency' => 'BRL']);
-        $this->unit = Unit::create(['name' => 'Hour', 'symbol' => 'h', 'company_id' => $this->user->company->id]);
-        $this->product = Product::create(['name' => 'Consulting', 'symbol' => 'C', 'service' => true, 'digital' => false, 'company_id' => $this->user->company->id, 'unit_id' => $this->unit->id, 'price' => 100, 'cost' => 0]);
+        $this->company = $this->actingInCompany($this->user);
+        $this->client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id, 'currency' => 'BRL']);
+        $this->unit = Unit::create(['name' => 'Hour', 'symbol' => 'h', 'company_id' => $this->company->id]);
+        $this->product = Product::create(['name' => 'Consulting', 'symbol' => 'C', 'service' => true, 'digital' => false, 'company_id' => $this->company->id, 'unit_id' => $this->unit->id, 'price' => 100, 'cost' => 0]);
     }
 
     private function makeSession(array $attrs): WorkSession
     {
         return WorkSession::create(array_merge([
-            'title' => 'Work', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id,
+            'title' => 'Work', 'company_id' => $this->company->id, 'client_id' => $this->client->id,
             'is_running' => false, 'rate' => 100.00, 'billable' => true,
         ], $attrs));
     }
@@ -118,8 +120,8 @@ class SessionInvoiceServiceTest extends TestCase
 
     public function test_group_by_project_yields_one_item_per_project(): void
     {
-        $alpha = Project::create(['name' => 'Alpha', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id]);
-        $beta = Project::create(['name' => 'Beta', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id]);
+        $alpha = Project::create(['name' => 'Alpha', 'company_id' => $this->company->id, 'client_id' => $this->client->id]);
+        $beta = Project::create(['name' => 'Beta', 'company_id' => $this->company->id, 'client_id' => $this->client->id]);
         $this->makeSession(['start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00', 'project_id' => $alpha->id]);
         $this->makeSession(['start' => '2026-06-10 11:00:00', 'end' => '2026-06-10 12:00:00', 'project_id' => $beta->id]);
 

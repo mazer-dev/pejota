@@ -3,17 +3,21 @@
 namespace Tests\Feature;
 
 use App\Enums\ContinuousModeEnum;
+use App\Models\Company;
 use App\Models\Scopes\ExcludeRecurrenceTemplatesScope;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class TaskContinuousTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
+
+    private Company $company;
 
     public function test_continuous_mode_enum_has_simple_and_daily_check(): void
     {
@@ -26,7 +30,7 @@ class TaskContinuousTest extends TestCase
     private function makeUser(): User
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
+        $this->company = $this->actingInCompany($user);
 
         return $user;
     }
@@ -39,7 +43,7 @@ class TaskContinuousTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -48,7 +52,7 @@ class TaskContinuousTest extends TestCase
         return Task::create(array_merge([
             'title' => 'Task',
             'status_id' => $status->id,
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
         ], $attributes));
     }
 
@@ -106,13 +110,13 @@ class TaskContinuousTest extends TestCase
         $today = Carbon::today();
         foreach ([0, 1, 2] as $daysAgo) {
             $task->taskCompletions()->create([
-                'company_id' => $user->company->id,
+                'company_id' => $this->company->id,
                 'user_id' => $user->id,
                 'completed_on' => $today->copy()->subDays($daysAgo)->toDateString(),
             ]);
         }
         $task->taskCompletions()->create([
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'user_id' => $user->id,
             'completed_on' => $today->copy()->subDays(4)->toDateString(),
         ]);
@@ -130,7 +134,7 @@ class TaskContinuousTest extends TestCase
         ]);
 
         $task->taskCompletions()->create([
-            'company_id' => $user->company->id,
+            'company_id' => $this->company->id,
             'user_id' => $user->id,
             'completed_on' => Carbon::today()->subDay()->toDateString(),
         ]);

@@ -4,30 +4,33 @@ namespace Tests\Feature\Mail;
 
 use App\Enums\MailDriverEnum;
 use App\Enums\MailEncryptionEnum;
+use App\Models\Company;
 use App\Models\CompanyMailConfig;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class CompanyMailConfigTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     public function test_company_has_one_mail_config(): void
     {
-        $config = $this->user->company->mailConfig()->create([
+        $config = $this->company->mailConfig()->create([
             'host' => 'smtp.example.test',
             'port' => 587,
             'encryption' => 'tls',
@@ -36,13 +39,13 @@ class CompanyMailConfigTest extends TestCase
             'from_address' => 'me@example.test',
         ]);
 
-        $this->assertInstanceOf(CompanyMailConfig::class, $this->user->company->fresh()->mailConfig);
-        $this->assertSame($config->id, $this->user->company->fresh()->mailConfig->id);
+        $this->assertInstanceOf(CompanyMailConfig::class, $this->company->fresh()->mailConfig);
+        $this->assertSame($config->id, $this->company->fresh()->mailConfig->id);
     }
 
     public function test_password_is_encrypted_at_rest_and_decrypts_via_cast(): void
     {
-        $config = $this->user->company->mailConfig()->create([
+        $config = $this->company->mailConfig()->create([
             'host' => 'smtp.example.test',
             'port' => 587,
             'username' => 'user@example.test',
@@ -59,7 +62,7 @@ class CompanyMailConfigTest extends TestCase
 
     public function test_driver_and_encryption_cast_to_enums(): void
     {
-        $config = $this->user->company->mailConfig()->create([
+        $config = $this->company->mailConfig()->create([
             'driver' => 'smtp',
             'host' => 'smtp.example.test',
             'port' => 465,
@@ -76,8 +79,8 @@ class CompanyMailConfigTest extends TestCase
 
     public function test_mail_config_is_scoped_to_owning_company(): void
     {
-        $first = $this->user;
-        $first->company->mailConfig()->create([
+        $firstCompany = $this->company;
+        $firstCompany->mailConfig()->create([
             'host' => 'smtp.example.test',
             'port' => 587,
             'encryption' => 'tls',
@@ -87,16 +90,17 @@ class CompanyMailConfigTest extends TestCase
         ]);
 
         $second = User::factory()->create();
+        $secondCompany = $second->companies()->firstOrFail();
 
         // Switch the tenant scope to the second company - it must not see the first company's config.
-        Landlord::addTenant('company_id', $second->company->id);
+        Landlord::addTenant('company_id', $secondCompany->id);
 
-        $this->assertNull($second->company->fresh()->mailConfig);
+        $this->assertNull($secondCompany->fresh()->mailConfig);
         $this->assertSame(0, CompanyMailConfig::query()->count());
 
         // Switching back proves the row is still there, just scoped to its own company.
-        Landlord::addTenant('company_id', $first->company->id);
-        $this->assertNotNull($first->company->fresh()->mailConfig);
+        Landlord::addTenant('company_id', $firstCompany->id);
+        $this->assertNotNull($firstCompany->fresh()->mailConfig);
     }
 
     public function test_is_complete_requires_host_port_username_password_and_from_address(): void

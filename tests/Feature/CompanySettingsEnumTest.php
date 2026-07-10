@@ -3,29 +3,33 @@
 namespace Tests\Feature;
 
 use App\Enums\CompanySettingsEnum;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class CompanySettingsEnumTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        $this->assertNotNull($this->user->company, 'Company was not created for test user');
+        $this->company = $this->actingInCompany($this->user);
+        $this->assertNotNull($this->company, 'Company was not created for test user');
     }
 
     public function test_first_invoice_number_starts_at_1(): void
     {
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
             'ym000'
         );
@@ -37,7 +41,7 @@ class CompanySettingsEnumTest extends TestCase
 
     public function test_sequential_numbers_increment_within_same_period(): void
     {
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
             'ym000'
         );
@@ -53,17 +57,17 @@ class CompanySettingsEnumTest extends TestCase
 
     public function test_counter_resets_to_1_when_period_changes(): void
     {
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
             'ym000'
         );
 
         // Simulate being in a previous period
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value,
             5
         );
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST_PERIOD->value,
             '9901' // January 1999 — definitely not the current period
         );
@@ -77,15 +81,15 @@ class CompanySettingsEnumTest extends TestCase
     {
         $currentPeriod = Carbon::now()->format('ym');
 
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
             'ym000'
         );
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value,
             7
         );
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST_PERIOD->value,
             $currentPeriod
         );
@@ -97,7 +101,7 @@ class CompanySettingsEnumTest extends TestCase
 
     public function test_peek_does_not_mutate_and_is_repeatable(): void
     {
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
             'ym000'
         );
@@ -108,7 +112,7 @@ class CompanySettingsEnumTest extends TestCase
         $this->assertSame(1, $first);
         $this->assertSame(1, $second);
 
-        $stored = $this->user->company->settings()->get(
+        $stored = $this->company->settings()->get(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value
         );
 
@@ -117,7 +121,7 @@ class CompanySettingsEnumTest extends TestCase
 
     public function test_peek_then_consume_returns_same_number(): void
     {
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
             'ym000'
         );
@@ -134,24 +138,24 @@ class CompanySettingsEnumTest extends TestCase
     {
         $expectedPeriod = Carbon::now()->format('ym');
 
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
             'ym000'
         );
-        $this->user->company->settings()->set(
+        $this->company->settings()->set(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST_PERIOD->value,
             '9901'
         );
 
         CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->getNextDocNumber();
 
-        $savedPeriod = $this->user->company->settings()->get(
+        $savedPeriod = $this->company->settings()->get(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST_PERIOD->value
         );
 
         $this->assertSame($expectedPeriod, $savedPeriod);
 
-        $savedNumber = $this->user->company->settings()->get(
+        $savedNumber = $this->company->settings()->get(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_LAST->value
         );
 

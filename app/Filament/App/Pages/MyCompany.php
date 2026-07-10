@@ -4,6 +4,7 @@ namespace App\Filament\App\Pages;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
+use App\Helpers\PejotaHelper;
 use App\Models\Company;
 use Filament\Actions\Action;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -55,7 +56,7 @@ class MyCompany extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->company = auth()->user()->company;
+        $this->company = PejotaHelper::currentCompany();
         $this->form->fill($this->company->toArray());
     }
 

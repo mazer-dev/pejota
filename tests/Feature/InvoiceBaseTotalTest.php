@@ -5,36 +5,43 @@ namespace Tests\Feature;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\ExchangeRate;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Services\InvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoiceBaseTotalTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private function actingUserWithBase(string $base): User
     {
         $user = User::factory()->create();
-        $user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, $base);
-        $this->actingAs($user);
+        $company = $this->actingInCompany($user);
+        $company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, $base);
 
         return $user;
     }
 
+    private function companyOf(User $user): Company
+    {
+        return $user->companies()->firstOrFail();
+    }
+
     private function makeInvoice(User $user, array $attributes): Invoice
     {
-        $client = Client::create(['name' => 'C', 'company_id' => $user->company->id]);
+        $client = Client::create(['name' => 'C', 'company_id' => $this->companyOf($user)->id]);
 
         return Invoice::create(array_merge([
             'number' => 'INV-'.fake()->unique()->numerify('####'),
             'title' => 'Invoice',
             'client_id' => $client->id,
-            'company_id' => $user->company->id,
+            'company_id' => $this->companyOf($user)->id,
             'total' => 100.00,
             'status' => InvoiceStatusEnum::SENT,
         ], $attributes));
@@ -127,21 +134,21 @@ class InvoiceBaseTotalTest extends TestCase
     public function test_backfill_sets_each_companys_base_currency_on_null_currency_invoices(): void
     {
         $userBrl = User::factory()->create();
-        $userBrl->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->companyOf($userBrl)->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
         $userEur = User::factory()->create();
-        $userEur->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'EUR');
+        $this->companyOf($userEur)->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'EUR');
 
-        $clientBrl = Client::create(['name' => 'A', 'company_id' => $userBrl->company->id]);
-        $clientEur = Client::create(['name' => 'B', 'company_id' => $userEur->company->id]);
+        $clientBrl = Client::create(['name' => 'A', 'company_id' => $this->companyOf($userBrl)->id]);
+        $clientEur = Client::create(['name' => 'B', 'company_id' => $this->companyOf($userEur)->id]);
 
         $idBrl = DB::table('invoices')->insertGetId([
             'number' => 'B1', 'title' => 'x', 'client_id' => $clientBrl->id,
-            'company_id' => $userBrl->company->id, 'total' => 100, 'status' => 'sent',
+            'company_id' => $this->companyOf($userBrl)->id, 'total' => 100, 'status' => 'sent',
             'currency' => null, 'created_at' => now(), 'updated_at' => now(),
         ]);
         $idEur = DB::table('invoices')->insertGetId([
             'number' => 'E1', 'title' => 'y', 'client_id' => $clientEur->id,
-            'company_id' => $userEur->company->id, 'total' => 100, 'status' => 'sent',
+            'company_id' => $this->companyOf($userEur)->id, 'total' => 100, 'status' => 'sent',
             'currency' => null, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
@@ -154,12 +161,12 @@ class InvoiceBaseTotalTest extends TestCase
     public function test_backfill_does_not_overwrite_invoices_that_already_have_a_currency(): void
     {
         $user = User::factory()->create();
-        $user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
-        $client = Client::create(['name' => 'C', 'company_id' => $user->company->id]);
+        $this->companyOf($user)->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $client = Client::create(['name' => 'C', 'company_id' => $this->companyOf($user)->id]);
 
         $id = DB::table('invoices')->insertGetId([
             'number' => 'X1', 'title' => 'z', 'client_id' => $client->id,
-            'company_id' => $user->company->id, 'total' => 50, 'status' => 'draft',
+            'company_id' => $this->companyOf($user)->id, 'total' => 50, 'status' => 'draft',
             'currency' => 'EUR', 'created_at' => now(), 'updated_at' => now(),
         ]);
 
@@ -171,11 +178,11 @@ class InvoiceBaseTotalTest extends TestCase
     public function test_backfill_defaults_to_usd_when_company_has_no_currency_setting(): void
     {
         $user = User::factory()->create();
-        $client = Client::create(['name' => 'D', 'company_id' => $user->company->id]);
+        $client = Client::create(['name' => 'D', 'company_id' => $this->companyOf($user)->id]);
 
         $id = DB::table('invoices')->insertGetId([
             'number' => 'U1', 'title' => 'w', 'client_id' => $client->id,
-            'company_id' => $user->company->id, 'total' => 70, 'status' => 'sent',
+            'company_id' => $this->companyOf($user)->id, 'total' => 70, 'status' => 'sent',
             'currency' => null, 'created_at' => now(), 'updated_at' => now(),
         ]);
 

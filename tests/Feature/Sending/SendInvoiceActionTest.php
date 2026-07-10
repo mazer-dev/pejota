@@ -5,42 +5,44 @@ namespace Tests\Feature\Sending;
 use App\Filament\App\Resources\InvoiceResource\Pages\ViewInvoice;
 use App\Jobs\SendInvoiceDelivery;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class SendInvoiceActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function makeInvoice(): Invoice
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id, 'email' => 'main@acme.test']);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id, 'email' => 'main@acme.test']);
 
         return Invoice::create([
             'number' => 'INV-1', 'title' => 'X', 'client_id' => $client->id,
-            'company_id' => $this->user->company->id, 'total' => 100, 'currency' => 'USD',
+            'company_id' => $this->company->id, 'total' => 100, 'currency' => 'USD',
             'due_date' => '2026-05-15', 'status' => 'draft',
         ]);
     }
 
     private function withMailConfig(): void
     {
-        $this->user->company->mailConfig()->create([
+        $this->company->mailConfig()->create([
             'host' => 'smtp.example.test', 'port' => 587, 'username' => 'u', 'password' => 'p',
             'from_address' => 'me@example.test', 'from_name' => 'Me',
         ]);

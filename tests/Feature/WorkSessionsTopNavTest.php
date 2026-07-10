@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\WorkSessionsTopNav;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Project;
 use App\Models\Status;
 use App\Models\Task;
@@ -11,26 +12,29 @@ use App\Models\User;
 use App\Models\WorkSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class WorkSessionsTopNavTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     public function test_lists_running_sessions(): void
     {
         WorkSession::create([
             'title' => 'Running A',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'start' => now(),
             'is_running' => true,
             'rate' => 0,
@@ -45,7 +49,7 @@ class WorkSessionsTopNavTest extends TestCase
     {
         $client = Client::create([
             'name' => 'Acme',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'currency' => 'BRL',
             'default_hourly_rate' => 60.00,
             'billable_default' => true,
@@ -68,7 +72,7 @@ class WorkSessionsTopNavTest extends TestCase
     {
         $session = WorkSession::create([
             'title' => 'Stop me',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'start' => now()->subHour(),
             'is_running' => true,
             'rate' => 0,
@@ -85,8 +89,8 @@ class WorkSessionsTopNavTest extends TestCase
 
     public function test_client_search_filters_options(): void
     {
-        Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
-        Client::create(['name' => 'Globex', 'company_id' => $this->user->company->id]);
+        Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
+        Client::create(['name' => 'Globex', 'company_id' => $this->company->id]);
 
         Livewire::test(WorkSessionsTopNav::class)
             ->set('clientSearch', 'Acme')
@@ -116,10 +120,10 @@ class WorkSessionsTopNavTest extends TestCase
 
     public function test_selecting_task_fills_its_project_and_client(): void
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $project = Project::create([
             'name' => 'Apollo',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
         ]);
         $status = Status::create([
@@ -128,12 +132,12 @@ class WorkSessionsTopNavTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
         $task = Task::create([
             'title' => 'Build feature',
             'status_id' => $status->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
             'project_id' => $project->id,
         ]);
@@ -146,10 +150,10 @@ class WorkSessionsTopNavTest extends TestCase
 
     public function test_selecting_project_fills_its_client(): void
     {
-        $client = Client::create(['name' => 'Globex', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Globex', 'company_id' => $this->company->id]);
         $project = Project::create([
             'name' => 'Zeus',
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'client_id' => $client->id,
         ]);
 
@@ -160,7 +164,7 @@ class WorkSessionsTopNavTest extends TestCase
 
     public function test_selected_client_label_is_shown(): void
     {
-        $client = Client::create(['name' => 'Umbrella Corp', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Umbrella Corp', 'company_id' => $this->company->id]);
 
         Livewire::test(WorkSessionsTopNav::class)
             ->set('newClient', $client->id)

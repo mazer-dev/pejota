@@ -3,24 +3,26 @@
 namespace Tests\Feature\Mail;
 
 use App\Filament\App\Pages\CompanyMailSettings;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class CompanyMailSettingsTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     public function test_page_loads(): void
@@ -45,7 +47,7 @@ class CompanyMailSettingsTest extends TestCase
             ->call('save')
             ->assertHasNoFormErrors();
 
-        $config = $this->user->company->fresh()->mailConfig;
+        $config = $this->company->fresh()->mailConfig;
         $this->assertNotNull($config);
         $this->assertSame('smtp.example.test', $config->host);
         $this->assertSame('topsecret', $config->password);
@@ -53,7 +55,7 @@ class CompanyMailSettingsTest extends TestCase
 
     public function test_saving_with_blank_password_preserves_existing(): void
     {
-        $this->user->company->mailConfig()->create([
+        $this->company->mailConfig()->create([
             'host' => 'smtp.example.test',
             'port' => 587,
             'encryption' => 'tls',
@@ -73,14 +75,14 @@ class CompanyMailSettingsTest extends TestCase
             ->call('save')
             ->assertHasNoFormErrors();
 
-        $config = $this->user->company->fresh()->mailConfig;
+        $config = $this->company->fresh()->mailConfig;
         $this->assertSame('smtp.changed.test', $config->host);
         $this->assertSame('keepme', $config->password);
     }
 
     public function test_password_is_not_prefilled_when_mounting_with_existing_config(): void
     {
-        $this->user->company->mailConfig()->create([
+        $this->company->mailConfig()->create([
             'host' => 'smtp.example.test',
             'port' => 587,
             'encryption' => 'tls',

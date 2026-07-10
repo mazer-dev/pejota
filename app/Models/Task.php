@@ -120,7 +120,7 @@ class Task extends Model
             return;
         }
 
-        $settings = auth()->user()->company
+        $settings = PejotaHelper::currentCompany()
             ->settings();
 
         $status = Status::find($model->status_id);

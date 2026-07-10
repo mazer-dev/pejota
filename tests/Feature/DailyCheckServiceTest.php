@@ -2,26 +2,28 @@
 
 namespace Tests\Feature;
 
+use App\Models\Company;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\DailyCheckService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class DailyCheckServiceTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function makeStatus(): Status
@@ -32,7 +34,7 @@ class DailyCheckServiceTest extends TestCase
             'color' => '#000000',
             'sort_order' => 1,
             'active' => true,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
         ]);
     }
 
@@ -41,7 +43,7 @@ class DailyCheckServiceTest extends TestCase
         return Task::create([
             'title' => $title,
             'status_id' => $this->makeStatus()->id,
-            'company_id' => $this->user->company->id,
+            'company_id' => $this->company->id,
             'priority' => 'medium',
             'is_continuous' => $continuous,
         ]);

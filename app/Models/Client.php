@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\CompanySettingsEnum;
+use App\Helpers\PejotaHelper;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,7 +24,7 @@ class Client extends Model
     public function labelName(): Attribute
     {
         return Attribute::make(
-            get: fn (?string $value) => auth()->user()->company
+            get: fn (?string $value) => PejotaHelper::currentCompany()
                 ->settings()->get(CompanySettingsEnum::CLIENT_PREFER_TRADENAME->value)
                         ? $this->tradename
                         : $this->name,

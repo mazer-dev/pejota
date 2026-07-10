@@ -444,7 +444,7 @@ class WorkSessionResource extends Resource
                 RichEditor::make('description')
                     ->hiddenLabel()
                     ->fileAttachmentsDisk('work_sessions')
-                    ->fileAttachmentsDirectory(auth()->user()->company->id)
+                    ->fileAttachmentsDirectory(PejotaHelper::currentCompany()->id)
                     ->fileAttachmentsVisibility('private'),
             ])->collapsible()->collapsed()->translateLabel(),
         ];

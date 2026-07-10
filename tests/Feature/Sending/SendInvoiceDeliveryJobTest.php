@@ -7,6 +7,7 @@ use App\Enums\InvoiceStatusEnum;
 use App\Jobs\SendInvoiceDelivery;
 use App\Mail\InvoiceDeliveryMailable;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoiceDelivery;
 use App\Models\User;
@@ -16,23 +17,24 @@ use App\Services\Invoicing\SendInvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use NunoMazer\Samehouse\Facades\Landlord;
 use RuntimeException;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class SendInvoiceDeliveryJobTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
-        $this->user->company->mailConfig()->create([
+        $this->company = $this->actingInCompany($this->user);
+        $this->company->mailConfig()->create([
             'host' => 'smtp.example.test', 'port' => 587, 'username' => 'u', 'password' => 'p',
             'from_address' => 'me@example.test', 'from_name' => 'Me',
         ]);
@@ -40,10 +42,10 @@ class SendInvoiceDeliveryJobTest extends TestCase
 
     private function makeDelivery(string $invoiceStatus): InvoiceDelivery
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id]);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id]);
         $invoice = Invoice::create([
             'number' => 'INV-1', 'title' => 'X', 'client_id' => $client->id,
-            'company_id' => $this->user->company->id, 'total' => 100, 'currency' => 'USD', 'status' => $invoiceStatus,
+            'company_id' => $this->company->id, 'total' => 100, 'currency' => 'USD', 'status' => $invoiceStatus,
         ]);
 
         return $invoice->deliveries()->create([
@@ -121,14 +123,14 @@ class SendInvoiceDeliveryJobTest extends TestCase
     {
         Mail::fake();
 
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id, 'currency' => 'USD']);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id, 'currency' => 'USD']);
         WorkSession::create([
-            'title' => 'Work', 'company_id' => $this->user->company->id, 'client_id' => $client->id,
+            'title' => 'Work', 'company_id' => $this->company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-05-10 09:00:00', 'end' => '2026-05-10 11:00:00',
         ]);
         $invoice = Invoice::create([
             'number' => 'INV-9', 'title' => 'X', 'client_id' => $client->id,
-            'company_id' => $this->user->company->id, 'total' => 100, 'currency' => 'USD',
+            'company_id' => $this->company->id, 'total' => 100, 'currency' => 'USD',
             'due_date' => '2026-05-15', 'status' => 'draft',
         ]);
 

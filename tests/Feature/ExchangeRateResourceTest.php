@@ -5,23 +5,27 @@ namespace Tests\Feature;
 use App\Enums\CompanySettingsEnum;
 use App\Filament\App\Resources\ExchangeRateResource;
 use App\Filament\App\Resources\ExchangeRateResource\Pages\ListExchangeRates;
+use App\Models\Company;
 use App\Models\ExchangeRate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class ExchangeRateResourceTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     public function test_lists_exchange_rates(): void
@@ -71,7 +75,7 @@ class ExchangeRateResourceTest extends TestCase
     public function test_derived_column_shows_dash_when_base_rate_missing(): void
     {
         // Base da empresa = EUR, mas não há taxa de EUR -> triangulação falha -> '—'.
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'EUR');
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'EUR');
 
         $rate = ExchangeRate::factory()->forCurrency('BRL')->on('2026-01-10')->create(['rate' => 5.0]);
 
@@ -82,7 +86,7 @@ class ExchangeRateResourceTest extends TestCase
     public function test_derived_column_shows_numeric_value_when_base_rate_available(): void
     {
         // Base = EUR; existem taxas de BRL e EUR -> base_value = convert(1, BRL, EUR) = 0.9/5.0.
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'EUR');
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'EUR');
 
         ExchangeRate::factory()->forCurrency('EUR')->on('2026-01-10')->create(['rate' => 0.9]);
         $rate = ExchangeRate::factory()->forCurrency('BRL')->on('2026-01-10')->create(['rate' => 5.0]);

@@ -5,13 +5,16 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Events\UserCreated;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasTenants
 {
     use HasFactory, Notifiable;
 
@@ -58,13 +61,28 @@ class User extends Authenticatable implements FilamentUser
         });
     }
 
-    public function company(): HasOne
+    public function companies(): BelongsToMany
     {
-        return $this->hasOne(Company::class);
+        return $this->belongsToMany(Company::class)
+            ->withPivot(['role', 'invited_at', 'joined_at'])
+            ->withTimestamps();
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
         return true;
+    }
+
+    public function getTenants(Panel $panel): Collection
+    {
+        return $this->companies()->wherePivotNotNull('joined_at')->get();
+    }
+
+    public function canAccessTenant(Model $tenant): bool
+    {
+        return $this->companies()
+            ->wherePivotNotNull('joined_at')
+            ->whereKey($tenant->getKey())
+            ->exists();
     }
 }

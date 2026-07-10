@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Company;
 use App\Models\User;
 use Database\Seeders\CurrencySeeder;
 use Illuminate\Console\Command;
@@ -47,13 +46,13 @@ class Install extends Command
         $companyName = $this->ask('Please enter the company name, enter for "My Company"', 'My Company');
         $companyEmail = $this->ask('Please enter the company email or enter for empty');
 
-        Company::create([
+        $company = $user->companies()->first();
+        $company->update([
             'name' => $companyName,
-            'email' => $companyEmail,
-            'user_id' => $user->id,
+            'email' => $companyEmail ?: $company->email,
         ]);
 
-        $this->info('Company created successfully');
+        $this->info('Company configured successfully');
 
         $this->call('db:seed', [
             '--class' => CurrencySeeder::class,

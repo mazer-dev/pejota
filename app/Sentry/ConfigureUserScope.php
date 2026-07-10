@@ -50,7 +50,7 @@ class ConfigureUserScope
             ],
         ];
 
-        $company = $user->company;
+        $company = $user->companies->first();
 
         if ($company !== null) {
             $data['tags'] = ['company' => (string) $company->id];

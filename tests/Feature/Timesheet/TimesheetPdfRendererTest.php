@@ -13,19 +13,20 @@ use App\Services\Timesheet\TimesheetBuilder;
 use App\Services\Timesheet\TimesheetRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class TimesheetPdfRendererTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     public function test_pdf_renders_and_contains_client_name(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        $client = Client::create(['name' => 'Acme Corp', 'company_id' => $user->company->id, 'currency' => 'BRL']);
+        $company = $this->actingInCompany($user);
+        $client = Client::create(['name' => 'Acme Corp', 'company_id' => $company->id, 'currency' => 'BRL']);
         WorkSession::create([
-            'title' => 'Did work', 'company_id' => $user->company->id, 'client_id' => $client->id,
+            'title' => 'Did work', 'company_id' => $company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00',
         ]);
 
@@ -53,10 +54,10 @@ class TimesheetPdfRendererTest extends TestCase
     public function test_pdf_view_renders_client_header_groups_subtotal_and_total(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        $client = Client::create(['name' => 'Acme Corp', 'company_id' => $user->company->id, 'currency' => 'BRL']);
+        $company = $this->actingInCompany($user);
+        $client = Client::create(['name' => 'Acme Corp', 'company_id' => $company->id, 'currency' => 'BRL']);
         WorkSession::create([
-            'title' => 'Did work', 'company_id' => $user->company->id, 'client_id' => $client->id,
+            'title' => 'Did work', 'company_id' => $company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00',
         ]);
 
@@ -79,10 +80,10 @@ class TimesheetPdfRendererTest extends TestCase
     public function test_pdf_view_omits_value_columns_when_include_value_false(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        $client = Client::create(['name' => 'Acme Corp', 'company_id' => $user->company->id, 'currency' => 'BRL']);
+        $company = $this->actingInCompany($user);
+        $client = Client::create(['name' => 'Acme Corp', 'company_id' => $company->id, 'currency' => 'BRL']);
         WorkSession::create([
-            'title' => 'Did work', 'company_id' => $user->company->id, 'client_id' => $client->id,
+            'title' => 'Did work', 'company_id' => $company->id, 'client_id' => $client->id,
             'is_running' => false, 'rate' => 100.00, 'start' => '2026-06-10 09:00:00', 'end' => '2026-06-10 10:00:00',
         ]);
 
@@ -103,8 +104,8 @@ class TimesheetPdfRendererTest extends TestCase
     public function test_pdf_view_renders_empty_notice_for_empty_period(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
-        $client = Client::create(['name' => 'Acme Corp', 'company_id' => $user->company->id, 'currency' => 'BRL']);
+        $company = $this->actingInCompany($user);
+        $client = Client::create(['name' => 'Acme Corp', 'company_id' => $company->id, 'currency' => 'BRL']);
 
         $request = $this->makeRequest($client, includeValue: true);
         $data = (new TimesheetBuilder)->build($request);

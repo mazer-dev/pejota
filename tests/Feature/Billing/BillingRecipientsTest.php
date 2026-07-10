@@ -3,28 +3,30 @@
 namespace Tests\Feature\Billing;
 
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class BillingRecipientsTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function makeClient(array $attributes = []): Client
     {
-        return Client::create(array_merge(['name' => 'Acme', 'company_id' => $this->user->company->id], $attributes));
+        return Client::create(array_merge(['name' => 'Acme', 'company_id' => $this->company->id], $attributes));
     }
 
     public function test_returns_billing_contact_emails(): void

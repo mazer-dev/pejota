@@ -5,18 +5,22 @@ namespace Tests\Feature;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\ExchangeRate;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Services\InvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoiceServiceConsolidationTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     private Client $client;
 
@@ -24,9 +28,9 @@ class InvoiceServiceConsolidationTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
-        $this->actingAs($this->user);
-        $this->client = Client::create(['name' => 'C', 'company_id' => $this->user->company->id]);
+        $this->company = $this->actingInCompany($this->user);
+        $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
+        $this->client = Client::create(['name' => 'C', 'company_id' => $this->company->id]);
     }
 
     private function invoice(array $attributes): Invoice
@@ -34,7 +38,7 @@ class InvoiceServiceConsolidationTest extends TestCase
         return Invoice::create(array_merge([
             'number' => 'INV-'.fake()->unique()->numerify('####'),
             'title' => 'x', 'client_id' => $this->client->id,
-            'company_id' => $this->user->company->id, 'total' => 100.00,
+            'company_id' => $this->company->id, 'total' => 100.00,
             'status' => InvoiceStatusEnum::SENT,
         ], $attributes));
     }

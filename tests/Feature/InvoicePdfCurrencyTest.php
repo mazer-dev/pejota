@@ -13,32 +13,33 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Number;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoicePdfCurrencyTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     public function test_pdf_renders_amounts_in_document_currency(): void
     {
         $user = User::factory()->create();
-        $user->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
-        $this->actingAs($user);
+        $company = $this->actingInCompany($user);
+        $company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
 
-        $client = Client::create(['name' => 'ACME', 'company_id' => $user->company->id]);
-        $unit = Unit::create(['name' => 'h', 'symbol' => 'h', 'company_id' => $user->company->id]);
+        $client = Client::create(['name' => 'ACME', 'company_id' => $company->id]);
+        $unit = Unit::create(['name' => 'h', 'symbol' => 'h', 'company_id' => $company->id]);
         $product = Product::create([
             'name' => 'Dev',
             'service' => true,
             'digital' => false,
             'unit_id' => $unit->id,
-            'company_id' => $user->company->id,
+            'company_id' => $company->id,
         ]);
 
         $invoice = Invoice::create([
             'number' => 'INV-1', 'title' => 'Services', 'status' => InvoiceStatusEnum::SENT,
             'client_id' => $client->id, 'currency' => 'USD', 'total' => 250.00,
-            'company_id' => $user->company->id,
+            'company_id' => $company->id,
         ]);
         $invoice->items()->create([
             'product_id' => $product->id, 'name' => 'Dev', 'unit_id' => $unit->id,

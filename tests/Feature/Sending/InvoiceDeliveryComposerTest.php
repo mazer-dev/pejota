@@ -4,34 +4,36 @@ namespace Tests\Feature\Sending;
 
 use App\Enums\DeliveryStatusEnum;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Services\Invoicing\InvoiceDeliveryComposer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class InvoiceDeliveryComposerTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
+        $this->company = $this->actingInCompany($this->user);
     }
 
     private function makeInvoice(): Invoice
     {
-        $client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id, 'currency' => 'USD']);
+        $client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id, 'currency' => 'USD']);
 
         return Invoice::create([
             'number' => 'INV-1', 'title' => 'X', 'client_id' => $client->id,
-            'company_id' => $this->user->company->id, 'total' => 100, 'currency' => 'USD',
+            'company_id' => $this->company->id, 'total' => 100, 'currency' => 'USD',
             'due_date' => '2026-05-15', 'status' => 'draft',
         ]);
     }

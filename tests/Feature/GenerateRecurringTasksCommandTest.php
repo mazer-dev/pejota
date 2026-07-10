@@ -12,23 +12,24 @@ use App\Models\User;
 use App\Services\RecurrenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class GenerateRecurringTasksCommandTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     public function test_command_generates_due_occurrences_across_companies(): void
     {
         $userA = User::factory()->create();
-        $this->actingAs($userA);
+        $companyA = $this->actingInCompany($userA);
         $statusA = Status::create([
             'name' => 'To Do', 'phase' => 'todo', 'color' => '#000000',
-            'sort_order' => 1, 'active' => true, 'company_id' => $userA->company->id,
+            'sort_order' => 1, 'active' => true, 'company_id' => $companyA->id,
         ]);
         $taskA = Task::create([
             'title' => 'A monthly', 'status_id' => $statusA->id,
-            'company_id' => $userA->company->id, 'due_date' => '2026-01-15',
+            'company_id' => $companyA->id, 'due_date' => '2026-01-15',
         ]);
         $service = app(RecurrenceService::class);
         $recurrenceA = $service->enableForTask($taskA, [
@@ -49,14 +50,14 @@ class GenerateRecurringTasksCommandTest extends TestCase
     public function test_command_respects_count_stop(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
+        $company = $this->actingInCompany($user);
         $status = Status::create([
             'name' => 'To Do', 'phase' => 'todo', 'color' => '#000000',
-            'sort_order' => 1, 'active' => true, 'company_id' => $user->company->id,
+            'sort_order' => 1, 'active' => true, 'company_id' => $company->id,
         ]);
         $task = Task::create([
             'title' => 'Weekly x3', 'status_id' => $status->id,
-            'company_id' => $user->company->id, 'due_date' => '2026-01-01',
+            'company_id' => $company->id, 'due_date' => '2026-01-01',
         ]);
         $service = app(RecurrenceService::class);
         $recurrence = $service->enableForTask($task, [
@@ -80,14 +81,14 @@ class GenerateRecurringTasksCommandTest extends TestCase
     public function test_command_runs_without_authenticated_user(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
+        $company = $this->actingInCompany($user);
         $status = Status::create([
             'name' => 'To Do', 'phase' => 'todo', 'color' => '#000000',
-            'sort_order' => 1, 'active' => true, 'company_id' => $user->company->id,
+            'sort_order' => 1, 'active' => true, 'company_id' => $company->id,
         ]);
         $task = Task::create([
             'title' => 'Cron weekly', 'status_id' => $status->id,
-            'company_id' => $user->company->id, 'due_date' => '2026-01-01',
+            'company_id' => $company->id, 'due_date' => '2026-01-01',
         ]);
         $recurrence = app(RecurrenceService::class)->enableForTask($task, [
             'frequency' => RecurrenceFrequencyEnum::Weekly,

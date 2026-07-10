@@ -5,6 +5,7 @@ namespace Tests\Feature\Invoicing;
 use App\Enums\CompanySettingsEnum;
 use App\Filament\App\Resources\WorkSessionResource\Pages\ListWorkSessions;
 use App\Models\Client;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Unit;
@@ -12,14 +13,16 @@ use App\Models\User;
 use App\Models\WorkSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use NunoMazer\Samehouse\Facades\Landlord;
+use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
 
 class GenerateInvoiceActionTest extends TestCase
 {
-    use RefreshDatabase;
+    use ActsInCompany, RefreshDatabase;
 
     private User $user;
+
+    private Company $company;
 
     private Client $client;
 
@@ -31,11 +34,10 @@ class GenerateInvoiceActionTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-        Landlord::addTenant('company_id', $this->user->company->id);
-        $this->client = Client::create(['name' => 'Acme', 'company_id' => $this->user->company->id, 'currency' => 'BRL']);
-        $this->unit = Unit::create(['name' => 'Hour', 'symbol' => 'h', 'company_id' => $this->user->company->id]);
-        $this->product = Product::create(['name' => 'Consulting', 'symbol' => 'C', 'service' => true, 'digital' => false, 'company_id' => $this->user->company->id, 'unit_id' => $this->unit->id, 'price' => 100, 'cost' => 0]);
+        $this->company = $this->actingInCompany($this->user);
+        $this->client = Client::create(['name' => 'Acme', 'company_id' => $this->company->id, 'currency' => 'BRL']);
+        $this->unit = Unit::create(['name' => 'Hour', 'symbol' => 'h', 'company_id' => $this->company->id]);
+        $this->product = Product::create(['name' => 'Consulting', 'symbol' => 'C', 'service' => true, 'digital' => false, 'company_id' => $this->company->id, 'unit_id' => $this->unit->id, 'price' => 100, 'cost' => 0]);
     }
 
     private function data(array $overrides = []): array
@@ -61,7 +63,7 @@ class GenerateInvoiceActionTest extends TestCase
     public function test_action_creates_draft_invoice_and_persists_setting_defaults(): void
     {
         WorkSession::create([
-            'title' => 'Work', 'company_id' => $this->user->company->id, 'client_id' => $this->client->id,
+            'title' => 'Work', 'company_id' => $this->company->id, 'client_id' => $this->client->id,
             'is_running' => false, 'rate' => 100.00, 'billable' => true,
             'start' => now()->subDays(2), 'end' => now()->subDays(2)->addHour(),
         ]);
@@ -73,7 +75,7 @@ class GenerateInvoiceActionTest extends TestCase
         $this->assertSame(1, Invoice::count());
         $this->assertSame(
             $this->product->id,
-            (int) $this->user->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value)
+            (int) $this->company->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value)
         );
     }
 

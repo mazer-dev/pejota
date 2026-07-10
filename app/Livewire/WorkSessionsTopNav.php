@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Helpers\PejotaHelper;
 use App\Models\Client;
 use App\Models\Project;
 use App\Models\Task;
@@ -30,7 +31,7 @@ class WorkSessionsTopNav extends Component
     {
         $session = new WorkSession([
             'title' => $this->newTitle ?: __('Work session'),
-            'company_id' => auth()->user()->company->id,
+            'company_id' => PejotaHelper::currentCompany()->id,
             'start' => now(),
             'is_running' => true,
             'client_id' => $this->newClient,
