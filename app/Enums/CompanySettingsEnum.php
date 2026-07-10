@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+use App\Helpers\PejotaHelper;
 use DateTime;
 use DateTimeZone;
 use Exception;
@@ -131,7 +132,7 @@ enum CompanySettingsEnum: string
     {
         $this->assertAllowedForNumbering();
 
-        $company = auth()->user()->company;
+        $company = PejotaHelper::currentCompany();
 
         $format = $company->settings()->get(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
@@ -163,7 +164,7 @@ enum CompanySettingsEnum: string
     {
         $this->assertAllowedForNumbering();
 
-        $company = auth()->user()->company;
+        $company = PejotaHelper::currentCompany();
 
         $format = $company->settings()->get(
             CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
@@ -234,7 +235,7 @@ enum CompanySettingsEnum: string
         $format = 'ym000';
 
         if (auth()->user()) {
-            $format = auth()->user()->company->settings()
+            $format = PejotaHelper::currentCompany()->settings()
                 ->get(
                     CompanySettingsEnum::DOCS_INVOICE_NUMBER_FORMAT->value,
                     'ym000'
