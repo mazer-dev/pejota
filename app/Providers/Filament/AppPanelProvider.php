@@ -109,13 +109,13 @@ class AppPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                LocalizationMiddleware::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
             ], isPersistent: true)
             ->tenantMiddleware([
                 ApplyTenantToLandlord::class,
+                LocalizationMiddleware::class,
             ], isPersistent: true);
     }
 }
