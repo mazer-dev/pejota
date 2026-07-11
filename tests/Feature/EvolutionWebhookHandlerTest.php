@@ -157,4 +157,106 @@ class EvolutionWebhookHandlerTest extends TestCase
         $this->assertSame('BATCH2', data_get($second->payload, 'data.key.id'));
         $this->assertFalse(array_is_list($first->payload['data']));
     }
+
+    public function test_it_preserves_existing_text_when_resync_payload_has_no_text(): void
+    {
+        $user = User::factory()->create();
+        $companyId = $user->company->id;
+
+        config([
+            'services.evolution.default_company_id' => $companyId,
+            'services.evolution.instance' => 'geolead_funnel_2',
+        ]);
+
+        $conversation = WhatsappConversation::create([
+            'company_id' => $companyId,
+            'evolution_instance' => 'geolead_funnel_2',
+            'remote_jid' => '5511999990000@s.whatsapp.net',
+            'phone_number' => '5511999990000',
+            'push_name' => 'Cliente',
+            'status' => 'open',
+        ]);
+
+        $message = WhatsappMessage::create([
+            'company_id' => $companyId,
+            'whatsapp_conversation_id' => $conversation->id,
+            'evolution_instance' => 'geolead_funnel_2',
+            'remote_message_id' => 'AUDIO1',
+            'remote_jid' => '5511999990000@s.whatsapp.net',
+            'from_me' => false,
+            'message_type' => 'audio',
+            'text' => 'Transcrição existente do áudio.',
+            'sent_at' => now(),
+        ]);
+
+        app(EvolutionWebhookHandler::class)->handle([
+            'event' => 'messages.upsert',
+            'instance' => 'geolead_funnel_2',
+            'sender' => '5511999990000@s.whatsapp.net',
+            'date_time' => now()->toISOString(),
+            'data' => [
+                'key' => [
+                    'remoteJid' => '5511999990000@s.whatsapp.net',
+                    'id' => 'AUDIO1',
+                    'fromMe' => false,
+                ],
+                'pushName' => 'Cliente',
+                'messageType' => 'audioMessage',
+                'messageTimestamp' => now()->timestamp,
+                'message' => [
+                    'audioMessage' => [
+                        'mimetype' => 'audio/ogg; codecs=opus',
+                    ],
+                ],
+            ],
+        ], dispatchSuggestions: false, withMedia: false);
+
+        $this->assertSame('Transcrição existente do áudio.', $message->refresh()->text);
+    }
+
+    public function test_it_reuses_existing_conversation_when_same_phone_arrives_with_different_jid(): void
+    {
+        $user = User::factory()->create();
+        $companyId = $user->company->id;
+
+        config([
+            'services.evolution.default_company_id' => $companyId,
+            'services.evolution.instance' => 'geolead_funnel_2',
+        ]);
+
+        $conversation = WhatsappConversation::create([
+            'company_id' => $companyId,
+            'evolution_instance' => 'geolead_funnel_2',
+            'remote_jid' => '138993832345808@lid',
+            'phone_number' => '558199116613',
+            'push_name' => 'Felipe Franca',
+            'status' => 'open',
+            'last_message_at' => now()->subMinute(),
+        ]);
+
+        app(EvolutionWebhookHandler::class)->handle([
+            'event' => 'messages.upsert',
+            'instance' => 'geolead_funnel_2',
+            'sender' => '558199116613@s.whatsapp.net',
+            'date_time' => now()->toISOString(),
+            'data' => [
+                'key' => [
+                    'remoteJid' => '558199116613@s.whatsapp.net',
+                    'id' => 'PHONEJID1',
+                    'fromMe' => true,
+                ],
+                'messageType' => 'conversation',
+                'messageTimestamp' => now()->timestamp,
+                'message' => [
+                    'conversation' => 'Mensagem enviada pelo JID numerico.',
+                ],
+            ],
+        ], dispatchSuggestions: false);
+
+        $message = WhatsappMessage::allTenants()->where('remote_message_id', 'PHONEJID1')->firstOrFail();
+
+        $this->assertSame($conversation->id, $message->whatsapp_conversation_id);
+        $this->assertSame('138993832345808@lid', $conversation->refresh()->remote_jid);
+        $this->assertSame(1, WhatsappConversation::allTenants()->count());
+    }
 }

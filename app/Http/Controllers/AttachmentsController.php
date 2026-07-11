@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\WhatsappAttachment;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AttachmentsController extends Controller
 {
@@ -20,19 +21,28 @@ class AttachmentsController extends Controller
         abort(404);
     }
 
-    public function getWhatsappAttachment(WhatsappAttachment $attachment)
+    public function getWhatsappAttachment(WhatsappAttachment $attachment): BinaryFileResponse
     {
         if (auth()->user()?->company?->id !== $attachment->company_id) {
             abort(404);
         }
 
-        if (! $attachment->path || ! Storage::disk($attachment->disk)->exists($attachment->path)) {
+        $disk = Storage::disk($attachment->disk);
+
+        if (! $attachment->path || ! $disk->exists($attachment->path)) {
             abort(404);
         }
 
-        return Storage::disk($attachment->disk)->response(
-            $attachment->path,
-            $attachment->original_filename
-        );
+        return response()->file($disk->path($attachment->path), [
+            'Accept-Ranges' => 'bytes',
+            'Content-Type' => $this->contentType($attachment),
+        ]);
+    }
+
+    private function contentType(WhatsappAttachment $attachment): string
+    {
+        $mimeType = str((string) $attachment->mime_type)->before(';')->trim()->toString();
+
+        return $mimeType !== '' ? $mimeType : 'application/octet-stream';
     }
 }

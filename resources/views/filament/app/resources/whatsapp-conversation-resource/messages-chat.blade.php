@@ -162,6 +162,7 @@
                                     $isImage = str_starts_with((string) $attachment->mime_type, 'image/') && filled($attachment->path);
                                     $isAudio = str_starts_with((string) $attachment->mime_type, 'audio/') && filled($attachment->path);
                                     $isStored = filled($attachment->path);
+                                    $audioMimeType = str((string) $attachment->mime_type)->before(';')->trim()->toString() ?: 'audio/ogg';
                                 @endphp
 
                                 @if ($isImage)
@@ -175,8 +176,8 @@
                                         >
                                     </a>
                                 @elseif ($isAudio)
-                                    <audio controls preload="none" class="mb-3 w-full">
-                                        <source src="{{ route('whatsapp.attachments.show', $attachment) }}" type="{{ $attachment->mime_type }}">
+                                    <audio controls preload="metadata" class="mb-3 w-full">
+                                        <source src="{{ route('whatsapp.attachments.show', $attachment) }}" type="{{ $audioMimeType }}">
                                     </audio>
                                 @elseif ($isStored)
                                     <a

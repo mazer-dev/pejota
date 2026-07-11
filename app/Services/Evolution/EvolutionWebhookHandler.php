@@ -74,11 +74,7 @@ class EvolutionWebhookHandler
         $phoneNumber = $this->phoneNumber($payload, $messageData, $remoteJid);
         $sentAt = $this->sentAt($payload, $messageData);
         $matchedClient = null;
-        $conversation = WhatsappConversation::allTenants()->firstOrNew([
-            'company_id' => $companyId,
-            'evolution_instance' => $instance,
-            'remote_jid' => $remoteJid,
-        ]);
+        $conversation = $this->conversationForMessage($companyId, $instance, $remoteJid, $phoneNumber);
 
         if (! $conversation->client_id && $phoneNumber) {
             $conversation->phone_number = $conversation->phone_number ?: $phoneNumber;
@@ -103,6 +99,7 @@ class EvolutionWebhookHandler
             : new WhatsappMessage;
 
         $isNew = ! $message->exists;
+        $messageText = $this->messageText($messageData);
 
         $message->fill([
             'company_id' => $companyId,
@@ -116,7 +113,7 @@ class EvolutionWebhookHandler
             'sender_name' => $this->pushName($messageData),
             'from_me' => $fromMe,
             'message_type' => $this->messageType($messageData),
-            'text' => $this->messageText($messageData),
+            'text' => $messageText ?? $message->text,
             'status' => data_get($messageData, 'status'),
             'sent_at' => $sentAt,
             'payload' => $this->messagePayload($payload, $messageData),
@@ -216,7 +213,7 @@ class EvolutionWebhookHandler
 
     private function storeAttachment(WhatsappMessage $message, array $messageData, bool $withMedia = true): void
     {
-        $attachment = $message->attachments()->first();
+        $attachment = $this->attachmentForMessage($message);
         if ($attachment?->path) {
             if ($withMedia && $this->needsEnrichment($attachment)) {
                 $this->enrichAttachment($attachment, storage_path('app/'.$attachment->path), $message);
@@ -270,6 +267,44 @@ class EvolutionWebhookHandler
         }
 
         $attachment->save();
+    }
+
+    private function attachmentForMessage(WhatsappMessage $message): ?WhatsappAttachment
+    {
+        return $message->attachments()->whereNotNull('path')->first()
+            ?: $message->attachments()->first();
+    }
+
+    private function conversationForMessage(int $companyId, string $instance, string $remoteJid, ?string $phoneNumber): WhatsappConversation
+    {
+        $conversation = WhatsappConversation::allTenants()
+            ->where('company_id', $companyId)
+            ->where('evolution_instance', $instance)
+            ->where('remote_jid', $remoteJid)
+            ->first();
+
+        if ($conversation) {
+            return $conversation;
+        }
+
+        if ($phoneNumber) {
+            $conversation = WhatsappConversation::allTenants()
+                ->where('company_id', $companyId)
+                ->where('evolution_instance', $instance)
+                ->where('phone_number', $phoneNumber)
+                ->orderByDesc('last_message_at')
+                ->first();
+
+            if ($conversation) {
+                return $conversation;
+            }
+        }
+
+        return new WhatsappConversation([
+            'company_id' => $companyId,
+            'evolution_instance' => $instance,
+            'remote_jid' => $remoteJid,
+        ]);
     }
 
     private function enrichAttachment(WhatsappAttachment $attachment, string $filePath, WhatsappMessage $message): void
