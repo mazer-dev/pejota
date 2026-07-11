@@ -148,7 +148,7 @@ class Team extends Page implements HasTable
                 TextColumn::make('email')->label(__('Email'))->searchable(),
                 TextColumn::make('role')
                     ->label(__('Role'))
-                    ->state(fn (User $record): ?string => $record->getRoleNames()->first()),
+                    ->state(fn (User $record): ?string => filled($role = $record->getRoleNames()->first()) ? __(ucfirst($role)) : null),
             ])
             ->actions([
                 Action::make('changeRole')

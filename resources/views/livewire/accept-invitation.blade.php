@@ -26,7 +26,7 @@
 
     @elseif ($this->state === 'confirm')
         <h1>{{ __('Join :company', ['company' => $invitation->company->name]) }}</h1>
-        <p class="muted">{{ __('You were invited to join as :role.', ['role' => $invitation->role->value]) }}</p>
+        <p class="muted">{{ __('You were invited to join as :role.', ['role' => __(ucfirst($invitation->role->value))]) }}</p>
         <button class="btn" wire:click="acceptExisting">{{ __('Accept invitation') }}</button>
 
     @elseif ($this->state === 'mismatch')
