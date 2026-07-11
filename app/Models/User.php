@@ -8,6 +8,7 @@ use App\Events\UserCreated;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -19,6 +20,14 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     use HasFactory, HasRoles, Notifiable;
+
+    /**
+     * Runtime-only flag (not persisted): when true, the UserCreated listener
+     * skips auto-provisioning a personal company. Set on the instance before
+     * save() in the invite-acceptance path so an invited user does not get
+     * their own company.
+     */
+    public bool $skipCompanyProvisioning = false;
 
     /**
      * The attributes that are mass assignable.
@@ -61,6 +70,13 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         static::created(function ($model) {
             event(new UserCreated($model));
         });
+    }
+
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value): string => strtolower(trim($value)),
+        );
     }
 
     public function companies(): BelongsToMany

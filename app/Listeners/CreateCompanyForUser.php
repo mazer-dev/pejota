@@ -20,6 +20,10 @@ class CreateCompanyForUser
      */
     public function handle(UserCreated $event): void
     {
-        (new CompanyService())->create($event->user);
+        if ($event->user->skipCompanyProvisioning) {
+            return;
+        }
+
+        (new CompanyService)->create($event->user);
     }
 }
