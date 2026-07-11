@@ -3,7 +3,7 @@
 <body style="font-family: ui-sans-serif, system-ui, sans-serif; color: #111827;">
     <h2>{{ __('You have been invited to :company', ['company' => $invitation->company->name]) }}</h2>
 
-    <p>{{ __('You were invited to join :company on Pejota as :role.', ['company' => $invitation->company->name, 'role' => $invitation->role->value]) }}</p>
+    <p>{{ __('You were invited to join :company on Pejota as :role.', ['company' => $invitation->company->name, 'role' => __(ucfirst($invitation->role->value))]) }}</p>
 
     <p>
         <a href="{{ $acceptUrl }}"

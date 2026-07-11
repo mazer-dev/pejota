@@ -24,4 +24,21 @@ class LocaleFromCompanySettingsTest extends TestCase
 
         $this->assertSame('pt_BR', app()->getLocale());
     }
+
+    public function test_phase3_ui_strings_are_translated_in_pt_br_and_es(): void
+    {
+        $keys = [
+            'Team', 'Invite member', 'Change role', 'Remove', 'Resend', 'Revoke',
+            'Owner', 'Admin', 'Member', 'Pending invitations', 'Accept invitation',
+            'Sign in to accept', 'Invitation unavailable',
+        ];
+
+        foreach (['pt_BR', 'es'] as $locale) {
+            app()->setLocale($locale);
+
+            foreach ($keys as $key) {
+                $this->assertNotSame($key, __($key), "Missing {$locale} translation for '{$key}'");
+            }
+        }
+    }
 }
