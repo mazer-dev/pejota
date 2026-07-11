@@ -15,6 +15,8 @@ class InvitationService
 {
     public function invite(Company $company, string $email, CompanyRoleEnum $role, User $invitedBy): Invitation
     {
+        $email = strtolower(trim($email));
+
         $alreadyMember = $company->users()
             ->wherePivotNotNull('joined_at')
             ->where('email', $email)

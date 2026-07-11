@@ -88,9 +88,19 @@ class AcceptInvitation extends Component
         $this->redirect($this->companyUrl(), navigate: false);
     }
 
+    public function signIn(): void
+    {
+        session()->put('url.intended', route('invitations.accept', $this->token));
+
+        $this->redirect(Filament::getPanel('app')->getLoginUrl(), navigate: false);
+    }
+
     private function companyUrl(): string
     {
-        return Filament::getPanel('app')->getUrl($this->invitation()->company);
+        $company = $this->invitation()->company;
+
+        return Filament::getPanel('app')->getUrl($company)
+            ?? url('/app/'.$company->getKey());
     }
 
     public function render(): View

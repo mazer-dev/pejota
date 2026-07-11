@@ -127,12 +127,14 @@ class Team extends Page implements HasTable
 
     public function revokeInvitation(int $invitationId): void
     {
-        $this->company->invitations()
+        $deleted = $this->company->invitations()
             ->whereKey($invitationId)
             ->whereNull('accepted_at')
             ->delete();
 
-        Notification::make()->success()->title(__('Invitation revoked'))->send();
+        if ($deleted > 0) {
+            Notification::make()->success()->title(__('Invitation revoked'))->send();
+        }
     }
 
     public function table(Table $table): Table
