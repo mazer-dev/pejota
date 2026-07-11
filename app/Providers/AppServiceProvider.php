@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Billing\NullBilling;
+use App\Contracts\SubscriptionGate;
 use App\Sentry\ConfigureUserScope;
 use App\Services\Timesheet\Layouts\ClientTimesheetLayout;
 use App\Services\Timesheet\Layouts\InternalTimesheetLayout;
@@ -29,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
 
             return $registry;
         });
+
+        $this->app->bind(SubscriptionGate::class, NullBilling::class);
     }
 
     /**

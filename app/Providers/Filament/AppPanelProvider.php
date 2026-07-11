@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Enums\MenuGroupsEnum;
 use App\Filament\App\Pages\Dashboard;
+use App\Filament\App\Pages\Tenancy\RegisterCompany;
 use App\Helpers\PejotaHelper;
 use App\Http\Middleware\ApplyTenantToLandlord;
 use App\Http\Middleware\LocalizationMiddleware;
@@ -38,8 +39,10 @@ class AppPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->login()
             ->passwordReset()
+            ->registration(config('pejota.registration_page'))
             ->tenant(Company::class)
             ->tenantMenu()
+            ->tenantRegistration(RegisterCompany::class)
             ->brandName('Pejota')
             ->brandLogo(asset('imgs/pejota-logo.svg'))
             ->brandLogoHeight('10em')

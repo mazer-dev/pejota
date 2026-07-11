@@ -9,12 +9,12 @@ use Spatie\Permission\PermissionRegistrar;
 
 class CompanyService
 {
-    public function create(User $user): Company
+    public function create(User $user, ?string $name = null, ?string $email = null): Company
     {
         $company = Company::create([
             'user_id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
+            'name' => filled($name) ? $name : $user->name,
+            'email' => filled($email) ? $email : $user->email,
         ]);
 
         $company->users()->attach($user->id, [

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Contracts\SubscriptionGate;
 use App\Events\UserCreated;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
@@ -81,9 +82,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     public function canAccessTenant(Model $tenant): bool
     {
-        return $this->companies()
+        $isJoinedMember = $this->companies()
             ->wherePivotNotNull('joined_at')
             ->whereKey($tenant->getKey())
             ->exists();
+
+        return $isJoinedMember && app(SubscriptionGate::class)->allows($tenant);
     }
 }
