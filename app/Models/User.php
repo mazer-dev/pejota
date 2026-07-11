@@ -21,6 +21,14 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     use HasFactory, HasRoles, Notifiable;
 
     /**
+     * Runtime-only flag (not persisted): when true, the UserCreated listener
+     * skips auto-provisioning a personal company. Set on the instance before
+     * save() in the invite-acceptance path so an invited user does not get
+     * their own company.
+     */
+    public bool $skipCompanyProvisioning = false;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
