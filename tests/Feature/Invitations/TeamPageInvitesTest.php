@@ -70,4 +70,36 @@ class TeamPageInvitesTest extends TestCase
 
         Mail::assertSent(InvitationMailable::class, fn (InvitationMailable $m): bool => $m->hasTo('invitee@x.com'));
     }
+
+    public function test_revoking_a_nonexistent_invitation_does_not_notify_success(): void
+    {
+        $owner = User::factory()->create();
+        $company = $owner->companies()->wherePivotNotNull('joined_at')->firstOrFail();
+        $this->actingInCompany($owner, $company);
+
+        Livewire::test(Team::class)
+            ->call('revokeInvitation', 999999)
+            ->assertNotNotified(__('Invitation revoked'));
+    }
+
+    public function test_cannot_revoke_or_resend_another_companys_invitation(): void
+    {
+        Mail::fake();
+        $ownerA = User::factory()->create();
+        $companyA = $ownerA->companies()->wherePivotNotNull('joined_at')->firstOrFail();
+        $ownerB = User::factory()->create();
+        $companyB = $ownerB->companies()->wherePivotNotNull('joined_at')->firstOrFail();
+        $invB = Invitation::create([
+            'company_id' => $companyB->id, 'email' => 'b-invitee@x.com', 'role' => CompanyRoleEnum::Member,
+            'token' => 'tok-cross', 'expires_at' => now()->addDay(),
+        ]);
+
+        $this->actingInCompany($ownerA, $companyA);
+
+        Livewire::test(Team::class)->call('revokeInvitation', $invB->id);
+        Livewire::test(Team::class)->call('resendInvitation', $invB->id);
+
+        $this->assertDatabaseHas('invitations', ['id' => $invB->id]);
+        Mail::assertNothingSent();
+    }
 }

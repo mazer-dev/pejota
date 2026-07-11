@@ -111,4 +111,20 @@ class AcceptInvitationPageTest extends TestCase
         Livewire::test(AcceptInvitation::class, ['token' => $invitation->token])
             ->assertSet('state', 'mismatch');
     }
+
+    public function test_sign_in_action_sets_intended_and_redirects_to_login(): void
+    {
+        $company = $this->company();
+        $invitee = User::factory()->create();
+        $invitation = $this->invitation($company, $invitee->email);
+
+        $loginUrl = Filament::getPanel('app')->getLoginUrl();
+
+        Livewire::test(AcceptInvitation::class, ['token' => $invitation->token])
+            ->assertSet('state', 'login')
+            ->call('signIn')
+            ->assertRedirect($loginUrl);
+
+        $this->assertSame(route('invitations.accept', $invitation->token), session('url.intended'));
+    }
 }

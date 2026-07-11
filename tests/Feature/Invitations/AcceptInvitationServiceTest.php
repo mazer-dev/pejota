@@ -86,6 +86,27 @@ class AcceptInvitationServiceTest extends TestCase
         app(InvitationService::class)->accept($invitation, $invitee);
     }
 
+    public function test_accepting_when_already_a_member_does_not_duplicate_membership(): void
+    {
+        [, $company] = $this->ownerCompany();
+        $invitee = User::factory()->create();
+
+        $first = $this->invitation($company, $invitee->email, CompanyRoleEnum::Member);
+        app(InvitationService::class)->accept($first, $invitee);
+
+        $second = Invitation::create([
+            'company_id' => $company->id,
+            'email' => $invitee->email,
+            'role' => CompanyRoleEnum::Admin,
+            'token' => 'tok-second',
+            'expires_at' => now()->addDay(),
+        ]);
+        app(InvitationService::class)->accept($second, $invitee);
+
+        $this->assertSame(1, $company->users()->whereKey($invitee->id)->count());
+        $this->assertTrue($this->hasRoleInCompany($invitee, $company, CompanyRoleEnum::Admin));
+    }
+
     public function test_new_user_is_created_without_auto_company(): void
     {
         [, $company] = $this->ownerCompany();

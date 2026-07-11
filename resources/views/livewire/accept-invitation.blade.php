@@ -36,6 +36,6 @@
     @else
         <h1>{{ __('Sign in to accept') }}</h1>
         <p class="muted">{{ __('This invitation is for an existing account. Please sign in to accept it.') }}</p>
-        <a class="btn" href="{{ \Filament\Facades\Filament::getPanel('app')->getLoginUrl() }}">{{ __('Sign in') }}</a>
+        <button class="btn" wire:click="signIn">{{ __('Sign in') }}</button>
     @endif
 </div>

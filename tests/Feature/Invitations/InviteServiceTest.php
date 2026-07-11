@@ -60,4 +60,21 @@ class InviteServiceTest extends TestCase
         $this->expectException(InvitationException::class);
         app(InvitationService::class)->invite($company, $owner->email, CompanyRoleEnum::Member, $owner);
     }
+
+    public function test_user_email_is_normalized_to_lowercase(): void
+    {
+        $user = User::factory()->create(['email' => '  MiXeD@Example.COM ']);
+
+        $this->assertSame('mixed@example.com', $user->fresh()->email);
+    }
+
+    public function test_invite_detects_an_existing_member_regardless_of_email_case(): void
+    {
+        Mail::fake();
+        $owner = User::factory()->create();
+        $company = $owner->companies()->wherePivotNotNull('joined_at')->firstOrFail();
+
+        $this->expectException(InvitationException::class);
+        app(InvitationService::class)->invite($company, strtoupper($owner->email), CompanyRoleEnum::Member, $owner);
+    }
 }
