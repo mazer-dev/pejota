@@ -112,10 +112,10 @@ class AppPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                LocalizationMiddleware::class,
             ], isPersistent: true)
             ->tenantMiddleware([
                 ApplyTenantToLandlord::class,
-                LocalizationMiddleware::class,
             ], isPersistent: true);
     }
 }

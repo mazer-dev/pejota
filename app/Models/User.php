@@ -8,6 +8,7 @@ use App\Events\UserCreated;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
+use Glorand\Model\Settings\Traits\HasSettingsField;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +20,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
-    use HasFactory, HasRoles, Notifiable;
+    use HasFactory, HasRoles, HasSettingsField, Notifiable;
 
     /**
      * Runtime-only flag (not persisted): when true, the UserCreated listener
