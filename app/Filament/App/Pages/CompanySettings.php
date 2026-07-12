@@ -4,14 +4,12 @@ namespace App\Filament\App\Pages;
 
 use App\Enums\CompanySettingsEnum;
 use App\Enums\MenuGroupsEnum;
-use App\Filament\App\Resources\TaskResource;
 use App\Helpers\PejotaHelper;
 use App\Models\Currency;
 use App\Support\Help\HelpAction;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -64,35 +62,6 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
             ->columns(1)
             ->schema([
                 Tabs::make('Tabs')->tabs([
-                    Tab::make('Localization')
-                        ->translateLabel()
-                        ->schema([
-                            Select::make(CompanySettingsEnum::LOCALIZATION_LOCALE->value)
-                                ->translateLabel()
-                                ->label('Locale')
-                                ->options(CompanySettingsEnum::getLocales())
-                                ->default('en'),
-
-                            Select::make(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value)
-                                ->translateLabel()
-                                ->label('Timezone')
-                                ->options(CompanySettingsEnum::getTimezones())
-                                ->default('UTC')
-                                ->searchable(),
-
-                            Select::make(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value)
-                                ->translateLabel()
-                                ->label('Date format')
-                                ->options(CompanySettingsEnum::getDateFormats())
-                                ->default('d/m/Y'),
-
-                            Select::make(CompanySettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value)
-                                ->translateLabel()
-                                ->label('Date and time format')
-                                ->options(CompanySettingsEnum::getDateTimeFormats())
-                                ->default('d/m/Y H:i:s'),
-                        ]),
-
                     Tab::make('Clients')
                         ->translateLabel()
                         ->schema([
@@ -142,18 +111,6 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                     )
                                 )
                                 ->default(false),
-
-                            CheckboxList::make(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value)
-                                ->translateLabel()
-                                ->options(
-                                    collect(TaskResource::getTableColumns())
-                                        ->mapWithKeys(function ($column) {
-                                            return [
-                                                $column->getName() => $column->getLabel(),
-                                            ];
-                                        })->toArray()
-                                )
-                                ->columns(2),
                         ]),
 
                     Tab::make('Finance')
