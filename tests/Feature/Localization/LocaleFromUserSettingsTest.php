@@ -2,21 +2,24 @@
 
 namespace Tests\Feature\Localization;
 
-use App\Enums\CompanySettingsEnum;
+use App\Enums\UserSettingsEnum;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class LocaleFromCompanySettingsTest extends TestCase
+class LocaleFromUserSettingsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_locale_is_applied_from_company_settings_on_a_tenant_page(): void
+    public function test_locale_is_applied_from_user_settings_over_the_company(): void
     {
         $user = User::factory()->create();
         $company = $user->companies()->wherePivotNotNull('joined_at')->firstOrFail();
-        $company->settings()->set(CompanySettingsEnum::LOCALIZATION_LOCALE->value, 'pt_BR');
+
+        // Empresa em 'es', preferência do user em 'pt_BR' — o user deve vencer.
+        $company->settings()->set(UserSettingsEnum::LOCALIZATION_LOCALE->value, 'es');
+        $user->settings()->set(UserSettingsEnum::LOCALIZATION_LOCALE->value, 'pt_BR');
 
         $this->actingAs($user);
 
