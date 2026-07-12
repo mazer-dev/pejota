@@ -3,7 +3,9 @@
 namespace App\Helpers;
 
 use App\Enums\CompanySettingsEnum;
+use App\Enums\UserSettingsEnum;
 use App\Models\Company;
+use App\Models\User;
 use DateTime;
 use Detection\MobileDetect;
 use Exception;
@@ -14,6 +16,11 @@ class PejotaHelper
     public static function currentCompany(): ?Company
     {
         return Filament::getTenant();
+    }
+
+    public static function currentUser(): ?User
+    {
+        return auth()->user();
     }
 
     /**
@@ -33,22 +40,22 @@ class PejotaHelper
 
     public static function getUserTimeZone()
     {
-        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::LOCALIZATION_TIMEZONE->value);
+        return self::currentUser()?->settings()?->get(UserSettingsEnum::LOCALIZATION_TIMEZONE->value);
     }
 
     public static function getUserDateFormat()
     {
-        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::LOCALIZATION_DATE_FORMAT->value) ?? 'Y-m-d';
+        return self::currentUser()?->settings()?->get(UserSettingsEnum::LOCALIZATION_DATE_FORMAT->value) ?? 'Y-m-d';
     }
 
     public static function getUserDateTimeFormat()
     {
-        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value) ?? 'Y-m-d H:i:s';
+        return self::currentUser()?->settings()?->get(UserSettingsEnum::LOCALIZATION_DATE_TIME_FORMAT->value) ?? 'Y-m-d H:i:s';
     }
 
     public static function getUserLocate()
     {
-        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::LOCALIZATION_LOCALE->value) ?? 'en';
+        return self::currentUser()?->settings()?->get(UserSettingsEnum::LOCALIZATION_LOCALE->value) ?? 'en';
     }
 
     public static function getUserCurrency()
@@ -58,7 +65,7 @@ class PejotaHelper
 
     public static function getUserTaskListDefaultColumns()
     {
-        return self::currentCompany()?->settings()?->get(CompanySettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value) ?? [];
+        return self::currentUser()?->settings()?->get(UserSettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value) ?? [];
     }
 
     public static function isMobile(): bool
