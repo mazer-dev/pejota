@@ -9,6 +9,7 @@ use App\Helpers\PejotaHelper;
 use App\Http\Middleware\ApplyTenantToLandlord;
 use App\Http\Middleware\LocalizationMiddleware;
 use App\Models\Company;
+use Detection\MobileDetect;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -78,6 +79,10 @@ class AppPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn () => Blade::render('@livewire(\'work-sessions-top-nav\')')
+            )
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => (new MobileDetect)->isMobile() ? '' : Blade::render("@livewire('top-navigate-action')"),
             )
             ->maxContentWidth(MaxWidth::Full)
             ->sidebarCollapsibleOnDesktop()
