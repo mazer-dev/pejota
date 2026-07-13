@@ -9,7 +9,8 @@ class ConfigureEvolutionWebhook extends Command
 {
     protected $signature = 'evolution:configure-webhook
         {--url= : URL pública do webhook}
-        {--no-base64 : Não solicitar base64 de mídias no webhook}';
+        {--no-base64 : Não solicitar base64 de mídias no webhook}
+        {--instance= : Instância Evolution alvo (default: EVOLUTION_INSTANCE)}';
 
     protected $description = 'Configura a Evolution API para enviar eventos de WhatsApp ao Pejota';
 
@@ -22,7 +23,9 @@ class ConfigureEvolutionWebhook extends Command
             return self::FAILURE;
         }
 
-        $client->setWebhook((string) $url, ! (bool) $this->option('no-base64'));
+        $instance = $this->option('instance');
+
+        $client->setWebhook((string) $url, ! (bool) $this->option('no-base64'), is_string($instance) && trim($instance) !== '' ? trim($instance) : null);
         $this->info('Webhook da Evolution configurado.');
 
         return self::SUCCESS;

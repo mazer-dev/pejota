@@ -19,6 +19,13 @@ Route::get(
     ->name('whatsapp.attachments.show')
     ->middleware(Authenticate::class);
 
+Route::get(
+    '/assistant-attachments/{attachment}',
+    [AttachmentsController::class, 'getAssistantAttachment']
+)
+    ->name('assistant.attachments.show')
+    ->middleware(Authenticate::class);
+
 Route::redirect('/', '/app');
 
 Route::post('/webhooks/evolution', EvolutionWebhookController::class)

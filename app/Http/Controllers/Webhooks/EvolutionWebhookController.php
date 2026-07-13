@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
+use App\Services\Evolution\AssistantWhatsappWebhookHandler;
 use App\Services\Evolution\EvolutionWebhookForwarder;
 use App\Services\Evolution\EvolutionWebhookHandler;
 use Illuminate\Http\JsonResponse;
@@ -15,10 +16,24 @@ class EvolutionWebhookController extends Controller
         Request $request,
         EvolutionWebhookHandler $handler,
         EvolutionWebhookForwarder $forwarder,
+        AssistantWhatsappWebhookHandler $assistantHandler,
     ): JsonResponse {
         $this->authorizeWebhook($request);
 
         $payload = $request->all();
+
+        /**
+         * The dedicated assistant instance branches BEFORE the client-facing
+         * flow: its events never create WhatsappConversation records nor get
+         * forwarded, and the existing client flow stays untouched.
+         */
+        if ($assistantHandler->handles($payload)) {
+            return response()->json([
+                'ok' => true,
+                'handled' => $assistantHandler->handle($payload),
+            ]);
+        }
+
         $handled = $handler->handle($payload);
         $forwarder->forward($payload);
 

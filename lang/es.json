@@ -329,5 +329,12 @@
     "WhatsApp remote id": "ID remoto de WhatsApp",
     "Internal (raw)": "Interno (sin procesar)",
     "read-only + invoices": "solo lectura + facturas con confirmación",
-    "Ask anything about your clients, tasks, invoices and sessions. The assistant reads your data and can create an invoice, but only after you confirm it with a passphrase.": "Pregunta lo que quieras sobre tus clientes, tareas, facturas y sesiones. El asistente lee tus datos y puede crear una factura, pero solo después de que la confirmes con una contraseña."
+    "Ask anything about your clients, tasks, invoices and sessions. The assistant reads your data and can create an invoice, but only after you confirm it with a passphrase.": "Pregunta lo que quieras sobre tus clientes, tareas, facturas y sesiones. El asistente lee tus datos y puede crear una factura, pero solo después de que la confirmes con una contraseña.",
+    "Analyzing attachments...": "Analizando archivos adjuntos...",
+    "Attach file": "Adjuntar archivo",
+    "Uploading file...": "Subiendo archivo...",
+    "Failed": "Falló",
+    "Processing...": "Procesando...",
+    "File": "Archivo",
+    "Attachment": "Archivo adjunto"
 }

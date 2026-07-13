@@ -134,6 +134,49 @@ class EvolutionApiClientTest extends TestCase
         ], $media);
     }
 
+    public function test_it_sends_text_directly_to_a_number_and_instance(): void
+    {
+        config([
+            'services.evolution.base_url' => 'http://evolution.test',
+            'services.evolution.api_key' => 'secret',
+            'services.evolution.instance' => 'fallback_instance',
+        ]);
+
+        Http::fake([
+            'http://evolution.test/message/sendText/Assistente_Pejota' => Http::response([
+                'key' => ['id' => 'MSG456'],
+            ]),
+        ]);
+
+        app(EvolutionApiClient::class)->sendTextToNumber('Assistente_Pejota', '5554999371490', 'Olá!');
+
+        Http::assertSent(fn ($request) => $request->url() === 'http://evolution.test/message/sendText/Assistente_Pejota'
+            && $request->hasHeader('apikey', 'secret')
+            && $request['number'] === '5554999371490'
+            && $request['text'] === 'Olá!');
+    }
+
+    public function test_it_configures_webhook_for_an_explicit_instance(): void
+    {
+        config([
+            'services.evolution.base_url' => 'http://evolution.test',
+            'services.evolution.api_key' => 'secret',
+            'services.evolution.instance' => 'client_instance',
+        ]);
+
+        Http::fake([
+            'http://evolution.test/webhook/set/Assistente_Pejota' => Http::response([
+                'enabled' => true,
+            ]),
+        ]);
+
+        app(EvolutionApiClient::class)->setWebhook('https://pejota.test/webhooks/evolution?token=abc', true, 'Assistente_Pejota');
+
+        Http::assertSent(fn ($request) => $request->url() === 'http://evolution.test/webhook/set/Assistente_Pejota'
+            && $request['webhook']['url'] === 'https://pejota.test/webhooks/evolution?token=abc'
+            && $request['webhook']['base64'] === true);
+    }
+
     public function test_it_configures_webhook_with_evolution_payload_keys(): void
     {
         config([

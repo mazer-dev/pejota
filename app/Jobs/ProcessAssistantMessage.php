@@ -4,7 +4,9 @@ namespace App\Jobs;
 
 use App\Models\AssistantConversation;
 use App\Models\AssistantMessage;
+use App\Models\AssistantMessageAttachment;
 use App\Models\User;
+use App\Services\Ai\AssistantAttachmentProcessor;
 use App\Services\Ai\AssistantChatService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -30,8 +32,21 @@ class ProcessAssistantMessage implements ShouldQueue
     public function __construct(
         public readonly AssistantConversation $conversation,
         public readonly User $user,
-    ) {}
+    ) {
+        // Attachments route through AGY/Codex sequentially (one CPU on the
+        // VPS) before the chat service even runs, so they get the longer,
+        // dedicated attachments timeout instead of the plain-text default.
+        if ($this->lastUserMessage()?->attachments()->exists()) {
+            $this->timeout = max($this->timeout, (int) config('services.assistant.attachments.timeout', 900));
+        }
+    }
 
+    /**
+     * Only takes AssistantChatService as a real parameter (kept
+     * backward-compatible with call sites that invoke handle() directly in
+     * tests); AssistantAttachmentProcessor is resolved internally instead
+     * of via method injection for the same reason.
+     */
     public function handle(AssistantChatService $service): void
     {
         // Queue workers run without an authenticated user; log the
@@ -39,12 +54,28 @@ class ProcessAssistantMessage implements ShouldQueue
         // read settings from auth()->user()).
         Auth::onceUsingId($this->user->id);
 
+        $conversation = $this->conversation->fresh();
+        $failures = [];
+
+        $lastUserMessage = $this->lastUserMessage();
+        if ($lastUserMessage) {
+            $attachments = $lastUserMessage->attachments()->get();
+
+            if ($attachments->isNotEmpty()) {
+                $failures = app(AssistantAttachmentProcessor::class)->processAll($attachments);
+            }
+        }
+
         try {
-            $answer = $service->respond($this->conversation->fresh());
+            $answer = $service->respond($conversation);
         } catch (Throwable $exception) {
             report($exception);
 
             $answer = __('The assistant failed to answer. Please try again.');
+        }
+
+        if ($failures !== []) {
+            $answer = rtrim($answer)."\n\n".$this->failuresNotice($failures);
         }
 
         $this->conversation->messages()->create([
@@ -54,6 +85,31 @@ class ProcessAssistantMessage implements ShouldQueue
         ]);
 
         $this->conversation->touch();
+    }
+
+    private function lastUserMessage(): ?AssistantMessage
+    {
+        // See the identical comment in AssistantChatService::lastUserMessage():
+        // the messages() relation already orders oldest('id') first, so a
+        // plain latest('id') here would be a no-op appended after it and
+        // this would silently return the OLDEST user message instead.
+        return $this->conversation->messages()
+            ->where('role', AssistantMessage::ROLE_USER)
+            ->reorder('id', 'desc')
+            ->first();
+    }
+
+    /**
+     * @param  array<int, array{attachment: AssistantMessageAttachment, error: string}>  $failures
+     */
+    private function failuresNotice(array $failures): string
+    {
+        $lines = array_map(
+            fn (array $failure): string => '- '.($failure['attachment']->original_filename ?? 'arquivo').': '.$failure['error'],
+            $failures,
+        );
+
+        return '⚠️ Não consegui processar '.count($failures)." anexo(s):\n".implode("\n", $lines);
     }
 
     /**

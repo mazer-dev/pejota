@@ -66,6 +66,31 @@ return [
         'db_connection' => env('ASSISTANT_DB_CONNECTION', 'sqlite_readonly'),
         'max_iterations' => (int) env('ASSISTANT_MAX_ITERATIONS', 5),
         'max_rows' => (int) env('ASSISTANT_MAX_ROWS', 200),
+        'history_max_messages' => (int) env('ASSISTANT_HISTORY_MAX_MESSAGES', 30),
+
+        'attachments' => [
+            'enabled' => filter_var(env('ASSISTANT_ATTACHMENTS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+            'max_files' => (int) env('ASSISTANT_ATTACHMENTS_MAX_FILES', 3),
+            'max_file_mb' => (int) env('ASSISTANT_ATTACHMENTS_MAX_FILE_MB', 25),
+            'max_pdf_pages' => (int) env('ASSISTANT_ATTACHMENTS_MAX_PDF_PAGES', 100),
+            'allowed_mimes' => array_filter(array_map('trim', explode(',', (string) env(
+                'ASSISTANT_ATTACHMENTS_ALLOWED_MIMES',
+                'image/jpeg,image/png,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain'
+            )))),
+            'max_context_chars' => (int) env('ASSISTANT_ATTACHMENTS_MAX_CONTEXT_CHARS', 48000),
+            'timeout' => (int) env('ASSISTANT_ATTACHMENTS_TIMEOUT', 900),
+            'max_reopens_per_response' => (int) env('ASSISTANT_ATTACHMENTS_MAX_REOPENS', 2),
+        ],
+
+        'whatsapp' => [
+            'enabled' => filter_var(env('ASSISTANT_WHATSAPP_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+            'instance' => env('ASSISTANT_WHATSAPP_INSTANCE', 'Assistente_Pejota'),
+            'allowed_numbers' => array_filter(array_map('trim', explode(',', (string) env('ASSISTANT_WHATSAPP_ALLOWED_NUMBERS', '')))),
+            'end_command' => env('ASSISTANT_WHATSAPP_END_COMMAND', '#fim'),
+            'help_command' => env('ASSISTANT_WHATSAPP_HELP_COMMAND', '#ajuda'),
+            'ack_enabled' => filter_var(env('ASSISTANT_WHATSAPP_ACK', true), FILTER_VALIDATE_BOOLEAN),
+            'debounce_seconds' => (int) env('ASSISTANT_WHATSAPP_DEBOUNCE_SECONDS', 15),
+        ],
     ],
 
     'evolution' => [

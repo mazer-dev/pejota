@@ -30,6 +30,20 @@ class AiCliRunner
     }
 
     /**
+     * Runs the AGY CLI only, deliberately skipping Codex. Used for content
+     * Codex cannot accept directly (e.g. PDFs, which the installed Codex
+     * CLI's `--image` flag does not support): the absolute path is embedded
+     * in the prompt text so AGY opens the file itself, read-only, instead of
+     * being passed as a shell argument built from user-controlled input.
+     *
+     * @param  array<int, string>  $filePaths
+     */
+    public function completeAgyOnly(string $prompt, array $filePaths = []): string
+    {
+        return $this->runAgy($prompt, $filePaths);
+    }
+
+    /**
      * @param  array<int, string>  $images
      */
     private function runCodex(string $prompt, array $images): string

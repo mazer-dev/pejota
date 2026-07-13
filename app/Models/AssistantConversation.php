@@ -13,7 +13,22 @@ class AssistantConversation extends Model
     use BelongsToTenants,
         HasFactory;
 
+    public const CHANNEL_WEB = 'web';
+
+    public const CHANNEL_WHATSAPP = 'whatsapp';
+
     protected $guarded = ['id'];
+
+    /**
+     * Deletes messages (which in turn delete their attachments and physical
+     * files) whenever a conversation is deleted through Eloquent.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (self $conversation): void {
+            $conversation->messages()->get()->each(fn (AssistantMessage $message) => $message->delete());
+        });
+    }
 
     public function user(): BelongsTo
     {
@@ -29,6 +44,7 @@ class AssistantConversation extends Model
     {
         return [
             'pending_action' => 'array',
+            'closed_at' => 'datetime',
         ];
     }
 }

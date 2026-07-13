@@ -90,7 +90,13 @@ class AssistantChatServiceTest extends TestCase
         $this->assertSame('Vou usar horário local.', $answer);
     }
 
-    public function test_it_requires_a_query_before_answering_data_questions_and_omits_old_assistant_answers(): void
+    /**
+     * Assistant answers now DO enter the history (a corrective user message
+     * needs its referent), so instead of omitting them the prompt relies on
+     * the explicit instruction not to copy old timestamps — and the loop
+     * still forces a fresh query before accepting an answer.
+     */
+    public function test_it_requires_a_query_before_answering_data_questions_and_labels_old_assistant_answers(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user);
@@ -106,7 +112,8 @@ class AssistantChatServiceTest extends TestCase
         $runner->shouldReceive('complete')
             ->once()
             ->ordered()
-            ->with(Mockery::on(fn (string $prompt): bool => ! str_contains($prompt, '19:18')))
+            ->with(Mockery::on(fn (string $prompt): bool => str_contains($prompt, 'Assistente: Resposta antiga errada dizendo 19:18.')
+                && str_contains($prompt, 'não copie horários de respostas anteriores')))
             ->andReturn('{"say": "Sim, você cobrou às 19:18."}');
         $runner->shouldReceive('complete')
             ->once()

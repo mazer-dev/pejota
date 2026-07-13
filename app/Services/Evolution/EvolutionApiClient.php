@@ -18,10 +18,15 @@ class EvolutionApiClient
             throw new RuntimeException('Não foi possível identificar o número do WhatsApp desta conversa.');
         }
 
+        return $this->sendTextToNumber($this->instance($conversation->evolution_instance), $number, $text);
+    }
+
+    public function sendTextToNumber(string $instance, string $number, string $text): array
+    {
         try {
             $response = Http::timeout($this->timeout())
                 ->withHeaders(['apikey' => $this->apiKey()])
-                ->post($this->endpoint('/message/sendText/'.$this->instance($conversation->evolution_instance)), [
+                ->post($this->endpoint('/message/sendText/'.$this->instance($instance)), [
                     'number' => $number,
                     'text' => $text,
                     'delay' => 1000,
@@ -279,12 +284,12 @@ class EvolutionApiClient
         return $this->findChatRecords('/chat/findContacts/'.$this->instance($instance), 'contacts');
     }
 
-    public function setWebhook(string $url, bool $base64 = true): array
+    public function setWebhook(string $url, bool $base64 = true, ?string $instance = null): array
     {
         try {
             $response = Http::timeout($this->timeout())
                 ->withHeaders(['apikey' => $this->apiKey()])
-                ->post($this->endpoint('/webhook/set/'.$this->instance()), [
+                ->post($this->endpoint('/webhook/set/'.$this->instance($instance)), [
                     'webhook' => [
                         'enabled' => true,
                         'url' => $url,
