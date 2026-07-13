@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Contracts\SubscriptionGate;
+use App\Enums\PlatformRoleEnum;
 use App\Events\UserCreated;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
+use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
@@ -89,7 +91,29 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        if ($panel->getId() === 'app') {
+            return true;
+        }
+
+        return $this->hasPlatformRole();
+    }
+
+    public function hasPlatformRole(?PlatformRoleEnum $role = null): bool
+    {
+        $registrar = app(PermissionRegistrar::class);
+        $previousTeamId = $registrar->getPermissionsTeamId();
+
+        try {
+            $registrar->setPermissionsTeamId(PlatformRoleEnum::TeamId);
+            $this->unsetRelation('roles');
+
+            return $role === null
+                ? $this->hasAnyRole(PlatformRoleEnum::values())
+                : $this->hasRole($role->value);
+        } finally {
+            $registrar->setPermissionsTeamId($previousTeamId);
+            $this->unsetRelation('roles');
+        }
     }
 
     public function getTenants(Panel $panel): Collection
@@ -104,6 +128,8 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             ->whereKey($tenant->getKey())
             ->exists();
 
-        return $isJoinedMember && app(SubscriptionGate::class)->allows($tenant);
+        return $isJoinedMember
+            && $tenant->is_active
+            && app(SubscriptionGate::class)->allows($tenant);
     }
 }

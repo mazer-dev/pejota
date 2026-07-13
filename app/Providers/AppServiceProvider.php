@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Billing\NullBilling;
 use App\Contracts\SubscriptionGate;
+use App\PejotaCloud\Providers\PejotaCloudServiceProvider;
 use App\Sentry\ConfigureUserScope;
 use App\Services\Timesheet\Layouts\ClientTimesheetLayout;
 use App\Services\Timesheet\Layouts\InternalTimesheetLayout;
@@ -33,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(SubscriptionGate::class, NullBilling::class);
+
+        if (class_exists(PejotaCloudServiceProvider::class)) {
+            $this->app->register(PejotaCloudServiceProvider::class);
+        }
     }
 
     /**

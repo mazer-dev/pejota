@@ -20,6 +20,13 @@ class Company extends Model implements HasMedia
 
     protected $guarded = ['id'];
 
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -45,5 +52,16 @@ class Company extends Model implements HasMedia
     public function invitations(): HasMany
     {
         return $this->hasMany(Invitation::class);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'suspended_at' => 'datetime',
+        ];
     }
 }
