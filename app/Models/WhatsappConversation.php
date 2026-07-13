@@ -17,6 +17,29 @@ class WhatsappConversation extends Model
 
     protected $guarded = ['id'];
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $conversation): void {
+            if (filled($conversation->name)) {
+                return;
+            }
+
+            $client = $conversation->client_id ? Client::find($conversation->client_id) : null;
+            $conversation->name = collect([
+                $conversation->push_name,
+                $client?->name,
+                $client?->tradename,
+                $conversation->phone_number,
+                $conversation->remote_jid,
+            ])->first(fn ($value): bool => is_string($value) && trim($value) !== '') ?: 'Conversa do WhatsApp';
+        });
+
+        static::deleting(function (self $conversation): void {
+            $conversation->messages()->get()->each(fn (WhatsappMessage $message) => $message->delete());
+            $conversation->suggestions()->get()->each(fn (WhatsappSuggestion $suggestion) => $suggestion->delete());
+        });
+    }
+
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
@@ -55,7 +78,7 @@ class WhatsappConversation extends Model
     public function displayName(): Attribute
     {
         return Attribute::make(
-            get: fn (): string => $this->push_name ?: $this->phone_number ?: $this->remote_jid,
+            get: fn (): string => $this->name,
         );
     }
 

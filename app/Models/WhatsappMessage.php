@@ -16,6 +16,13 @@ class WhatsappMessage extends Model
 
     protected $guarded = ['id'];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $message): void {
+            $message->attachments()->get()->each(fn (WhatsappAttachment $attachment) => $attachment->delete());
+        });
+    }
+
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(WhatsappConversation::class, 'whatsapp_conversation_id');

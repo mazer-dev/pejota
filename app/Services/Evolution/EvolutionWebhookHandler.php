@@ -2,7 +2,6 @@
 
 namespace App\Services\Evolution;
 
-use App\Jobs\AnalyzeWhatsappConversation;
 use App\Models\Company;
 use App\Models\WhatsappAttachment;
 use App\Models\WhatsappConversation;
@@ -18,20 +17,24 @@ class EvolutionWebhookHandler
     public function __construct(
         private readonly EvolutionApiClient $client,
         private readonly WhatsappAttachmentEnricher $attachmentEnricher,
-        private readonly WhatsappConversationMatcher $matcher,
+        private readonly WhatsappJidNormalizer $normalizer,
         private readonly WhatsappConversationTokenService $tokenService,
     ) {}
 
     /**
-     * @param  bool  $dispatchSuggestions  Real-time webhook ingestion schedules the AI
-     *                                     suggestion analysis; bulk imports (manual sync
-     *                                     of historical messages) must pass false.
+     * @param  bool  $dispatchSuggestions  Kept for backwards-compatible callers. Automatic
+     *                                     AI analysis is intentionally disabled; every AI
+     *                                     feature is initiated by an explicit UI action.
      * @param  bool  $withMedia  When false, skips media downloads and AI enrichment —
      *                           required on request-bound paths (chat polling), where the
      *                           extra HTTP calls and AI CLI runs exhaust memory/time.
      */
-    public function handle(array $payload, bool $dispatchSuggestions = true, bool $withMedia = true): int
-    {
+    public function handle(
+        array $payload,
+        bool $dispatchSuggestions = true,
+        bool $withMedia = true,
+        bool $refreshTokens = true,
+    ): int {
         $event = $this->event($payload);
 
         if ($event === 'MESSAGES_UPDATE') {
@@ -47,20 +50,24 @@ class EvolutionWebhookHandler
         $conversations = [];
 
         foreach ($messages as $messageData) {
-            if ($message = $this->storeMessage($payload, $messageData, $dispatchSuggestions, $withMedia)) {
-                $count++;
+            if ($message = $this->storeMessage($payload, $messageData, $withMedia)) {
+                if ($message->wasRecentlyCreated) {
+                    $count++;
+                }
                 $conversations[$message->whatsapp_conversation_id] = $message->conversation;
             }
         }
 
-        foreach ($conversations as $conversation) {
-            $this->tokenService->refresh($conversation);
+        if ($refreshTokens) {
+            foreach ($conversations as $conversation) {
+                $this->tokenService->refresh($conversation);
+            }
         }
 
         return $count;
     }
 
-    private function storeMessage(array $payload, array $messageData, bool $dispatchSuggestions = true, bool $withMedia = true): ?WhatsappMessage
+    private function storeMessage(array $payload, array $messageData, bool $withMedia = true): ?WhatsappMessage
     {
         $companyId = $this->companyId();
         $instance = (string) ($payload['instance'] ?? config('services.evolution.instance') ?? 'default');
@@ -73,19 +80,27 @@ class EvolutionWebhookHandler
         $fromMe = (bool) data_get($messageData, 'key.fromMe', data_get($messageData, 'fromMe', false));
         $phoneNumber = $this->phoneNumber($payload, $messageData, $remoteJid);
         $sentAt = $this->sentAt($payload, $messageData);
-        $matchedClient = null;
-        $conversation = $this->conversationForMessage($companyId, $instance, $remoteJid, $phoneNumber);
+        $conversation = $this->conversationForMessage(
+            $companyId,
+            $instance,
+            $this->identityJids($payload, $messageData),
+            $phoneNumber,
+        );
 
-        if (! $conversation->client_id && $phoneNumber) {
-            $conversation->phone_number = $conversation->phone_number ?: $phoneNumber;
-            $matchedClient = $this->matcher->bestClientForConversation($conversation);
+        // Manually-created conversations are the allowlist. Unknown identities
+        // stop here, before messages, files, token counting or AI work.
+        if (! $conversation) {
+            return null;
         }
 
+        $latestAt = $conversation->last_message_at && $conversation->last_message_at->gt($sentAt)
+            ? $conversation->last_message_at
+            : $sentAt;
+
         $conversation->fill([
-            'client_id' => $conversation->client_id ?: ($matchedClient->id ?? null),
             'phone_number' => $conversation->phone_number ?: $phoneNumber,
             'push_name' => ($fromMe ? null : $this->pushName($messageData)) ?: $conversation->push_name,
-            'last_message_at' => $sentAt,
+            'last_message_at' => $latestAt,
             'status' => $conversation->status ?: 'open',
         ]);
 
@@ -128,15 +143,7 @@ class EvolutionWebhookHandler
             $conversation->increment('unread_count');
         }
 
-        $conversation->forceFill([
-            'last_message_at' => $sentAt,
-        ])->save();
-
         $this->storeAttachment($message, $messageData, $withMedia);
-
-        if ($dispatchSuggestions) {
-            $this->dispatchSuggestionAnalysis($conversation, $message, $isNew, $fromMe);
-        }
 
         return $message;
     }
@@ -166,20 +173,6 @@ class EvolutionWebhookHandler
         $payload['data'] = $messageData;
 
         return $payload;
-    }
-
-    /**
-     * Inbound client messages schedule an AI suggestion analysis with a
-     * delay, so a burst of messages is analyzed once by the last job.
-     */
-    private function dispatchSuggestionAnalysis(WhatsappConversation $conversation, WhatsappMessage $message, bool $isNew, bool $fromMe): void
-    {
-        if (! $isNew || $fromMe || ! config('services.ai_whatsapp_suggestions', true)) {
-            return;
-        }
-
-        AnalyzeWhatsappConversation::dispatch($conversation, $message)
-            ->delay(now()->addMinutes(2));
     }
 
     private function handleMessageUpdate(array $payload): int
@@ -275,36 +268,56 @@ class EvolutionWebhookHandler
             ?: $message->attachments()->first();
     }
 
-    private function conversationForMessage(int $companyId, string $instance, string $remoteJid, ?string $phoneNumber): WhatsappConversation
+    /**
+     * @param  array<int, string>  $identityJids
+     */
+    private function conversationForMessage(int $companyId, string $instance, array $identityJids, ?string $phoneNumber): ?WhatsappConversation
     {
-        $conversation = WhatsappConversation::allTenants()
+        $incomingJids = collect($identityJids)
+            ->filter(fn ($jid): bool => is_string($jid) && trim($jid) !== '' && ! str_contains($jid, '@g.us'))
+            ->unique()
+            ->values();
+
+        if ($incomingJids->isEmpty()) {
+            return null;
+        }
+
+        $baseQuery = WhatsappConversation::allTenants()
             ->where('company_id', $companyId)
-            ->where('evolution_instance', $instance)
-            ->where('remote_jid', $remoteJid)
+            ->where('evolution_instance', $instance);
+
+        $conversation = (clone $baseQuery)
+            ->whereIn('remote_jid', $incomingJids->all())
+            ->orderByDesc('last_message_at')
             ->first();
 
         if ($conversation) {
             return $conversation;
         }
 
-        if ($phoneNumber) {
-            $conversation = WhatsappConversation::allTenants()
-                ->where('company_id', $companyId)
-                ->where('evolution_instance', $instance)
-                ->where('phone_number', $phoneNumber)
-                ->orderByDesc('last_message_at')
-                ->first();
+        $incomingNumbers = $incomingJids
+            ->reject(fn (string $jid): bool => str_contains($jid, '@lid'))
+            ->flatMap(fn (string $jid): array => $this->normalizer->candidates($jid))
+            ->merge($phoneNumber ? $this->normalizer->candidates($phoneNumber) : [])
+            ->unique()
+            ->values()
+            ->all();
 
-            if ($conversation) {
-                return $conversation;
-            }
+        if ($incomingNumbers === []) {
+            return null;
         }
 
-        return new WhatsappConversation([
-            'company_id' => $companyId,
-            'evolution_instance' => $instance,
-            'remote_jid' => $remoteJid,
-        ]);
+        return (clone $baseQuery)
+            ->get()
+            ->first(function (WhatsappConversation $candidate) use ($incomingNumbers): bool {
+                $allowedNumbers = collect([$candidate->phone_number, $candidate->remote_jid])
+                    ->filter(fn ($value): bool => is_string($value) && ! str_contains($value, '@lid'))
+                    ->flatMap(fn (string $value): array => $this->normalizer->candidates($value))
+                    ->unique()
+                    ->all();
+
+                return array_intersect($incomingNumbers, $allowedNumbers) !== [];
+            });
     }
 
     private function enrichAttachment(WhatsappAttachment $attachment, string $filePath, WhatsappMessage $message): void
@@ -347,6 +360,28 @@ class EvolutionWebhookHandler
         return is_string($jid) && $jid !== '' ? $jid : null;
     }
 
+    /**
+     * Evolution may identify the same person by a numeric JID, a LID, or an
+     * alternate JID. All supplied identities participate in allowlist lookup.
+     *
+     * @return array<int, string>
+     */
+    private function identityJids(array $payload, array $messageData): array
+    {
+        return collect([
+            data_get($messageData, 'key.remoteJid'),
+            data_get($messageData, 'key.remoteJidAlt'),
+            data_get($messageData, 'remoteJid'),
+            data_get($messageData, 'remoteJidAlt'),
+            data_get($payload, 'sender'),
+        ])
+            ->filter(fn ($jid): bool => is_string($jid) && trim($jid) !== '')
+            ->map(fn (string $jid): string => trim($jid))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     private function messageId(array $messageData): ?string
     {
         $id = data_get($messageData, 'key.id') ?: data_get($messageData, 'keyId') ?: data_get($messageData, 'id');
@@ -356,13 +391,18 @@ class EvolutionWebhookHandler
 
     private function phoneNumber(array $payload, array $messageData, string $remoteJid): ?string
     {
-        $candidate = str_contains($remoteJid, '@lid')
-            ? (string) ($payload['sender'] ?? '')
-            : $remoteJid;
+        foreach ($this->identityJids($payload, $messageData) as $candidate) {
+            if (str_contains($candidate, '@lid') || str_contains($candidate, '@g.us')) {
+                continue;
+            }
 
-        $number = preg_replace('/\D+/', '', str($candidate)->before('@')->toString());
+            $number = $this->normalizer->digits($candidate);
+            if ($number !== '') {
+                return $number;
+            }
+        }
 
-        return $number === '' ? null : $number;
+        return str_contains($remoteJid, '@lid') ? null : ($this->normalizer->digits($remoteJid) ?: null);
     }
 
     private function pushName(array $messageData): ?string

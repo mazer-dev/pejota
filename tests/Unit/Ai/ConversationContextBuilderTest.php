@@ -38,7 +38,7 @@ class ConversationContextBuilderTest extends TestCase
         $this->assertStringContainsString('Nome do projeto: Sistema de propostas', $context);
         $this->assertStringContainsString('Escopo inicial: CRM com automacoes.', $context);
         $this->assertStringContainsString('Contexto do projeto:', $context);
-        $this->assertStringContainsString('Contexto recente da conversa:', $context);
+        $this->assertStringContainsString('Histórico completo armazenado desta conversa:', $context);
         $this->assertStringNotContainsString('<p>', $context);
     }
 }

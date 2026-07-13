@@ -73,7 +73,7 @@ class WhatsappConversationResource extends Resource
                     ->searchable()
                     ->preload()
                     ->live()
-                    ->afterStateUpdated(function (Set $set, ?int $state): void {
+                    ->afterStateUpdated(function (Get $get, Set $set, ?int $state): void {
                         $set('project_id', null);
 
                         if (! $state) {
@@ -85,7 +85,10 @@ class WhatsappConversationResource extends Resource
                             return;
                         }
 
-                        $set('push_name', $client->name ?: $client->tradename);
+                        if (blank($get('name'))) {
+                            $set('name', $client->name ?: $client->tradename);
+                        }
+
                         $set('phone_number', $client->phone);
                         $set('remote_jid', self::remoteJidFromPhone($client->phone));
                     }),
@@ -95,8 +98,10 @@ class WhatsappConversationResource extends Resource
                     ->searchable()
                     ->preload()
                     ->disabled(fn (Get $get): bool => blank($get('client_id'))),
-                TextInput::make('push_name')
-                    ->label(__('Name')),
+                TextInput::make('name')
+                    ->label(__('Name'))
+                    ->required()
+                    ->maxLength(255),
                 TextInput::make('phone_number')
                     ->label(__('Phone'))
                     ->tel()
@@ -137,7 +142,7 @@ class WhatsappConversationResource extends Resource
             ->columns([
                 TextColumn::make('display_name')
                     ->label(__('Conversation'))
-                    ->searchable(['push_name', 'phone_number', 'remote_jid']),
+                    ->searchable(['name', 'phone_number', 'remote_jid']),
                 TextColumn::make('evolution_instance')
                     ->label(__('Evolution instance'))
                     ->badge()
@@ -268,9 +273,11 @@ class WhatsappConversationResource extends Resource
         }
 
         if ($client) {
-            $data['push_name'] = $data['push_name'] ?: ($client->name ?: $client->tradename);
+            $data['name'] = ($data['name'] ?? null) ?: ($client->name ?: $client->tradename);
             $data['phone_number'] = $data['phone_number'] ?: $client->phone;
         }
+
+        $data['name'] = trim((string) ($data['name'] ?? ''));
 
         $data['remote_jid'] = $data['remote_jid'] ?: self::remoteJidFromPhone($data['phone_number'] ?? null);
 

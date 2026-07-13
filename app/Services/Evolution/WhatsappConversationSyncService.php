@@ -10,39 +10,131 @@ class WhatsappConversationSyncService
     public function __construct(
         private readonly EvolutionApiClient $client,
         private readonly EvolutionWebhookHandler $handler,
+        private readonly WhatsappJidNormalizer $normalizer,
     ) {}
 
     public function sync(WhatsappConversation $conversation, int $limit = 50, bool $discoverCandidates = true, bool $withMedia = true): int
     {
         $conversation->loadMissing('client');
 
-        foreach ($this->candidates($conversation, $discoverCandidates) as $candidate) {
-            $records = $this->client->findMessages(
-                $conversation->evolution_instance,
-                $candidate['remote_jid'],
-                $limit,
-            );
-
-            if ($records === []) {
-                continue;
-            }
-
-            $this->applyCandidate($conversation, $candidate);
-
-            $records = collect($records)
-                ->filter(fn ($record) => is_array($record))
-                ->sortBy(fn (array $record): int => $this->messageTimestamp($record))
-                ->values()
-                ->all();
-
-            return $this->handler->handle([
-                'event' => 'MESSAGES_UPSERT',
-                'instance' => $conversation->evolution_instance,
-                'sender' => $candidate['remote_jid'],
-                'date_time' => now()->toISOString(),
-                'data' => $records,
-            ], dispatchSuggestions: false, withMedia: $withMedia);
+        $seen = [];
+        $candidateGroups = [$this->candidates($conversation, false)];
+        if ($discoverCandidates) {
+            $candidateGroups[] = fn (): array => $this->candidates($conversation, true);
         }
+
+        foreach ($candidateGroups as $group) {
+            $group = is_callable($group) ? $group() : $group;
+
+            foreach ($group as $candidate) {
+                if (isset($seen[$candidate['remote_jid']])) {
+                    continue;
+                }
+                $seen[$candidate['remote_jid']] = true;
+
+                $page = $this->client->findMessagesPage(
+                    $conversation->evolution_instance,
+                    $candidate['remote_jid'],
+                    page: 1,
+                    offset: $limit,
+                );
+                $records = $page['records'];
+
+                if ($records === []) {
+                    continue;
+                }
+
+                $this->applyCandidate($conversation, $candidate);
+
+                $records = collect($records)
+                    ->filter(fn ($record) => is_array($record))
+                    ->sortBy(fn (array $record): int => $this->messageTimestamp($record))
+                    ->values()
+                    ->all();
+
+                return $this->handler->handle([
+                    'event' => 'MESSAGES_UPSERT',
+                    'instance' => $conversation->evolution_instance,
+                    'sender' => $candidate['remote_jid'],
+                    'date_time' => now()->toISOString(),
+                    'data' => $records,
+                ], dispatchSuggestions: false, withMedia: $withMedia);
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Imports every page in the background. Historical media is kept as
+     * metadata only: no file download or AI enrichment occurs during a
+     * backfill. Message uniqueness makes the operation idempotent.
+     */
+    public function syncAll(WhatsappConversation $conversation, int $offset = 100): int
+    {
+        $conversation->loadMissing('client');
+
+        $seen = [];
+        $candidateGroups = [
+            $this->candidates($conversation, false),
+            fn (): array => $this->candidates($conversation, true),
+        ];
+
+        foreach ($candidateGroups as $group) {
+            $group = is_callable($group) ? $group() : $group;
+
+            foreach ($group as $candidate) {
+                if (isset($seen[$candidate['remote_jid']])) {
+                    continue;
+                }
+                $seen[$candidate['remote_jid']] = true;
+
+                $pageNumber = 1;
+                $imported = 0;
+                $matched = false;
+
+                do {
+                    $page = $this->client->findMessagesPage(
+                        $conversation->evolution_instance,
+                        $candidate['remote_jid'],
+                        page: $pageNumber,
+                        offset: $offset,
+                    );
+
+                    if ($page['records'] === []) {
+                        break;
+                    }
+
+                    if (! $matched) {
+                        $this->applyCandidate($conversation, $candidate);
+                        $matched = true;
+                    }
+
+                    $records = collect($page['records'])
+                        ->sortBy(fn (array $record): int => $this->messageTimestamp($record))
+                        ->values()
+                        ->all();
+
+                    $imported += $this->handler->handle([
+                        'event' => 'MESSAGES_UPSERT',
+                        'instance' => $conversation->evolution_instance,
+                        'sender' => $candidate['remote_jid'],
+                        'date_time' => now()->toISOString(),
+                        'data' => $records,
+                    ], dispatchSuggestions: false, withMedia: false, refreshTokens: false);
+
+                    $pageNumber++;
+                } while ($pageNumber <= $page['pages']);
+
+                if ($matched) {
+                    app(WhatsappConversationTokenService::class)->refresh($conversation->fresh());
+
+                    return $imported;
+                }
+            }
+        }
+
+        app(WhatsappConversationTokenService::class)->refresh($conversation->fresh());
 
         return 0;
     }
@@ -118,27 +210,22 @@ class WhatsappConversationSyncService
     private function score(WhatsappConversation $conversation, array $row, string $jid): int
     {
         $score = 0;
-        $targetDigits = $this->digits($conversation->phone_number ?: $conversation->remote_jid);
-        $candidateDigits = collect([
+        $targetNumbers = collect([$conversation->phone_number, $conversation->remote_jid])
+            ->filter(fn ($value): bool => is_string($value) && ! str_contains($value, '@lid'))
+            ->flatMap(fn (string $value): array => $this->normalizer->candidates($value))
+            ->unique();
+        $candidateNumbers = collect([
             $jid,
             data_get($row, 'remoteJid'),
             data_get($row, 'key.remoteJidAlt'),
             data_get($row, 'lastMessage.key.remoteJidAlt'),
         ])
-            ->map(fn ($value): string => $this->digits($value))
-            ->filter()
+            ->filter(fn ($value): bool => is_string($value) && ! str_contains($value, '@lid'))
+            ->flatMap(fn (string $value): array => $this->normalizer->candidates($value))
             ->unique();
 
-        foreach ($candidateDigits as $digits) {
-            if ($targetDigits !== '' && $digits === $targetDigits) {
-                $score = max($score, 140);
-            }
-
-            foreach ([11, 10, 9, 8] as $length) {
-                if (strlen($targetDigits) >= $length && strlen($digits) >= $length && substr($targetDigits, -$length) === substr($digits, -$length)) {
-                    $score = max($score, 80 + $length);
-                }
-            }
+        if ($targetNumbers->intersect($candidateNumbers)->isNotEmpty()) {
+            $score = 140;
         }
 
         $targetNames = collect([
@@ -150,7 +237,7 @@ class WhatsappConversationSyncService
             ->filter();
 
         $candidateName = $this->normaliseName($this->candidateName($row));
-        if ($candidateName !== '') {
+        if ($score > 0 && $candidateName !== '') {
             foreach ($targetNames as $name) {
                 if ($name !== '' && (str_contains($candidateName, $name) || str_contains($name, $candidateName))) {
                     $score += 60;
@@ -163,9 +250,8 @@ class WhatsappConversationSyncService
     }
 
     /**
-     * Keeps an existing push_name: chat/contact rows can carry the account
-     * owner's own pushName (fromMe last message), which used to rename
-     * conversations to the owner's name.
+     * The manual name is deliberately absent here. Discovery can update only
+     * remote addressing and remote WhatsApp metadata.
      */
     private function applyCandidate(WhatsappConversation $conversation, array $candidate): void
     {

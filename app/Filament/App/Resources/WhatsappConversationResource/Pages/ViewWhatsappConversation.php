@@ -3,7 +3,7 @@
 namespace App\Filament\App\Resources\WhatsappConversationResource\Pages;
 
 use App\Filament\App\Resources\WhatsappConversationResource;
-use App\Services\Evolution\WhatsappConversationSyncService;
+use App\Jobs\SyncWhatsappConversationHistory;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -24,11 +24,11 @@ class ViewWhatsappConversation extends ViewRecord
 
     private function syncMessages(): void
     {
-        $count = app(WhatsappConversationSyncService::class)->sync($this->record);
+        SyncWhatsappConversationHistory::dispatch($this->record, auth()->id());
 
         Notification::make()
-            ->title('Mensagens sincronizadas')
-            ->body(trans_choice('{0} Nenhuma mensagem foi importada.|{1} 1 mensagem foi importada.|[2,*] :count mensagens foram importadas.', $count, ['count' => $count]))
+            ->title('Sincronização iniciada')
+            ->body('O histórico completo será importado em segundo plano. Você será notificado ao terminar.')
             ->success()
             ->send();
     }

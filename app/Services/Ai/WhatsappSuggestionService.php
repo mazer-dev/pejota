@@ -96,7 +96,7 @@ class WhatsappSuggestionService
         $conversation->loadMissing(['client', 'project', 'messages.attachments']);
         $newMessages->each(fn (WhatsappMessage $message) => $message->loadMissing('attachments'));
 
-        $history = $this->historyRenderer->render($conversation->messages, 'Luiz', 30);
+        $history = $this->historyRenderer->render($conversation->messages, 'Luiz');
         $context = $this->contextBuilder->build($conversation->client, $conversation->project, $history !== '' ? $history : null);
         $newHistory = $this->historyRenderer->render($newMessages, 'Luiz');
 

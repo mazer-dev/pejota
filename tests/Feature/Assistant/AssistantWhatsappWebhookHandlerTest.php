@@ -411,6 +411,15 @@ class AssistantWhatsappWebhookHandlerTest extends TestCase
     {
         Bus::fake();
 
+        WhatsappConversation::create([
+            'company_id' => $this->companyId,
+            'name' => 'Cliente autorizado',
+            'evolution_instance' => 'geolead_funnel_2',
+            'remote_jid' => '5511999990000@s.whatsapp.net',
+            'phone_number' => '5511999990000',
+            'status' => 'open',
+        ]);
+
         config([
             'services.evolution.webhook_token' => null,
             'services.evolution.webhook_verify_api_key' => false,
@@ -439,7 +448,7 @@ class AssistantWhatsappWebhookHandlerTest extends TestCase
 
         $this->assertSame(1, WhatsappConversation::allTenants()->count());
         $this->assertDatabaseCount('assistant_conversations', 0);
-        Bus::assertDispatched(AnalyzeWhatsappConversation::class);
+        Bus::assertNotDispatched(AnalyzeWhatsappConversation::class);
         Bus::assertNotDispatched(ProcessAssistantWhatsappMessage::class);
     }
 

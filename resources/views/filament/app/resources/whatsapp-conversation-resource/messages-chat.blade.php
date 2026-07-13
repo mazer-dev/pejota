@@ -372,6 +372,15 @@
                         <x-heroicon-o-pencil-square class="h-4 w-4" />
                         <span x-text="dictate ? 'Fechar ditado' : 'Ditar mensagem'">Ditar mensagem</span>
                     </button>
+
+                    <button
+                        type="button"
+                        wire:click="openAiQuestionModal"
+                        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5"
+                    >
+                        <x-heroicon-o-chat-bubble-left-ellipsis class="h-4 w-4" />
+                        Perguntar à IA
+                    </button>
                 </div>
 
                 <button
@@ -405,4 +414,72 @@
             @enderror
         </div>
     </form>
+
+    @if ($this->showAiQuestionModal)
+        <div
+            wire:key="whatsapp-ai-question-modal-{{ $this->getOwnerRecord()->getKey() }}"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/70 p-4"
+            wire:click.self="closeAiQuestionModal"
+        >
+            <div class="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-y-auto rounded-xl bg-white p-5 shadow-2xl dark:bg-gray-900">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-950 dark:text-white">Perguntar à IA</h2>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            A resposta usa somente o histórico completo desta conversa e os dados vinculados. Nada será salvo ou enviado.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        wire:click="closeAiQuestionModal"
+                        class="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
+                        aria-label="Fechar"
+                    >
+                        <x-heroicon-o-x-mark class="h-5 w-5" />
+                    </button>
+                </div>
+
+                <div>
+                    <label for="whatsapp-ai-question" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">Pergunta</label>
+                    <textarea
+                        id="whatsapp-ai-question"
+                        wire:model="aiQuestion"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="Ex.: qual prazo foi combinado para a próxima entrega?"
+                        class="block w-full resize-y rounded-lg border-gray-300 bg-white text-sm text-gray-950 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-gray-950 dark:text-white"
+                    ></textarea>
+                    <div class="mt-1 flex items-start justify-between gap-3">
+                        @error('aiQuestion')
+                            <p class="text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
+                        @else
+                            <span></span>
+                        @enderror
+                        <span class="text-xs text-gray-400">máximo de 4.000 caracteres</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button
+                        type="button"
+                        wire:click="askAiQuestion"
+                        wire:loading.attr="disabled"
+                        wire:target="askAiQuestion"
+                        class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 disabled:opacity-60"
+                    >
+                        <x-heroicon-o-sparkles class="h-4 w-4" />
+                        <span wire:loading.remove wire:target="askAiQuestion">Perguntar</span>
+                        <span wire:loading wire:target="askAiQuestion">Consultando...</span>
+                    </button>
+                </div>
+
+                @if ($this->aiAnswer !== null)
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+                        <div class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Resposta</div>
+                        <div class="whitespace-pre-wrap break-words text-sm leading-6 text-gray-700 dark:text-gray-200">{{ $this->aiAnswer }}</div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
 </div>

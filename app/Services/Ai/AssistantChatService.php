@@ -426,7 +426,7 @@ class AssistantChatService
 
         [$rows, $convertedTimestamps, $timezone] = $this->localizeQueryTimestamps($rows);
 
-        $payload = json_encode($rows, JSON_UNESCAPED_UNICODE);
+        $payload = json_encode($rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($convertedTimestamps) {
             $payload = "Observação: campos de data/hora reconhecidos neste resultado já foram convertidos de UTC para {$timezone}.\n".$payload;
         }

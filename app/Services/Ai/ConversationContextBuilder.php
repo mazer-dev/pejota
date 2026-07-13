@@ -4,20 +4,39 @@ namespace App\Services\Ai;
 
 use App\Models\Client;
 use App\Models\Project;
+use App\Models\WhatsappConversation;
 
 class ConversationContextBuilder
 {
-    public function build(?Client $client = null, ?Project $project = null, ?string $conversationContext = null): string
-    {
+    public function build(
+        ?Client $client = null,
+        ?Project $project = null,
+        ?string $conversationContext = null,
+        ?WhatsappConversation $conversation = null,
+    ): string {
         $client ??= $project?->client;
 
         return collect([
+            $this->conversationPersonSection($conversation),
             $this->clientSection($client),
             $this->projectSection($project),
-            $this->section('Contexto recente da conversa', $conversationContext),
+            $this->section('Histórico completo armazenado desta conversa', $conversationContext),
         ])
             ->filter()
             ->implode("\n\n");
+    }
+
+    private function conversationPersonSection(?WhatsappConversation $conversation): ?string
+    {
+        if (! $conversation) {
+            return null;
+        }
+
+        return $this->section('Pessoa desta conversa (não confundir com o cadastro do cliente)', $this->joinLines([
+            $this->line('Nome definido manualmente', $conversation->name),
+            $this->line('Telefone desta pessoa', $conversation->phone_number),
+            $this->line('Nome remoto informado pelo WhatsApp', $conversation->push_name),
+        ]));
     }
 
     private function clientSection(?Client $client): ?string

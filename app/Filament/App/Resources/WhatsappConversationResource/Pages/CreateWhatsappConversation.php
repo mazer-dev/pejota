@@ -3,8 +3,7 @@
 namespace App\Filament\App\Resources\WhatsappConversationResource\Pages;
 
 use App\Filament\App\Resources\WhatsappConversationResource;
-use App\Services\Evolution\WhatsappConversationSyncService;
-use Filament\Notifications\Notification;
+use App\Jobs\SyncWhatsappConversationHistory;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateWhatsappConversation extends CreateRecord
@@ -22,16 +21,6 @@ class CreateWhatsappConversation extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $count = app(WhatsappConversationSyncService::class)->sync($this->record);
-
-        if ($count === 0) {
-            return;
-        }
-
-        Notification::make()
-            ->title('Mensagens sincronizadas')
-            ->body(trans_choice('{1} 1 mensagem foi importada.|[2,*] :count mensagens foram importadas.', $count, ['count' => $count]))
-            ->success()
-            ->send();
+        SyncWhatsappConversationHistory::dispatch($this->record, auth()->id());
     }
 }

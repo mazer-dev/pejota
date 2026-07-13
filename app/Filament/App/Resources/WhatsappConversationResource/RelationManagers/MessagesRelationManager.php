@@ -7,6 +7,7 @@ use App\Enums\WhatsappSuggestionStatusEnum;
 use App\Enums\WhatsappSuggestionTypeEnum;
 use App\Filament\App\Resources\NoteResource;
 use App\Filament\App\Resources\TaskResource;
+use App\Jobs\SyncWhatsappConversationHistory;
 use App\Models\Note;
 use App\Models\Status;
 use App\Models\Task;
@@ -14,6 +15,7 @@ use App\Models\WhatsappAttachment;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappSuggestion;
+use App\Services\Ai\CliWhatsappConversationQuestionAnswerer;
 use App\Services\Ai\CliWhatsappMessageSuggester;
 use App\Services\Evolution\EvolutionApiClient;
 use App\Services\Evolution\WhatsappAttachmentEnricher;
@@ -46,6 +48,12 @@ class MessagesRelationManager extends RelationManager
     public ?string $aiSuggestion = null;
 
     public string $aiInstruction = '';
+
+    public bool $showAiQuestionModal = false;
+
+    public string $aiQuestion = '';
+
+    public ?string $aiAnswer = null;
 
     public ?int $editingMessageId = null;
 
@@ -499,6 +507,43 @@ class MessagesRelationManager extends RelationManager
         }
     }
 
+    public function openAiQuestionModal(): void
+    {
+        $this->resetValidation('aiQuestion');
+        $this->aiQuestion = '';
+        $this->aiAnswer = null;
+        $this->showAiQuestionModal = true;
+    }
+
+    public function closeAiQuestionModal(): void
+    {
+        $this->resetValidation('aiQuestion');
+        $this->reset(['showAiQuestionModal', 'aiQuestion', 'aiAnswer']);
+    }
+
+    public function askAiQuestion(): void
+    {
+        $this->validate([
+            'aiQuestion' => ['required', 'string', 'max:4000'],
+        ], attributes: ['aiQuestion' => 'pergunta']);
+
+        /** @var WhatsappConversation $conversation */
+        $conversation = $this->getOwnerRecord();
+
+        try {
+            $this->aiAnswer = app(CliWhatsappConversationQuestionAnswerer::class)
+                ->answer($conversation, trim($this->aiQuestion));
+        } catch (Throwable $exception) {
+            $this->aiAnswer = null;
+
+            Notification::make()
+                ->title('Falha ao consultar a IA')
+                ->body($exception->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
     public function removeComposerAttachment(): void
     {
         $this->reset('composerAttachment');
@@ -551,11 +596,11 @@ class MessagesRelationManager extends RelationManager
     {
         /** @var WhatsappConversation $conversation */
         $conversation = $this->getOwnerRecord();
-        $count = app(WhatsappConversationSyncService::class)->sync($conversation);
+        SyncWhatsappConversationHistory::dispatch($conversation, auth()->id());
 
         Notification::make()
-            ->title('Mensagens sincronizadas')
-            ->body(trans_choice('{0} Nenhuma mensagem foi importada.|{1} 1 mensagem foi importada.|[2,*] :count mensagens foram importadas.', $count, ['count' => $count]))
+            ->title('Sincronização iniciada')
+            ->body('O histórico completo será importado em segundo plano. Você será notificado ao terminar.')
             ->success()
             ->send();
     }

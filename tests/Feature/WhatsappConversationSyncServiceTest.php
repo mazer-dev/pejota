@@ -215,4 +215,88 @@ class WhatsappConversationSyncServiceTest extends TestCase
             'status' => 'metadata_only',
         ]);
     }
+
+    public function test_full_sync_walks_all_pages_deduplicates_and_never_downloads_historical_media(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        config([
+            'services.evolution.base_url' => 'http://evolution.test',
+            'services.evolution.api_key' => 'secret',
+            'services.evolution.default_company_id' => $user->company->id,
+        ]);
+
+        $conversation = WhatsappConversation::create([
+            'company_id' => $user->company->id,
+            'name' => 'João — Financeiro',
+            'evolution_instance' => 'client_instance',
+            'remote_jid' => '5511999990000@s.whatsapp.net',
+            'phone_number' => '5511999990000',
+            'status' => 'open',
+            'last_message_at' => now(),
+        ]);
+        $originalLastMessageAt = $conversation->last_message_at;
+
+        Http::preventStrayRequests();
+        Http::fake(function (Request $request) {
+            $page = (int) data_get($request->data(), 'page');
+            $records = $page === 1
+                ? [
+                    $this->historyRecord('B', 200, 'Segunda'),
+                    $this->historyRecord('A', 100, 'Primeira'),
+                ]
+                : [
+                    $this->historyRecord('C', 300, null, 'imageMessage'),
+                    $this->historyRecord('B', 200, 'Segunda'),
+                ];
+
+            return Http::response(['messages' => [
+                'total' => 4,
+                'pages' => 2,
+                'currentPage' => $page,
+                'records' => $records,
+            ]]);
+        });
+
+        $count = app(WhatsappConversationSyncService::class)->syncAll($conversation, offset: 2);
+
+        $this->assertSame(3, $count);
+        $this->assertDatabaseCount('whatsapp_messages', 3);
+        $this->assertDatabaseHas('whatsapp_attachments', [
+            'mime_type' => 'image/png',
+            'path' => null,
+            'status' => 'metadata_only',
+        ]);
+        $this->assertSame('João — Financeiro', $conversation->refresh()->name);
+        $this->assertSame($originalLastMessageAt?->toDateTimeString(), $conversation->last_message_at?->toDateTimeString());
+
+        Http::assertSentCount(2);
+        Http::assertSent(fn ($request): bool => $request->url() === 'http://evolution.test/chat/findMessages/client_instance'
+            && in_array($request['page'], [1, 2], true)
+            && $request['offset'] === 2
+            && ! array_key_exists('limit', $request->data()));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function historyRecord(string $id, int $timestamp, ?string $text, string $type = 'conversation'): array
+    {
+        $message = $type === 'imageMessage'
+            ? ['imageMessage' => ['mimetype' => 'image/png', 'fileName' => 'foto.png']]
+            : ['conversation' => $text];
+
+        return [
+            'key' => [
+                'id' => $id,
+                'fromMe' => false,
+                'remoteJid' => '5511999990000@s.whatsapp.net',
+            ],
+            'pushName' => 'Nome remoto',
+            'messageType' => $type,
+            'messageTimestamp' => $timestamp,
+            'message' => $message,
+        ];
+    }
 }

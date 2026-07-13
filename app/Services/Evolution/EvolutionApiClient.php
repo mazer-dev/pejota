@@ -196,7 +196,22 @@ class EvolutionApiClient
      */
     public function findMessages(string $instance, string $remoteJid, int $limit = 50): array
     {
+        return $this->findMessagesPage($instance, $remoteJid, page: 1, offset: $limit)['records'];
+    }
+
+    /**
+     * Evolution API 2.3.7 paginates findMessages with `page` and `offset`
+     * (offset is the page size). Keeping the pagination metadata here lets a
+     * queue job walk the entire history without holding it all in memory.
+     *
+     * @return array{records: array<int, array<string, mixed>>, total: int, pages: int, current_page: int}
+     */
+    public function findMessagesPage(string $instance, string $remoteJid, int $page = 1, int $offset = 50): array
+    {
         try {
+            $page = max(1, $page);
+            $offset = max(1, min(500, $offset));
+
             $response = Http::timeout($this->timeout())
                 ->withHeaders(['apikey' => $this->apiKey()])
                 ->post($this->endpoint('/chat/findMessages/'.$this->instance($instance)), [
@@ -205,14 +220,25 @@ class EvolutionApiClient
                             'remoteJid' => $remoteJid,
                         ],
                     ],
-                    'limit' => $limit,
+                    'page' => $page,
+                    'offset' => $offset,
                 ]);
 
             $response->throw();
 
-            $records = data_get($response->json(), 'messages.records');
+            $messages = data_get($response->json(), 'messages', []);
+            $records = data_get($messages, 'records', []);
+            $records = is_array($records) ? array_values(array_filter($records, 'is_array')) : [];
+            $total = (int) (data_get($messages, 'total') ?? count($records));
+            $pages = (int) (data_get($messages, 'pages') ?? ($total > 0 ? (int) ceil($total / $offset) : 0));
+            $currentPage = (int) (data_get($messages, 'currentPage') ?? data_get($messages, 'current_page') ?? $page);
 
-            return is_array($records) ? array_filter($records, 'is_array') : [];
+            return [
+                'records' => $records,
+                'total' => $total,
+                'pages' => max($pages, $records === [] ? 0 : $page),
+                'current_page' => max(1, $currentPage),
+            ];
         } catch (RequestException $exception) {
             $message = $exception->response?->body() ?: $exception->getMessage();
 

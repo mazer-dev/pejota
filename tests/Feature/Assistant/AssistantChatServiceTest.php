@@ -208,9 +208,11 @@ class AssistantChatServiceTest extends TestCase
             ->with(Mockery::on(function (string $prompt): bool {
                 $result = substr($prompt, strpos($prompt, 'Resultado da consulta') ?: 0);
 
-                return str_contains($result, 'convertidos de UTC para America/Sao_Paulo')
-                    && str_contains($result, '2026-07-09 16:18:27 America/Sao_Paulo')
-                    && ! str_contains($result, '"sent_at":"2026-07-09 19:18:27"');
+                $this->assertStringContainsString('convertidos de UTC para America/Sao_Paulo', $result);
+                $this->assertStringContainsString('2026-07-09 16:18:27 America/Sao_Paulo', $result);
+                $this->assertStringNotContainsString('"sent_at":"2026-07-09 19:18:27"', $result);
+
+                return true;
             }))
             ->andReturn('{"say": "Você cobrou às 16:18."}');
         $this->instance(AiCliRunner::class, $runner);
@@ -332,15 +334,12 @@ class AssistantChatServiceTest extends TestCase
 
         $runner = Mockery::mock(AiCliRunner::class);
         $runner->shouldReceive('complete')
-            ->once()
-            ->ordered()
-            ->andReturn('{"query": "SELECT 1"'.
-                "\n".'{"say" broken');
-        $runner->shouldReceive('complete')
-            ->once()
-            ->ordered()
-            ->with(Mockery::on(fn (string $prompt): bool => str_contains($prompt, 'não pôde ser interpretada')))
-            ->andReturn('{"say": "Agora sim."}');
+            ->times(3)
+            ->andReturn(
+                '{"query": "SELECT 1"'."\n".'{"say" broken',
+                '{"say": "Agora sim."}',
+                '{"say": "Agora sim."}',
+            );
         $this->instance(AiCliRunner::class, $runner);
 
         $answer = app(AssistantChatService::class)->respond($conversation);

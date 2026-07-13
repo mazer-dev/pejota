@@ -61,13 +61,37 @@ class WhatsappConversationResourceFormTest extends TestCase
 
         $data = WhatsappConversationResource::prepareConversationData([
             'client_id' => $client->id,
+            'name' => null,
             'push_name' => null,
             'phone_number' => null,
             'remote_jid' => null,
         ]);
 
-        $this->assertSame('Vivianne', $data['push_name']);
+        $this->assertSame('Vivianne', $data['name']);
+        $this->assertNull($data['push_name']);
         $this->assertSame('+55 62 98174-9881', $data['phone_number']);
         $this->assertSame('5562981749881@s.whatsapp.net', $data['remote_jid']);
+    }
+
+    public function test_changing_the_client_never_overwrites_a_manual_conversation_name(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $client = Client::create([
+            'name' => 'Empresa ACME',
+            'phone' => '5511999990000',
+            'company_id' => $user->company->id,
+        ]);
+
+        $data = WhatsappConversationResource::prepareConversationData([
+            'client_id' => $client->id,
+            'name' => 'João — Financeiro',
+            'phone_number' => '5511888887777',
+            'remote_jid' => '5511888887777@s.whatsapp.net',
+        ]);
+
+        $this->assertSame('João — Financeiro', $data['name']);
+        $this->assertSame('5511888887777', $data['phone_number']);
     }
 }

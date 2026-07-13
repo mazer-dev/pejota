@@ -12,8 +12,8 @@ use App\Services\Ai\ConversationContextBuilder;
  * across the AI features:
  *
  * - forSuggestion(): built around one active WhatsApp conversation, used to
- *   draft the next message to send. History is capped at the last 30
- *   messages and includes the latest saved ClientAiAnalysis (if any) as
+ *   draft the next message to send. It includes the full stored history and
+ *   the latest saved ClientAiAnalysis (if any) as
  *   background, on top of the current facts (tasks, invoices, etc).
  * - forAnalysis(): built around the whole client relationship (every
  *   WhatsApp conversation the client has). History is NOT capped. The
@@ -42,7 +42,7 @@ class ClientContextBuilder
         $client = $conversation->client;
         $project = $conversation->project;
 
-        $history = $this->historyRenderer->render($conversation->messages, 'Luiz', 30);
+        $history = $this->historyRenderer->render($conversation->messages, 'Luiz');
 
         return $this->assemble($client, $project, $conversation, $history, includeAnalysis: true);
     }
@@ -76,7 +76,7 @@ class ClientContextBuilder
     private function assemble(?Client $client, ?Project $project, ?WhatsappConversation $conversation, string $history, bool $includeAnalysis): string
     {
         $sections = [
-            $this->identityBuilder->build($client, $project, $history !== '' ? $history : null),
+            $this->identityBuilder->build($client, $project, $history !== '' ? $history : null, $conversation),
             $this->tasksSection->build($client, $project),
             $this->invoicesSection->build($client, $project),
             $this->contractsSection->build($client),

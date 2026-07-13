@@ -184,7 +184,7 @@ class AnalyzeWhatsappConversationTest extends TestCase
         $this->assertStringContainsString('Falha ao gerar sugestões', $notification->data['title']);
     }
 
-    public function test_webhook_ingestion_dispatches_the_job_with_a_delay_for_inbound_messages(): void
+    public function test_webhook_ingestion_never_dispatches_automatic_ai_analysis(): void
     {
         Bus::fake([AnalyzeWhatsappConversation::class]);
 
@@ -200,9 +200,7 @@ class AnalyzeWhatsappConversationTest extends TestCase
 
         app(EvolutionWebhookHandler::class)->handle($this->webhookPayload(fromMe: false));
 
-        Bus::assertDispatched(AnalyzeWhatsappConversation::class, function (AnalyzeWhatsappConversation $job): bool {
-            return $job->delay !== null;
-        });
+        Bus::assertNotDispatched(AnalyzeWhatsappConversation::class);
     }
 
     public function test_webhook_ingestion_does_not_dispatch_for_outgoing_messages_or_when_disabled(): void

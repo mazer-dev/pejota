@@ -134,6 +134,35 @@ class EvolutionApiClientTest extends TestCase
         ], $media);
     }
 
+    public function test_it_uses_evolution_237_page_and_offset_for_message_pagination(): void
+    {
+        config([
+            'services.evolution.base_url' => 'http://evolution.test',
+            'services.evolution.api_key' => 'secret',
+        ]);
+
+        Http::fake([
+            'http://evolution.test/chat/findMessages/client_instance' => Http::response([
+                'messages' => [
+                    'total' => 120,
+                    'pages' => 3,
+                    'currentPage' => 2,
+                    'records' => [['key' => ['id' => 'M1']]],
+                ],
+            ]),
+        ]);
+
+        $page = app(EvolutionApiClient::class)
+            ->findMessagesPage('client_instance', '5511999990000@s.whatsapp.net', page: 2, offset: 50);
+
+        $this->assertSame(120, $page['total']);
+        $this->assertSame(3, $page['pages']);
+        $this->assertSame(2, $page['current_page']);
+        Http::assertSent(fn ($request): bool => $request['page'] === 2
+            && $request['offset'] === 50
+            && ! array_key_exists('limit', $request->data()));
+    }
+
     public function test_it_sends_text_directly_to_a_number_and_instance(): void
     {
         config([
