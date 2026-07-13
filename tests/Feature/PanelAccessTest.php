@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\PlatformRoleEnum;
 use App\Models\User;
+use App\PejotaCloud\Providers\PejotaCloudServiceProvider;
 use Filament\Facades\Filament;
 use Filament\Panel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -95,8 +96,10 @@ class PanelAccessTest extends TestCase
         $this->assertFalse($user->hasRole(PlatformRoleEnum::SuperAdmin->value));
     }
 
-    public function test_admin_panel_is_not_registered_in_open_core(): void
+    public function test_admin_panel_is_registered_only_when_the_cloud_overlay_is_present(): void
     {
-        $this->assertArrayNotHasKey('admin', Filament::getPanels());
+        $hasCloudOverlay = class_exists(PejotaCloudServiceProvider::class);
+
+        $this->assertSame($hasCloudOverlay, array_key_exists('admin', Filament::getPanels()));
     }
 }
