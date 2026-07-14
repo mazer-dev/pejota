@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CompanyRoleEnum;
+use App\Events\CompanyCreated;
 use App\Models\Company;
 use App\Models\User;
 use Spatie\Permission\PermissionRegistrar;
@@ -30,6 +31,8 @@ class CompanyService
         } finally {
             $registrar->setPermissionsTeamId($previousTeamId);
         }
+
+        CompanyCreated::dispatch($company);
 
         return $company;
     }
