@@ -10,6 +10,7 @@ use App\Http\Middleware\ApplyTenantToLandlord;
 use App\Http\Middleware\LocalizationMiddleware;
 use App\Models\Company;
 use Detection\MobileDetect;
+use Filament\Contracts\Plugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -86,6 +87,10 @@ class AppPanelProvider extends PanelProvider
             )
             ->maxContentWidth(MaxWidth::Full)
             ->sidebarCollapsibleOnDesktop()
+            ->plugins(array_map(
+                fn (string $plugin): Plugin => app($plugin),
+                config('pejota.app_panel_plugins', []),
+            ))
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')
             ->pages([
