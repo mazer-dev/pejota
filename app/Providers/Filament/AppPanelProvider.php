@@ -8,6 +8,7 @@ use App\Filament\App\Pages\Tenancy\RegisterCompany;
 use App\Helpers\PejotaHelper;
 use App\Http\Middleware\ApplyTenantToLandlord;
 use App\Http\Middleware\LocalizationMiddleware;
+use App\Http\Middleware\RedirectInaccessibleTenant;
 use App\Models\Company;
 use Detection\MobileDetect;
 use Filament\Contracts\Plugin;
@@ -122,6 +123,7 @@ class AppPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                RedirectInaccessibleTenant::class,
                 LocalizationMiddleware::class,
             ], isPersistent: true)
             ->tenantMiddleware([
