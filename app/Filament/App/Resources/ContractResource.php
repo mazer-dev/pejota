@@ -2,8 +2,10 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\FeatureEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
+use App\Filament\App\Concerns\GatesAccessByFeature;
 use App\Filament\App\Resources\ContractResource\Pages\CreateContract;
 use App\Filament\App\Resources\ContractResource\Pages\EditContract;
 use App\Filament\App\Resources\ContractResource\Pages\ListContracts;
@@ -33,11 +35,18 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ContractResource extends Resource
 {
+    use GatesAccessByFeature;
+
     protected static ?string $model = Contract::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?int $navigationSort = MenuSortEnum::CONTRACTS->value;
+
+    public static function feature(): FeatureEnum
+    {
+        return FeatureEnum::Contracts;
+    }
 
     public static function getNavigationGroup(): ?string
     {

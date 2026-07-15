@@ -36,6 +36,11 @@ class Project extends Model
         return $this->hasMany(Contract::class);
     }
 
+    public static function activeCount(): int
+    {
+        return static::where('active', true)->count();
+    }
+
     protected function casts(): array
     {
         return [

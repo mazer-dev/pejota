@@ -2,9 +2,11 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\FeatureEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\SubscriptionBillingPeriodEnum;
 use App\Enums\SubscriptionStatusEnum;
+use App\Filament\App\Concerns\GatesAccessByFeature;
 use App\Filament\App\Resources\SubscriptionResource\Pages\CreateSubscription;
 use App\Filament\App\Resources\SubscriptionResource\Pages\EditSubscription;
 use App\Filament\App\Resources\SubscriptionResource\Pages\ListSubscriptions;
@@ -33,9 +35,16 @@ use Illuminate\Database\Query\Builder;
 
 class SubscriptionResource extends Resource
 {
+    use GatesAccessByFeature;
+
     protected static ?string $model = Subscription::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-tv';
+
+    public static function feature(): FeatureEnum
+    {
+        return FeatureEnum::DomainSubscriptions;
+    }
 
     public static function getNavigationGroup(): ?string
     {

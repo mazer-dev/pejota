@@ -2,8 +2,10 @@
 
 namespace App\Filament\App\Resources\TaskResource\Pages;
 
+use App\Enums\QuotaEnum;
 use App\Filament\App\Resources\TaskResource;
 use App\Models\Task;
+use App\Support\Entitlements;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
@@ -18,7 +20,11 @@ class ListTasks extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->visible(fn (): bool => Entitlements::withinQuota(
+                    QuotaEnum::TasksPerMonth,
+                    Task::createdThisMonthCount(),
+                )),
         ];
     }
 

@@ -94,6 +94,15 @@ class Task extends Model
         return $this->belongsTo(Task::class, 'parent_id');
     }
 
+    public static function createdThisMonthCount(): int
+    {
+        $tz = PejotaHelper::getUserTimeZone();
+        $start = Carbon::now($tz)->startOfMonth()->utc();
+        $end = Carbon::now($tz)->endOfMonth()->utc();
+
+        return static::whereBetween('created_at', [$start, $end])->count();
+    }
+
     public function children(): HasMany
     {
         return $this->hasMany(Task::class, 'parent_id');

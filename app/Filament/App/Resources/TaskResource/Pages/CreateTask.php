@@ -2,6 +2,8 @@
 
 namespace App\Filament\App\Resources\TaskResource\Pages;
 
+use App\Enums\QuotaEnum;
+use App\Filament\App\Concerns\EnforcesCreateQuota;
 use App\Filament\App\Resources\TaskResource;
 use App\Models\Task;
 use Filament\Resources\Pages\CreateRecord;
@@ -9,7 +11,19 @@ use Illuminate\Support\Facades\URL;
 
 class CreateTask extends CreateRecord
 {
+    use EnforcesCreateQuota;
+
     protected static string $resource = TaskResource::class;
+
+    protected function quotaKey(): QuotaEnum
+    {
+        return QuotaEnum::TasksPerMonth;
+    }
+
+    protected function currentQuotaCount(): int
+    {
+        return Task::createdThisMonthCount();
+    }
 
     protected function afterFill()
     {

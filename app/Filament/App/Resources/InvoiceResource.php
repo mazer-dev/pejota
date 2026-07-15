@@ -3,6 +3,7 @@
 namespace App\Filament\App\Resources;
 
 use App\Enums\CompanySettingsEnum;
+use App\Enums\FeatureEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Exceptions\MissingExchangeRateException;
@@ -24,6 +25,7 @@ use App\Services\Invoicing\InvoiceDeliveryComposer;
 use App\Services\Messaging\TemplateContextBuilder;
 use App\Services\Messaging\TemplateRenderer;
 use App\Services\Timesheet\TimesheetLayoutRegistry;
+use App\Support\Entitlements;
 use Carbon\CarbonImmutable;
 use Filament\Actions\MountableAction;
 use Filament\Forms\Components\Actions\Action;
@@ -125,6 +127,7 @@ class InvoiceResource extends Resource
                         ->required()
                         ->options(fn (): array => Currency::selectOptions(PejotaHelper::getUserCurrency()))
                         ->default(fn (): string => PejotaHelper::getUserCurrency())
+                        ->disabled(fn (): bool => ! Entitlements::allows(FeatureEnum::MultiCurrency))
                         ->searchable()
                         ->helperText(__('Item prices are entered in this currency; changing it does not convert values.')),
                     Select::make('project_id')

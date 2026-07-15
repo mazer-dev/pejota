@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Billing\NullBilling;
+use App\Billing\NullFeatureGate;
+use App\Contracts\FeatureGate;
 use App\Contracts\SubscriptionGate;
 use App\PejotaCloud\Providers\PejotaCloudServiceProvider;
 use App\Sentry\ConfigureUserScope;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(SubscriptionGate::class, NullBilling::class);
+        $this->app->bind(FeatureGate::class, NullFeatureGate::class);
 
         if (class_exists(PejotaCloudServiceProvider::class)) {
             $this->app->register(PejotaCloudServiceProvider::class);

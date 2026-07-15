@@ -2,9 +2,11 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\FeatureEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Exceptions\MissingExchangeRateException;
+use App\Filament\App\Concerns\GatesAccessByFeature;
 use App\Filament\App\Resources\ExchangeRateResource\Pages\ListExchangeRates;
 use App\Filament\App\Resources\ExchangeRateResource\Pages\ViewExchangeRate;
 use App\Helpers\PejotaHelper;
@@ -27,11 +29,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class ExchangeRateResource extends Resource
 {
+    use GatesAccessByFeature;
+
     protected static ?string $model = ExchangeRate::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
 
     protected static ?int $navigationSort = MenuSortEnum::EXCHANGE_RATES->value;
+
+    public static function feature(): FeatureEnum
+    {
+        return FeatureEnum::MultiCurrency;
+    }
 
     public static function getModelLabel(): string
     {

@@ -2,9 +2,11 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\FeatureEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Enums\PriorityEnum;
+use App\Enums\QuotaEnum;
 use App\Enums\RecurrenceAnchorFieldEnum;
 use App\Enums\RecurrenceFrequencyEnum;
 use App\Enums\RecurrenceGenerationModeEnum;
@@ -24,6 +26,7 @@ use App\Models\Task;
 use App\Models\WorkSession;
 use App\Services\DailyCheckService;
 use App\Services\RecurrenceService;
+use App\Support\Entitlements;
 use Filament\Actions\MountableAction;
 use Filament\Forms;
 use Filament\Forms\Components\Checkbox;
@@ -580,6 +583,7 @@ class TaskResource extends Resource
                         )
                         ->icon('heroicon-o-document-duplicate')
                         ->color(Color::Amber)
+                        ->visible(fn (): bool => Entitlements::withinQuota(QuotaEnum::TasksPerMonth, Task::createdThisMonthCount()))
                         ->action(fn (Task $record) => self::clone($record)),
 
                     self::configureMakeRecurringAction(Tables\Actions\Action::make('makeRecurring')),
@@ -629,6 +633,7 @@ class TaskResource extends Resource
                         ->tooltip(__('Clone this session with same time and details, updating to current date'))
                         ->icon('heroicon-o-document-duplicate')
                         ->color(Color::Amber)
+                        ->visible(fn (): bool => Entitlements::withinQuota(QuotaEnum::TasksPerMonth, Task::createdThisMonthCount()))
                         ->action(fn (\Illuminate\Support\Collection $records) => self::cloneCollection($records))
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
@@ -1274,11 +1279,23 @@ class TaskResource extends Resource
 
     public static function cloneCollection(\Illuminate\Support\Collection $records)
     {
+        if (! Entitlements::withinQuota(QuotaEnum::TasksPerMonth, Task::createdThisMonthCount())) {
+            self::notifyPlanLimitReached();
+
+            return;
+        }
+
         $records->each(fn ($record) => self::clone($record));
     }
 
     public static function clone(Task $record)
     {
+        if (! Entitlements::withinQuota(QuotaEnum::TasksPerMonth, Task::createdThisMonthCount())) {
+            self::notifyPlanLimitReached();
+
+            return;
+        }
+
         $newModel = $record->replicate();
         $newModel->due_date = null;
         $newModel->planned_end = null;
@@ -1291,13 +1308,22 @@ class TaskResource extends Resource
         return redirect(EditTask::getUrl([$newModel->id]));
     }
 
+    private static function notifyPlanLimitReached(): void
+    {
+        Notification::make()
+            ->warning()
+            ->title(__('Plan limit reached'))
+            ->body(__('You have reached your current plan limit. Upgrade to add more.'))
+            ->send();
+    }
+
     public static function configureMakeRecurringAction(MountableAction $action): MountableAction
     {
         return $action
             ->label(__('Make recurring'))
             ->icon('heroicon-o-arrow-path')
             ->color(Color::Indigo)
-            ->visible(fn (Task $record): bool => $record->recurrence_id === null)
+            ->visible(fn (Task $record): bool => $record->recurrence_id === null && Entitlements::allows(FeatureEnum::RecurringTasks))
             ->form(self::makeRecurringFormSchema())
             ->action(fn (Task $record, array $data) => self::enableRecurrenceFromForm($record, $data));
     }
@@ -1355,6 +1381,12 @@ class TaskResource extends Resource
      */
     private static function enableRecurrenceFromForm(Task $record, array $data): void
     {
+        if (! Entitlements::allows(FeatureEnum::RecurringTasks)) {
+            self::notifyPlanLimitReached();
+
+            return;
+        }
+
         $frequency = $data['frequency'] instanceof RecurrenceFrequencyEnum
             ? $data['frequency']
             : RecurrenceFrequencyEnum::from($data['frequency']);

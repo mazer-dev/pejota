@@ -2,8 +2,10 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\FeatureEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
+use App\Filament\App\Concerns\GatesAccessByFeature;
 use App\Filament\App\Resources\ProductResource\Pages\CreateProduct;
 use App\Filament\App\Resources\ProductResource\Pages\EditProduct;
 use App\Filament\App\Resources\ProductResource\Pages\ListProducts;
@@ -25,11 +27,18 @@ use Filament\Tables\Table;
 
 class ProductResource extends Resource
 {
+    use GatesAccessByFeature;
+
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-inbox';
 
     protected static ?int $navigationSort = MenuSortEnum::PRODUCTS->value;
+
+    public static function feature(): FeatureEnum
+    {
+        return FeatureEnum::Products;
+    }
 
     public static function getModelLabel(): string
     {

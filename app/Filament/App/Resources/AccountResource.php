@@ -2,8 +2,10 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\FeatureEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
+use App\Filament\App\Concerns\GatesAccessByFeature;
 use App\Filament\App\Resources\AccountResource\Pages\CreateAccount;
 use App\Filament\App\Resources\AccountResource\Pages\EditAccount;
 use App\Filament\App\Resources\AccountResource\Pages\ListAccounts;
@@ -23,11 +25,18 @@ use Filament\Tables\Table;
 
 class AccountResource extends Resource
 {
+    use GatesAccessByFeature;
+
     protected static ?string $model = Account::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-library';
 
     protected static ?int $navigationSort = MenuSortEnum::ACCOUNTS->value;
+
+    public static function feature(): FeatureEnum
+    {
+        return FeatureEnum::Accounts;
+    }
 
     public static function getModelLabel(): string
     {

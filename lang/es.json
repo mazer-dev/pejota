@@ -396,5 +396,7 @@
     "This invitation is for :email. Sign out and reopen this link to accept it.": "Esta invitación es para :email. Cierra sesión y vuelve a abrir este enlace para aceptarla.",
     "You have been invited to :company": "Has sido invitado a :company",
     "You were invited to join as :role.": "Fuiste invitado a unirte como :role.",
-    "You were invited to join :company on Pejota as :role.": "Fuiste invitado a unirte a :company en Pejota como :role."
+    "You were invited to join :company on Pejota as :role.": "Fuiste invitado a unirte a :company en Pejota como :role.",
+    "Plan limit reached": "Límite del plan alcanzado",
+    "You have reached your current plan limit. Upgrade to add more.": "Has alcanzado el límite de tu plan actual. Mejora tu plan para agregar más."
 }
