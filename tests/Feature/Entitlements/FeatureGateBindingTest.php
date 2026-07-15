@@ -11,15 +11,18 @@ use Tests\TestCase;
 
 class FeatureGateBindingTest extends TestCase
 {
-    public function test_default_binding_is_null_feature_gate(): void
+    public function test_feature_gate_contract_is_bound(): void
     {
-        $this->assertInstanceOf(NullFeatureGate::class, app(FeatureGate::class));
+        // Assert the contract, not the concrete impl: it is NullFeatureGate in open-core
+        // and PlanFeatureGate under the cloud overlay, so asserting the class would break
+        // in the cloud. Mirrors SubscriptionGateTest (behavior via a fake, not the default).
+        $this->assertInstanceOf(FeatureGate::class, app(FeatureGate::class));
     }
 
-    public function test_null_gate_allows_every_feature_and_leaves_quotas_unlimited(): void
+    public function test_null_feature_gate_allows_every_feature_and_leaves_quotas_unlimited(): void
     {
+        $gate = new NullFeatureGate;
         $company = new Company;
-        $gate = app(FeatureGate::class);
 
         foreach (FeatureEnum::cases() as $feature) {
             $this->assertTrue($gate->allows($company, $feature));
