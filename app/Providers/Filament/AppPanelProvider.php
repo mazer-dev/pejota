@@ -19,7 +19,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -51,7 +51,7 @@ class AppPanelProvider extends PanelProvider
             ->brandLogoHeight('10em')
             ->favicon(asset('imgs/pejota-logo.svg'))
             ->colors([
-                'primary' => Color::hex('#00BF63'),
+                'primary' => Color::generateV3Palette('#00BF63'),
             ])
             ->viteTheme('resources/css/filament/app/theme.css')
             ->sidebarWidth('15rem;')
@@ -86,7 +86,7 @@ class AppPanelProvider extends PanelProvider
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => (new MobileDetect)->isMobile() ? '' : Blade::render("@livewire('top-navigate-action')"),
             )
-            ->maxContentWidth(MaxWidth::Full)
+            ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
             ->plugins(array_map(
                 fn (string $plugin): Plugin => app($plugin),

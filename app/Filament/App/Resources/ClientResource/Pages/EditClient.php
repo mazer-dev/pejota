@@ -4,8 +4,8 @@ namespace App\Filament\App\Resources\ClientResource\Pages;
 
 use App\Filament\App\Resources\ClientResource;
 use Filament\Actions\DeleteAction;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Schemas\Schema;
 use Parallax\FilamentComments\Actions\CommentsAction;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
 
@@ -21,10 +21,10 @@ class EditClient extends EditRecord
         ];
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
+        return $schema
+            ->components([
                 CommentsEntry::make('filament_comments'),
             ]);
     }

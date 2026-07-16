@@ -4,8 +4,8 @@ namespace App\Filament\App\Pages\Tenancy;
 
 use App\Services\CompanyService;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Pages\Tenancy\RegisterTenant;
+use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 
 class RegisterCompany extends RegisterTenant
@@ -15,9 +15,9 @@ class RegisterCompany extends RegisterTenant
         return __('Register company');
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             TextInput::make('name')
                 ->label(__('Name'))
                 ->required()

@@ -12,23 +12,22 @@ use App\Filament\App\Resources\VendorResource\Pages\ListVendors;
 use App\Filament\App\Resources\VendorResource\Pages\ViewVendor;
 use App\Helpers\PejotaHelper;
 use App\Models\Vendor;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Infolists\Components\Actions;
-use Filament\Infolists\Components\Actions\Action;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Support\Enums\TextSize;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -41,7 +40,7 @@ class VendorResource extends Resource
 
     protected static ?string $model = Vendor::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-storefront';
 
     protected static ?int $navigationSort = MenuSortEnum::VENDORS->value;
 
@@ -60,11 +59,11 @@ class VendorResource extends Resource
         return __(MenuGroupsEnum::ADMINISTRATION->value);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->columns(1)
-            ->schema([
+            ->components([
                 TextInput::make('name')
                     ->label(__('Name'))
                     ->required(),
@@ -111,35 +110,35 @@ class VendorResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make()
                     ->iconButton(),
                 CommentsAction::make()
                     ->iconButton(),
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Split::make([
+        return $schema
+            ->components([
+                Flex::make([
                     Grid::make(1)
                         ->schema([
                             Section::make([
                                 TextEntry::make('name')
-                                    ->size(TextEntrySize::Large)
+                                    ->size(TextSize::Large)
                                     ->weight(FontWeight::Bold)
                                     ->hiddenLabel(),
 
                                 TextEntry::make('tradename')
-                                    ->size(TextEntrySize::Large)
+                                    ->size(TextSize::Large)
                                     ->hiddenLabel()
                                     ->icon('heroicon-o-bookmark-square'),
 

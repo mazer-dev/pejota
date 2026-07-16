@@ -11,6 +11,7 @@ use App\Sentry\ConfigureUserScope;
 use App\Services\Timesheet\Layouts\ClientTimesheetLayout;
 use App\Services\Timesheet\Layouts\InternalTimesheetLayout;
 use App\Services\Timesheet\TimesheetLayoutRegistry;
+use Filament\Resources\Resource;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
@@ -44,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \Filament\Resources\Resource::scopeToTenant(false);
+        Resource::scopeToTenant(false);
 
         if (app()->environment('production')) {
             URL::forceScheme('https');

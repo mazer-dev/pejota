@@ -25,6 +25,6 @@ class InvoiceNumberHelpTest extends TestCase
         Livewire::test(CompanySettings::class)
             ->assertFormComponentActionExists('docs.invoice_number_format', 'invoice-number')
             ->mountFormComponentAction('docs.invoice_number_format', 'invoice-number')
-            ->assertSee('reinicia mensalmente');
+            ->assertMountedActionModalSee('reinicia mensalmente');
     }
 }

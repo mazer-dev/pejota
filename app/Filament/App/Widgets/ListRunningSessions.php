@@ -28,7 +28,7 @@ class ListRunningSessions extends BaseWidget
                 WorkSession::query()
                     ->where('is_running', true)
             )
-            ->actions([])
+            ->recordActions([])
             ->recordUrl(
                 fn ($record) => WorkSessionResource::getUrl('view', ['record' => $record])
             );

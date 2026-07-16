@@ -27,12 +27,14 @@ use App\Services\Messaging\TemplateRenderer;
 use App\Services\Timesheet\TimesheetLayoutRegistry;
 use App\Support\Entitlements;
 use Carbon\CarbonImmutable;
-use Filament\Actions\MountableAction;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\Component;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
@@ -42,18 +44,14 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -68,7 +66,7 @@ class InvoiceResource extends Resource
 {
     protected static ?string $model = Invoice::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
     public static function getNavigationGroup(): ?string
     {
@@ -80,11 +78,11 @@ class InvoiceResource extends Resource
         return __('Invoice');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
 //            ->columns(4)
-            ->schema([
+            ->components([
                 Grid::make([
                     'default' => 2,
                     'md' => 4,
@@ -100,7 +98,7 @@ class InvoiceResource extends Resource
                         ->required()
                         ->live()
                         ->afterStateUpdated(
-                            fn (Set $set, $state) => $state == InvoiceStatusEnum::PAID->value ? $set(
+                            fn (Set $set, $state) => self::statusValue($state) === InvoiceStatusEnum::PAID->value ? $set(
                                 'payment_date',
                                 now()->format(PejotaHelper::getUserDateFormat())
                             ) : null
@@ -112,7 +110,7 @@ class InvoiceResource extends Resource
                         ->translateLabel()
                         ->date()
                         ->live()
-                        ->required(fn (Get $get) => $get('status') == InvoiceStatusEnum::PAID->value),
+                        ->required(fn (Get $get) => self::statusValue($get('status')) === InvoiceStatusEnum::PAID->value),
                     Select::make('client_id')
                         ->translateLabel()
                         ->required()
@@ -125,7 +123,7 @@ class InvoiceResource extends Resource
                     Select::make('currency')
                         ->translateLabel()
                         ->required()
-                        ->options(fn (): array => Currency::selectOptions(PejotaHelper::getUserCurrency()))
+                        ->options(fn (Get $get): array => Currency::selectOptions($get('currency') ?: PejotaHelper::getUserCurrency()))
                         ->default(fn (): string => PejotaHelper::getUserCurrency())
                         ->disabled(fn (): bool => ! Entitlements::allows(FeatureEnum::MultiCurrency))
                         ->searchable()
@@ -353,25 +351,25 @@ class InvoiceResource extends Resource
                     ->options(InvoiceStatusEnum::class)
                     ->multiple(),
             ])
-            ->actions([
+            ->recordActions([
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
-                    self::configureChangeStatusAction(Tables\Actions\Action::make('change_status')),
-                    self::configureSendAction(Tables\Actions\Action::make('send')),
-                    Tables\Actions\Action::make('pdf')
+                    self::configureChangeStatusAction(Action::make('change_status')),
+                    self::configureSendAction(Action::make('send')),
+                    Action::make('pdf')
                         ->label('PDF')
                         ->color('info')
                         ->icon('heroicon-o-document-arrow-down')
                         ->action(fn ($record) => self::generatePdf($record)),
-                    Tables\Actions\Action::make('clone')
+                    Action::make('clone')
                         ->translateLabel()
                         ->color('gray')
                         ->icon('heroicon-o-document-duplicate')
                         ->url(fn ($record) => static::getUrl('create', ['clone' => $record->id])),
                 ]),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -460,14 +458,14 @@ class InvoiceResource extends Resource
      * Applies the shared "change status" modal (form, prefill and save rules) to a table
      * row action or a page header action, so both stay identical.
      */
-    public static function configureChangeStatusAction(MountableAction $action): MountableAction
+    public static function configureChangeStatusAction(Action $action): Action
     {
         return $action
             ->label(__('Change status'))
             ->icon('heroicon-o-arrow-path')
             ->color('warning')
             ->fillForm(fn (Invoice $record): array => self::changeStatusFormData($record))
-            ->form(self::changeStatusFormSchema())
+            ->schema(self::changeStatusFormSchema())
             ->action(fn (Invoice $record, array $data) => self::saveChangeStatus($record, $data));
     }
 
@@ -496,7 +494,7 @@ class InvoiceResource extends Resource
                 ->live()
                 ->columnSpanFull()
                 ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
-                    if ($state === InvoiceStatusEnum::PAID->value) {
+                    if (self::statusValue($state) === InvoiceStatusEnum::PAID->value) {
                         if (blank($get('payment_date'))) {
                             $set('payment_date', self::defaultPaidDate($record));
                         }
@@ -521,7 +519,7 @@ class InvoiceResource extends Resource
                     ->content(function (Invoice $record, Get $get): string {
                         $rate = $get('realized_rate');
 
-                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record) && filled($rate)) {
+                        if (self::statusValue($get('status')) === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record) && filled($rate)) {
                             return Number::currency((float) $record->total * (float) $rate, self::baseCurrency(), PejotaHelper::getUserLocate());
                         }
 
@@ -541,7 +539,7 @@ class InvoiceResource extends Resource
                     ->dehydrated()
                     ->disabled(fn (Get $get): bool => self::isUnpaidStatus($get('status')))
                     ->afterStateUpdated(function (Invoice $record, Set $set, Get $get, $state): void {
-                        if ($get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record)) {
+                        if (self::statusValue($get('status')) === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record)) {
                             $rate = self::referenceRate($record, $state);
                             if ($rate !== null) {
                                 $set('realized_rate', $rate);
@@ -554,8 +552,8 @@ class InvoiceResource extends Resource
                     ->minValue(0)
                     ->step('any')
                     ->live(onBlur: true)
-                    ->visible(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
-                    ->required(fn (Invoice $record, Get $get): bool => $get('status') === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
+                    ->visible(fn (Invoice $record, Get $get): bool => self::statusValue($get('status')) === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
+                    ->required(fn (Invoice $record, Get $get): bool => self::statusValue($get('status')) === InvoiceStatusEnum::PAID->value && self::isForeignInvoice($record))
                     ->helperText(__('Freezes the base-currency value received for this invoice.')),
             ]),
         ];
@@ -566,7 +564,7 @@ class InvoiceResource extends Resource
      */
     private static function saveChangeStatus(Invoice $record, array $data): void
     {
-        $status = $data['status'];
+        $status = self::statusValue($data['status']);
         $paymentDate = $data['payment_date'] ?? null;
 
         if (self::isUnpaidStatus($status)) {
@@ -588,7 +586,7 @@ class InvoiceResource extends Resource
      * Applies the shared "send" modal (form, prefill and dispatch) to a table
      * row action or a page header action, so both stay identical.
      */
-    public static function configureSendAction(MountableAction $action): MountableAction
+    public static function configureSendAction(Action $action): Action
     {
         return $action
             ->label(__('Send'))
@@ -596,7 +594,7 @@ class InvoiceResource extends Resource
             ->color('primary')
             ->visible(fn (Invoice $record): bool => self::companyMailConfigComplete($record))
             ->fillForm(fn (Invoice $record): array => self::sendFormDefaults($record))
-            ->form(self::sendFormSchema())
+            ->schema(self::sendFormSchema())
             ->action(fn (Invoice $record, array $data) => self::dispatchSend($record, $data));
     }
 
@@ -705,9 +703,14 @@ class InvoiceResource extends Resource
         }
     }
 
-    private static function isUnpaidStatus(?string $status): bool
+    private static function statusValue(InvoiceStatusEnum|string|null $status): ?string
     {
-        return in_array($status, [
+        return $status instanceof InvoiceStatusEnum ? $status->value : $status;
+    }
+
+    private static function isUnpaidStatus(InvoiceStatusEnum|string|null $status): bool
+    {
+        return in_array(self::statusValue($status), [
             InvoiceStatusEnum::UNPAID->value,
             InvoiceStatusEnum::CANCELED->value,
         ], true);

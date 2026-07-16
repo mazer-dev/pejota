@@ -12,30 +12,27 @@ use App\Filament\App\Resources\ClientResource\Pages\ViewClient;
 use App\Helpers\PejotaHelper;
 use App\Models\Client;
 use App\Models\Currency;
-use Filament\Forms;
-use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Infolists\Components\Actions;
-use Filament\Infolists\Components\Actions\Action;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Support\Enums\TextSize;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -47,7 +44,7 @@ class ClientResource extends Resource
 {
     protected static ?string $model = Client::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
 
     protected static ?int $navigationSort = MenuSortEnum::CLIENTS->value;
 
@@ -61,11 +58,11 @@ class ClientResource extends Resource
         return __(MenuGroupsEnum::ADMINISTRATION->value);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->columns(1)
-            ->schema(
+            ->components(
                 self::getSchema()
             );
     }
@@ -108,35 +105,35 @@ class ClientResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make()
                     ->iconButton(),
                 CommentsAction::make()
                     ->iconButton(),
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Split::make([
+        return $schema
+            ->components([
+                Flex::make([
                     Grid::make(1)
                         ->schema([
                             Section::make([
                                 TextEntry::make('name')
-                                    ->size(TextEntrySize::Large)
+                                    ->size(TextSize::Large)
                                     ->weight(FontWeight::Bold)
                                     ->hiddenLabel(),
 
                                 TextEntry::make('tradename')
-                                    ->size(TextEntrySize::Large)
+                                    ->size(TextSize::Large)
                                     ->hiddenLabel()
                                     ->icon('heroicon-o-bookmark-square'),
 
@@ -238,7 +235,7 @@ class ClientResource extends Resource
                 ->translateLabel()
                 ->default(true)
                 ->helperText(__('New work sessions for this client are billable by default')),
-            Forms\Components\Section::make('Billing')
+            Section::make('Billing')
                 ->translateLabel()
                 ->columns(1)
                 ->schema([
@@ -272,7 +269,7 @@ class ClientResource extends Resource
                         ->collapsible()
                         ->defaultItems(0)
                         ->addActionLabel(__('Add contact')),
-                    Forms\Components\Section::make('Email template overrides')
+                    Section::make('Email template overrides')
                         ->translateLabel()
                         ->description(__('Leave blank to use the company default.'))
                         ->collapsed()
@@ -281,7 +278,7 @@ class ClientResource extends Resource
                                 ->label('Email subject')
                                 ->translateLabel()
                                 ->hintAction(
-                                    FormAction::make('client_billing_vars')
+                                    Action::make('client_billing_vars')
                                         ->icon('heroicon-o-question-mark-circle')
                                         ->label('')
                                         ->modalHeading(__('Available variables'))

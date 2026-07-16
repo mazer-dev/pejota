@@ -4,25 +4,30 @@ namespace App\Filament\App\Pages;
 
 use App\Enums\MenuGroupsEnum;
 use App\Enums\UserSettingsEnum;
+use App\Filament\App\Pages\Concerns\ManagesModelSettings;
 use App\Filament\App\Resources\TaskResource;
 use App\Helpers\PejotaHelper;
-use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
-use Filament\Forms\Form;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Pages\Page;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
-use Quadrubo\FilamentModelSettings\Pages\Contracts\HasModelSettings;
-use Quadrubo\FilamentModelSettings\Pages\ModelSettingsPage;
+use Illuminate\Database\Eloquent\Model;
 
-class MyPreferences extends ModelSettingsPage implements HasModelSettings
+class MyPreferences extends Page implements HasForms
 {
-    protected static ?string $navigationIcon = 'heroicon-o-user-circle';
+    use ManagesModelSettings;
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-circle';
 
     protected static ?int $navigationSort = 97;
 
-    public static function getSettingRecord()
+    protected string $view = 'filament.app.pages.model-settings';
+
+    public static function getSettingRecord(): Model
     {
         return PejotaHelper::currentUser();
     }
@@ -42,17 +47,12 @@ class MyPreferences extends ModelSettingsPage implements HasModelSettings
         return __(MenuGroupsEnum::SETTINGS->value);
     }
 
-    public function getSaveFormAction(): Action
+    public function form(Schema $schema): Schema
     {
-        return parent::getSaveFormAction()
-            ->translateLabel();
-    }
-
-    public function form(Form $form): Form
-    {
-        return $form
+        return $schema
+            ->statePath('data')
             ->columns(1)
-            ->schema([
+            ->components([
                 Tabs::make('Tabs')->tabs([
                     Tab::make('Localization')
                         ->translateLabel()

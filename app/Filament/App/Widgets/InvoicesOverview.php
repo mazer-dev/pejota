@@ -30,22 +30,22 @@ class InvoicesOverview extends BaseWidget
             Stat::make(__('Total pending'), $fmt->formatCurrency($pending['total'], $currency))
                 ->description($this->describe(__('Pending invoices (sent + partially paid)'), $pending['unconverted']))
                 ->icon('heroicon-o-currency-dollar')
-                ->color(Color::hex('#dadada')),
+                ->color(Color::generateV3Palette('#dadada')),
 
             Stat::make(__('Pending overdue'), $fmt->formatCurrency($overdue['total'], $currency))
                 ->description($this->describe(__('Pending and overdue'), $overdue['unconverted']))
                 ->icon('heroicon-o-exclamation-circle')
-                ->color(Color::hex('#fadada')),
+                ->color(Color::generateV3Palette('#fadada')),
 
             Stat::make(__('Due within 30 days'), $fmt->formatCurrency($dueSoon['total'], $currency))
                 ->description($this->describe(__('Pending due in the next 30 days'), $dueSoon['unconverted']))
                 ->icon('heroicon-o-clock')
-                ->color(Color::hex('#fdf6da')),
+                ->color(Color::generateV3Palette('#fdf6da')),
 
             Stat::make(__('Received last 30 days'), $fmt->formatCurrency($received['total'], $currency))
                 ->description($this->describe(__('Paid in the last 30 days'), $received['unconverted']))
                 ->icon('heroicon-o-check')
-                ->color(Color::hex('#daFada')),
+                ->color(Color::generateV3Palette('#daFada')),
         ];
     }
 

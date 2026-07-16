@@ -11,6 +11,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\WorkSession;
 use App\Services\Timesheet\SessionGroupKey;
+use DomainException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -90,7 +91,7 @@ class SessionInvoiceService
         $base = PejotaHelper::getUserCurrency();
 
         if (($invoice->currency ?? $base) !== ($client->currency ?? $base)) {
-            throw new \DomainException(__('The invoice currency does not match the client currency.'));
+            throw new DomainException(__('The invoice currency does not match the client currency.'));
         }
 
         $items = $this->buildDraftItems($request);

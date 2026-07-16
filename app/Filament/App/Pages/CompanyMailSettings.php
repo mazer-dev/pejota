@@ -16,14 +16,15 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Dashboard;
 use Filament\Pages\Page;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Js;
+use Throwable;
 
 class CompanyMailSettings extends Page implements HasForms
 {
@@ -34,9 +35,9 @@ class CompanyMailSettings extends Page implements HasForms
 
     public Company $company;
 
-    protected static ?string $navigationIcon = 'heroicon-o-envelope';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-envelope';
 
-    protected static string $view = 'filament.app.pages.company-mail-settings';
+    protected string $view = 'filament.app.pages.company-mail-settings';
 
     protected static ?int $navigationSort = 98;
 
@@ -73,10 +74,10 @@ class CompanyMailSettings extends Page implements HasForms
         ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Select::make('driver')
                     ->label(__('Driver'))
                     ->options(MailDriverEnum::class)
@@ -133,7 +134,7 @@ class CompanyMailSettings extends Page implements HasForms
             Action::make('sendTest')
                 ->label(__('Send test email'))
                 ->icon('heroicon-o-paper-airplane')
-                ->form([
+                ->schema([
                     TextInput::make('test_recipient')
                         ->label(__('Send to'))
                         ->email()
@@ -171,7 +172,7 @@ class CompanyMailSettings extends Page implements HasForms
                             ->title(__('Test email sent'))
                             ->success()
                             ->send();
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         Notification::make()
                             ->title(__('Test email failed'))
                             ->body($e->getMessage())

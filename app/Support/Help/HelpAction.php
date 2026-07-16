@@ -3,8 +3,7 @@
 namespace App\Support\Help;
 
 use Filament\Actions\Action;
-use Filament\Forms\Components\Actions\Action as FormAction;
-use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Enums\Width;
 
 class HelpAction
 {
@@ -13,19 +12,19 @@ class HelpAction
         return self::configure(Action::make($slug), $slug);
     }
 
-    public static function form(string $slug): FormAction
+    public static function form(string $slug): Action
     {
-        return self::configure(FormAction::make($slug), $slug);
+        return self::configure(Action::make($slug), $slug);
     }
 
-    public static function configure(Action|FormAction $action, string $slug): Action|FormAction
+    public static function configure(Action $action, string $slug): Action
     {
         return $action
             ->label(__('Help'))
             ->icon('heroicon-o-question-mark-circle')
             ->color('gray')
             ->slideOver()
-            ->modalWidth(MaxWidth::Large)
+            ->modalWidth(Width::Large)
             ->modalHeading(fn (): string => (new HelpArticle($slug, app()->getLocale()))->title())
             ->modalContent(fn () => view('help.article', [
                 'article' => new HelpArticle($slug, app()->getLocale()),

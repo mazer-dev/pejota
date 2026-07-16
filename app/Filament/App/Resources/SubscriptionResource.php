@@ -13,19 +13,19 @@ use App\Filament\App\Resources\SubscriptionResource\Pages\ListSubscriptions;
 use App\Filament\App\Resources\SubscriptionResource\Pages\ViewSubscription;
 use App\Helpers\PejotaHelper;
 use App\Models\Subscription;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\Resource;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Grouping\Group;
@@ -39,7 +39,7 @@ class SubscriptionResource extends Resource
 
     protected static ?string $model = Subscription::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-tv';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-tv';
 
     public static function feature(): FeatureEnum
     {
@@ -56,10 +56,10 @@ class SubscriptionResource extends Resource
         return __('Subscription');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Grid::make([
                     'default' => 2,
                 ])->schema([
@@ -174,13 +174,13 @@ class SubscriptionResource extends Resource
                         fn (Model $record) => SubscriptionBillingPeriodEnum::from($record->billing_period)->getLabel()
                     )
             )
-            ->actions([
+            ->recordActions([
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
                 ]),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

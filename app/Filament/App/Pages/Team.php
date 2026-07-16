@@ -17,7 +17,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Page;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -29,9 +28,9 @@ class Team extends Page implements HasTable
 {
     use InteractsWithFormActions, InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
 
-    protected static string $view = 'filament.app.pages.team';
+    protected string $view = 'filament.app.pages.team';
 
     public Company $company;
 
@@ -74,7 +73,7 @@ class Team extends Page implements HasTable
             HeaderAction::make('invite')
                 ->label(__('Invite member'))
                 ->icon('heroicon-o-envelope')
-                ->form([
+                ->schema([
                     TextInput::make('email')->label(__('Email'))->email()->required()->maxLength(255),
                     Select::make('role')
                         ->label(__('Role'))
@@ -150,11 +149,11 @@ class Team extends Page implements HasTable
                     ->label(__('Role'))
                     ->state(fn (User $record): ?string => filled($role = $record->getRoleNames()->first()) ? __(ucfirst($role)) : null),
             ])
-            ->actions([
-                Action::make('changeRole')
+            ->recordActions([
+                HeaderAction::make('changeRole')
                     ->label(__('Change role'))
                     ->icon('heroicon-o-arrows-up-down')
-                    ->form([
+                    ->schema([
                         Select::make('role')
                             ->label(__('Role'))
                             ->options(function (): array {
@@ -182,7 +181,7 @@ class Team extends Page implements HasTable
                             Notification::make()->danger()->title($e->getMessage())->send();
                         }
                     }),
-                Action::make('remove')
+                HeaderAction::make('remove')
                     ->label(__('Remove'))
                     ->icon('heroicon-o-trash')
                     ->color('danger')

@@ -18,32 +18,29 @@ use App\Models\WorkSession;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Closure;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Filament\Infolists\Components\Actions;
-use Filament\Infolists\Components\Actions\Action;
-use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\IconEntry;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
-use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Actions\BulkAction;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
@@ -61,7 +58,7 @@ class WorkSessionResource extends Resource
 {
     protected static ?string $model = WorkSession::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clock';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clock';
 
     protected static ?int $navigationSort = MenuSortEnum::WORK_SESSIONS->value;
 
@@ -83,11 +80,11 @@ class WorkSessionResource extends Resource
         return __(MenuGroupsEnum::DAILY_WORK->value);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->columns(1)
-            ->schema(
+            ->components(
                 self::getFormSchema()
             );
     }
@@ -204,7 +201,7 @@ class WorkSessionResource extends Resource
                     ->translateLabel()
                     ->relationship('project', 'name'),
                 Filter::make('start')
-                    ->form([
+                    ->schema([
                         DateTimePicker::make('from')
                             ->translateLabel(),
                         DateTimePicker::make('to')
@@ -229,18 +226,18 @@ class WorkSessionResource extends Resource
                         return null;
                     }),
             ])
-            ->actions([
+            ->recordActions([
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
-                    Tables\Actions\Action::make(__('Clone'))
+                    Action::make(__('Clone'))
                         ->tooltip(__('Clone this session with same time and details, updating to current date'))
                         ->icon('heroicon-o-document-duplicate')
                         ->color(Color::Amber)
                         ->action(fn (WorkSession $record) => self::clone($record)),
                 ]),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                     BulkAction::make(__('Clone selected'))
@@ -280,7 +277,7 @@ class WorkSessionResource extends Resource
                 ->required()
                 ->translateLabel(),
 
-            Forms\Components\Grid::make([
+            Grid::make([
                 'default' => 2,
                 'sm' => 2,
                 'md' => 6,
@@ -398,7 +395,7 @@ class WorkSessionResource extends Resource
                     ->disabled(),
             ]),
 
-            Forms\Components\Grid::make(3)->schema([
+            Grid::make(3)->schema([
                 Select::make('client')
                     ->translateLabel()
                     ->relationship('client', 'name')
@@ -439,7 +436,7 @@ class WorkSessionResource extends Resource
 
             ]),
 
-            Forms\Components\Section::make(__('Description'))->schema([
+            Section::make(__('Description'))->schema([
 
                 RichEditor::make('description')
                     ->hiddenLabel()
@@ -450,11 +447,11 @@ class WorkSessionResource extends Resource
         ];
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Split::make([
+        return $schema
+            ->components([
+                Flex::make([
                     Section::make([
                         Grid::make([
                             'default' => 1,

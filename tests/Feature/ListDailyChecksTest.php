@@ -106,7 +106,7 @@ class ListDailyChecksTest extends TestCase
         $this->makeTask('Habit', true);
 
         Livewire::test(ListDailyChecks::class)
-            ->assertSeeHtml('fi-ta-icon-item');
+            ->assertSeeHtml('fi-ta-icon');
     }
 
     public function test_clicking_a_row_links_to_the_task_view_page(): void

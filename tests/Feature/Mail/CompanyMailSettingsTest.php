@@ -100,6 +100,6 @@ class CompanyMailSettingsTest extends TestCase
         Livewire::test(CompanyMailSettings::class)
             ->assertActionExists('gmail-smtp')
             ->mountAction('gmail-smtp')
-            ->assertSee('smtp.gmail.com');
+            ->assertMountedActionModalSee('smtp.gmail.com');
     }
 }

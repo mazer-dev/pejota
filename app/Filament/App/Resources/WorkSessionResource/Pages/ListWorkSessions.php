@@ -27,8 +27,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Features\SupportRedirects\Redirector;
@@ -56,7 +56,7 @@ class ListWorkSessions extends ListRecords
                     'includeValue' => true,
                     'billableOnly' => false,
                 ])
-                ->form([
+                ->schema([
                     Select::make('client_id')
                         ->label(__('Client'))
                         ->options(fn (): array => Client::orderBy('name')->pluck('name', 'id')->all())
@@ -135,7 +135,7 @@ class ListWorkSessions extends ListRecords
                         'title' => __('Work sessions :from–:to', ['from' => $from, 'to' => $to]),
                     ];
                 })
-                ->form([
+                ->schema([
                     Select::make('client_id')
                         ->label(__('Client'))
                         ->options(fn (): array => Client::orderBy('name')->pluck('name', 'id')->all())
@@ -202,7 +202,7 @@ class ListWorkSessions extends ListRecords
             'running' => Tab::make()
                 ->label(__('Running'))
                 ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('is_running', true))
-                ->badge(fn (WorkSession $record): int => $record->where('is_running', true)->count())
+                ->badge(fn (): int => WorkSession::where('is_running', true)->count())
                 ->badgeColor(Color::Green),
             'all' => Tab::make()
                 ->label(__('All')),

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use InvalidArgumentException;
 use NunoMazer\Samehouse\BelongsToTenants;
 
 class WorkSession extends Model
@@ -36,13 +37,13 @@ class WorkSession extends Model
      * rate and value are both read/written through MoneyCast, so this math
      * operates entirely in major units (e.g. 100.00), never raw cents.
      *
-     * @throws \InvalidArgumentException when end is before start
+     * @throws InvalidArgumentException when end is before start
      */
     public function recalculate(): void
     {
         if ($this->start && $this->end) {
             if ($this->end->lessThan($this->start)) {
-                throw new \InvalidArgumentException('Work session end must be greater than or equal to start.');
+                throw new InvalidArgumentException('Work session end must be greater than or equal to start.');
             }
 
             $this->duration = (int) round($this->start->diffInMinutes($this->end, absolute: false));

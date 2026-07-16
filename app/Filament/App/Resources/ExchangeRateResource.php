@@ -13,12 +13,12 @@ use App\Helpers\PejotaHelper;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
 use App\Services\ExchangeRateService;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -33,7 +33,7 @@ class ExchangeRateResource extends Resource
 
     protected static ?string $model = ExchangeRate::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-arrows-right-left';
 
     protected static ?int $navigationSort = MenuSortEnum::EXCHANGE_RATES->value;
 
@@ -127,7 +127,7 @@ class ExchangeRateResource extends Resource
                     ->label(__('Currency'))
                     ->options(fn (): array => Currency::query()->orderBy('code')->pluck('code', 'code')->all()),
                 Filter::make('date')
-                    ->form([
+                    ->schema([
                         DatePicker::make('from')->label(__('From')),
                         DatePicker::make('until')->label(__('Until')),
                     ])
@@ -137,14 +137,14 @@ class ExchangeRateResource extends Resource
                             ->when($data['until'] ?? null, fn (Builder $q, $date): Builder => $q->whereDate('date', '<=', $date));
                     }),
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make(),
             ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist->schema([
+        return $schema->components([
             TextEntry::make('currency_code')->label(__('Currency')),
             TextEntry::make('date')->translateLabel()->date(PejotaHelper::getUserDateFormat()),
             TextEntry::make('rate')->label(__('1 USD =')),

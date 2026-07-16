@@ -11,28 +11,27 @@ use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Helpers\PejotaHelper;
 use App\Livewire\Projects\ListTasks;
 use App\Models\Project;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieTagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Infolists\Components\Actions;
-use Filament\Infolists\Components\Actions\Action;
-use Filament\Infolists\Components\Livewire;
-use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\SpatieTagsEntry;
-use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\TextEntry\TextEntrySize;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Livewire;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Support\Enums\TextSize;
 use Filament\Tables\Columns\SpatieTagsColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
@@ -47,7 +46,7 @@ class ProjectResource extends Resource
 {
     protected static ?string $model = Project::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-bar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-presentation-chart-bar';
 
     protected static ?int $navigationSort = MenuSortEnum::PROJECTS->value;
 
@@ -61,11 +60,11 @@ class ProjectResource extends Resource
         return __('Project');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->columns(1)
-            ->schema(
+            ->components(
                 self::getFormComponents()
             );
     }
@@ -110,11 +109,11 @@ class ProjectResource extends Resource
             ->groups([
                 Group::make('client.name'),
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -123,15 +122,15 @@ class ProjectResource extends Resource
             ->persistFiltersInSession();
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
-            ->schema([
-                Split::make([
+        return $schema
+            ->components([
+                Flex::make([
                     Section::make([
                         TextEntry::make('name')
                             ->translateLabel()
-                            ->size(TextEntrySize::Large)
+                            ->size(TextSize::Large)
                             ->weight(FontWeight::Bold)
                             ->label(''),
 

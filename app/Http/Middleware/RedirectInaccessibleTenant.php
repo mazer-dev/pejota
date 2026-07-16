@@ -11,7 +11,7 @@ class RedirectInaccessibleTenant
 {
     public function handle(Request $request, Closure $next): mixed
     {
-        $panel = Filament::getCurrentPanel();
+        $panel = Filament::getCurrentOrDefaultPanel();
 
         if (! $panel?->hasTenancy() || ! $request->route()?->hasParameter('tenant')) {
             return $next($request);

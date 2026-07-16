@@ -7,8 +7,8 @@ use App\Filament\App\Resources\TaskResource;
 use App\Models\Task;
 use App\Support\Entitlements;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Support\Colors\Color;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,12 +51,12 @@ class ListTasks extends ListRecords
 
                     return $query;
                 })
-                ->badge(fn (Task $record): int => $record->opened()->excludeDoneTodayChecks()->count())
+                ->badge(fn (): int => Task::opened()->excludeDoneTodayChecks()->count())
                 ->badgeColor(Color::Orange),
             'daily_checks' => Tab::make()
                 ->label(__('Daily checks'))
                 ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('is_continuous', true))
-                ->badge(fn (Task $record): int => $record->where('is_continuous', true)->count())
+                ->badge(fn (): int => Task::where('is_continuous', true)->count())
                 ->badgeColor(Color::Amber),
             'closed' => Tab::make()
                 ->label(__('Closed'))

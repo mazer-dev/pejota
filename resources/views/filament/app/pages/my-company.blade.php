@@ -1,17 +1,17 @@
 <x-filament-panels::page>
     <div>
-        <x-filament-panels::form
+        <form
             id="form"
-            :wire:key="$this->getId() . '.forms.' . $this->getFormStatePath()"
             wire:submit="save"
+            class="space-y-6"
         >
             {{ $this->form }}
 
-            <x-filament-panels::form.actions
+            <x-filament::actions
                 :actions="$this->getCachedFormActions()"
                 :full-width="$this->hasFullWidthFormActions()"
             />
-        </x-filament-panels::form>
+        </form>
 
         <x-filament-actions::modals/>
     </div>

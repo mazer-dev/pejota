@@ -11,11 +11,11 @@ use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Dashboard;
 use Filament\Pages\Page;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Js;
 
@@ -28,9 +28,9 @@ class MyCompany extends Page implements HasForms
 
     public Company $company;
 
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-home';
 
-    protected static string $view = 'filament.app.pages.my-company';
+    protected string $view = 'filament.app.pages.my-company';
 
     protected static ?int $navigationSort = MenuSortEnum::MY_COMPANY->value;
 
@@ -60,10 +60,10 @@ class MyCompany extends Page implements HasForms
         $this->form->fill($this->company->toArray());
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('name')
                     ->label(__('Name'))
                     ->required(),
@@ -77,6 +77,7 @@ class MyCompany extends Page implements HasForms
                 SpatieMediaLibraryFileUpload::make('logo')
                     ->translateLabel()
                     ->disk('companies-logo')
+                    ->visibility('public')
                     ->image()
                     ->imageEditor()
                     ->imageEditorAspectRatios([

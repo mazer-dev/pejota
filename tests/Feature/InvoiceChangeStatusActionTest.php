@@ -195,10 +195,10 @@ class InvoiceChangeStatusActionTest extends TestCase
         Livewire::test(ListInvoices::class)
             ->set('activeTab', 'all')
             ->mountTableAction('change_status', $invoice)
-            ->set('mountedTableActionsData.0.status', InvoiceStatusEnum::PAID->value)
-            ->assertSet('mountedTableActionsData.0.realized_rate', 6.0)
-            ->set('mountedTableActionsData.0.payment_date', $early)
-            ->assertSet('mountedTableActionsData.0.realized_rate', 4.0)
+            ->set('mountedActions.0.data.status', InvoiceStatusEnum::PAID->value)
+            ->assertSet('mountedActions.0.data.realized_rate', 6.0)
+            ->set('mountedActions.0.data.payment_date', $early)
+            ->assertSet('mountedActions.0.data.realized_rate', 4.0)
             ->callMountedTableAction()
             ->assertHasNoTableActionErrors();
 
@@ -216,11 +216,11 @@ class InvoiceChangeStatusActionTest extends TestCase
         Livewire::test(ListInvoices::class)
             ->set('activeTab', 'all')
             ->mountTableAction('change_status', $invoice)
-            ->set('mountedTableActionsData.0.status', InvoiceStatusEnum::PAID->value)
-            ->set('mountedTableActionsData.0.payment_date', $covered)
-            ->assertSet('mountedTableActionsData.0.realized_rate', 5.5)
-            ->set('mountedTableActionsData.0.payment_date', $uncovered)
-            ->assertSet('mountedTableActionsData.0.realized_rate', 5.5);
+            ->set('mountedActions.0.data.status', InvoiceStatusEnum::PAID->value)
+            ->set('mountedActions.0.data.payment_date', $covered)
+            ->assertSet('mountedActions.0.data.realized_rate', 5.5)
+            ->set('mountedActions.0.data.payment_date', $uncovered)
+            ->assertSet('mountedActions.0.data.realized_rate', 5.5);
     }
 
     public function test_base_value_reflects_edited_realized_rate(): void
@@ -234,9 +234,9 @@ class InvoiceChangeStatusActionTest extends TestCase
         Livewire::test(ListInvoices::class)
             ->set('activeTab', 'all')
             ->mountTableAction('change_status', $invoice)
-            ->set('mountedTableActionsData.0.status', InvoiceStatusEnum::PAID->value)
-            ->set('mountedTableActionsData.0.realized_rate', 7.0)
-            ->assertSee($expected);
+            ->set('mountedActions.0.data.status', InvoiceStatusEnum::PAID->value)
+            ->set('mountedActions.0.data.realized_rate', 7.0)
+            ->assertMountedActionModalSee($expected);
     }
 
     public function test_view_page_exposes_change_status_action(): void

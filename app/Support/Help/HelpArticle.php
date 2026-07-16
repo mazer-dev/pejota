@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Throwable;
 
 class HelpArticle
 {
@@ -93,7 +94,7 @@ class HelpArticle
             );
 
             return new HtmlString($html);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::warning('Failed to render help article', [
                 'slug' => $this->slug,
                 'error' => $e->getMessage(),

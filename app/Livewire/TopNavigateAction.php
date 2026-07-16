@@ -13,7 +13,7 @@ use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Support\Colors\Color;
 use Filament\Support\Contracts\TranslatableContentDriver;
-use Filament\Support\Enums\ActionSize;
+use Filament\Support\Enums\Size;
 use Livewire\Component;
 
 class TopNavigateAction extends Component implements HasActions
@@ -25,7 +25,7 @@ class TopNavigateAction extends Component implements HasActions
         return view('livewire.top-navigate-action');
     }
 
-    public function getAction(array|string $name): ?Action
+    public function getAction(array|string $name, bool $isMounting = true): ?Action
     {
         return Action::make($name);
     }
@@ -34,12 +34,12 @@ class TopNavigateAction extends Component implements HasActions
     {
         return Action::make($name)
             ->hiddenLabel()
-            ->size(ActionSize::Small)
+            ->size(Size::Small)
             ->tooltip(__('Create a new Task'))
             ->label(__('Create Task'))
             ->icon(TaskResource::getNavigationIcon())
             ->url(
-                CreateTask::getUrl(panel: 'create')
+                CreateTask::getUrl()
             );
     }
 
@@ -47,13 +47,13 @@ class TopNavigateAction extends Component implements HasActions
     {
         return Action::make($name)
             ->hiddenLabel()
-            ->size(ActionSize::Small)
+            ->size(Size::Small)
             ->tooltip(__('Create a new Work Session'))
             ->label(__('Create Session'))
             ->icon(WorkSessionResource::getNavigationIcon())
             ->color(Color::Amber)
             ->url(
-                CreateWorkSession::getUrl(panel: 'create')
+                CreateWorkSession::getUrl()
             );
     }
 
@@ -61,13 +61,13 @@ class TopNavigateAction extends Component implements HasActions
     {
         return Action::make($name)
             ->hiddenLabel()
-            ->size(ActionSize::Small)
+            ->size(Size::Small)
             ->tooltip(__('Create a new Note'))
             ->label(__('Create Note'))
             ->icon(NoteResource::getNavigationIcon())
             ->color(Color::Cyan)
             ->url(
-                CreateNote::getUrl(panel: 'create')
+                CreateNote::getUrl()
             );
     }
 

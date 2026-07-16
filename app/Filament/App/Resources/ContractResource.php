@@ -11,26 +11,27 @@ use App\Filament\App\Resources\ContractResource\Pages\EditContract;
 use App\Filament\App\Resources\ContractResource\Pages\ListContracts;
 use App\Helpers\PejotaHelper;
 use App\Models\Contract;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\Resource;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
 
 class ContractResource extends Resource
@@ -39,7 +40,7 @@ class ContractResource extends Resource
 
     protected static ?string $model = Contract::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?int $navigationSort = MenuSortEnum::CONTRACTS->value;
 
@@ -58,11 +59,11 @@ class ContractResource extends Resource
         return __('Contract');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->columns(1)
-            ->schema([
+            ->components([
                 Grid::make(3)->schema([
                     Select::make('with')
                         ->translateLabel()
@@ -125,8 +126,13 @@ class ContractResource extends Resource
                 RichEditor::make('content')
                     ->translateLabel()
                     ->required(),
-                TableRepeater::make('signatures')
+                Repeater::make('signatures')
                     ->label(__('Signatures'))
+                    ->table([
+                        TableColumn::make(__('Name')),
+                        TableColumn::make(__('Role')),
+                        TableColumn::make(__('Date')),
+                    ])
                     ->schema([
                         TextInput::make('name')
                             ->translateLabel()
@@ -144,10 +150,7 @@ class ContractResource extends Resource
                             ->required(),
                     ])
                     ->addActionLabel(__('Add item'))
-                    ->defaultItems(0)
-                    ->colStyles([
-                        'item' => 'width:70%',
-                    ]),
+                    ->defaultItems(0),
             ]);
     }
 
@@ -194,7 +197,7 @@ class ContractResource extends Resource
                     ->relationship('vendor', 'name'),
                 Filter::make('end_at_not_empty')
                     ->translateLabel()
-                    ->form([
+                    ->schema([
                         Grid::make(2)->schema([
                             ToggleButtons::make('end_at')
                                 ->translateLabel()
@@ -216,7 +219,7 @@ class ContractResource extends Resource
                         return $query;
                     }),
                 Filter::make('end_at')
-                    ->form([
+                    ->schema([
                         DatePicker::make('from')
                             ->translateLabel(),
                         DatePicker::make('to')
@@ -234,13 +237,13 @@ class ContractResource extends Resource
                             );
                     }),
             ], layout: FiltersLayout::Modal)
-            ->actions([
+            ->recordActions([
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make(),
                 ]),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

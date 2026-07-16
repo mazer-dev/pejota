@@ -7,7 +7,6 @@ use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Resources\InvoiceResource;
 use App\Models\Invoice;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Str;
 
 class CreateInvoice extends CreateRecord
 {
@@ -45,20 +44,20 @@ class CreateInvoice extends CreateRecord
                     'obs_internal' => $source->obs_internal,
                     'discount' => $source->discount,
                     'total' => $source->total,
+                    'items' => $source->items
+                        ->map(fn ($item) => [
+                            'product_id' => $item->product_id,
+                            'name' => $item->name,
+                            'unit_id' => $item->unit_id,
+                            'quantity' => $item->quantity,
+                            'price' => $item->price,
+                            'discount' => $item->discount,
+                            'total' => $item->total,
+                            'obs' => $item->obs,
+                        ])
+                        ->values()
+                        ->toArray(),
                 ]);
-
-                $this->data['items'] = $source->items
-                    ->mapWithKeys(fn ($item) => [(string) Str::uuid() => [
-                        'product_id' => $item->product_id,
-                        'name' => $item->name,
-                        'unit_id' => $item->unit_id,
-                        'quantity' => $item->quantity,
-                        'price' => $item->price,
-                        'discount' => $item->discount,
-                        'total' => $item->total,
-                        'obs' => $item->obs,
-                    ]])
-                    ->toArray();
             }
         }
     }

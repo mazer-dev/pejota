@@ -1,89 +1,76 @@
-@import '/vendor/filament/filament/resources/css/theme.css';
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
 
-@config 'tailwind.config.js';
+@source '../../../../app/Filament/App/**/*.php';
+@source '../../../../resources/views/filament/app/**/*.blade.php';
+@source '../../../../resources/views/help/**/*.blade.php';
+@source '../../../../vendor/filament/**/*.blade.php';
 
-/** class to remove a table column header label **/
-.column-header-no-label span.fi-ta-header-cell-label {
-    display: none;
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+/** class to remove a table column header label. v5 no longer wraps the label in a
+ * dedicated span (it's bare text unless the column is sortable or has a header
+ * tooltip), so it's collapsed via font-size instead of hiding a child element. **/
+.column-header-no-label {
+    font-size: 0;
 }
 
-/*sidebar*/
-/*div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav {*/
-/*    background-color: #004B27;*/
-/*}*/
-
-/*!*topbar*!*/
-/*div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > div > header,*/
-/*.fi-logo {*/
-/*    background-color: #F2F7F5;*/
-/*}*/
-
- /*sidebar menus */
-/*div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li > a > span {*/
-/*    @apply text-gray-200;*/
-/*}*/
-
-/* sidebar menus hover */
-div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li > a:hover > span {
-    @apply text-gray-100;
-}
-
-div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li > a:hover {
+/* sidebar menu item hover (main sidebar only, not the resource sub-navigation sidebar) */
+.fi-main-sidebar .fi-sidebar-item-has-url .fi-sidebar-item-btn:hover {
     @apply bg-primary-900;
 }
 
-/* sidebar active menu */
-div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li.fi-sidebar-item.fi-active.fi-sidebar-item-active.flex.flex-col.gap-y-1 > a > span {
-    @apply text-gray-900;
+.fi-main-sidebar .fi-sidebar-item-has-url .fi-sidebar-item-btn:hover .fi-sidebar-item-label {
+    @apply text-gray-100;
 }
-div.fi-layout.flex.min-h-screen.w-full.flex-row-reverse.overflow-x-clip > aside > nav > ul > li > ul > li.fi-sidebar-item.fi-active.fi-sidebar-item-active.flex.flex-col.gap-y-1 > a {
+
+/* sidebar active menu */
+.fi-main-sidebar .fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
     @apply bg-primary-200;
 }
 
-/** sidebar menu groups **/
-/*.fi-sidebar-group-label {*/
-/*    @apply text-gray-400 hover:text-white;*/
-/*}*/
+.fi-main-sidebar .fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label {
+    @apply text-gray-900;
+}
 
 /* Table */
 /* Striped table */
 .fi-ta-row:nth-child(odd) {
-    /*background-color: rgba(var(--gray-100),1);*/
-    @apply bg-gray-100 dark:bg-gray-500 !important;
+    @apply bg-gray-100! dark:bg-gray-500!;
 }
 
 /* table hover */
 .fi-ta-row {
-    @apply hover:bg-gray-200 dark:hover:bg-danger-500 dark:hover:text-primary-900 !important;
+    @apply hover:bg-gray-200! dark:hover:bg-danger-500! dark:hover:text-primary-900!;
 }
 
-@media (hover:hover) {
+@media (hover: hover) {
     .fi-ta-row {
-        @apply dark:hover:bg-gray-900 dark:hover:text-gray-200 !important;
+        @apply dark:hover:bg-gray-900! dark:hover:text-gray-200!;
     }
 }
 
 /* daily check (continuous) rows - pending today: amber call-to-action */
 .fi-ta-row.fi-daily-check-pending {
-    @apply bg-amber-50 dark:bg-amber-950 !important;
+    @apply bg-amber-50! dark:bg-amber-950!;
 }
 
 .fi-ta-row.fi-daily-check-pending:hover {
-    @apply bg-amber-100 dark:bg-amber-900 dark:text-gray-200 !important;
+    @apply bg-amber-100! dark:bg-amber-900! dark:text-gray-200!;
 }
 
 /* daily check (continuous) rows - done today: subtle green */
 .fi-ta-row.fi-daily-check-done {
-    @apply bg-green-50 dark:bg-green-950 !important;
+    @apply bg-green-50! dark:bg-green-950!;
 }
 
 .fi-ta-row.fi-daily-check-done:hover {
-    @apply bg-green-100 dark:bg-green-900 dark:text-gray-200 !important;
+    @apply bg-green-100! dark:bg-green-900! dark:text-gray-200!;
 }
 
 /* dropdown list */
 .fi-ta-actions .fi-btn,
 .fi-dropdown-list-item {
     width: 100%;
-    @apply hover:bg-gray-200 dark:hover:bg-gray-900 dark:hover:text-gray-200 !important;
+    @apply hover:bg-gray-200! dark:hover:bg-gray-900! dark:hover:text-gray-200!;
 }

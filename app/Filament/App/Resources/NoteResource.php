@@ -2,7 +2,6 @@
 
 namespace App\Filament\App\Resources;
 
-use AbdelhamidErrahmouni\FilamentMonacoEditor\MonacoEditor;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\NoteResource\Pages\CreateNote;
@@ -11,26 +10,26 @@ use App\Filament\App\Resources\NoteResource\Pages\ListNotes;
 use App\Filament\App\Resources\NoteResource\Pages\ViewNote;
 use App\Models\Note;
 use App\Tables\Columns\BlockTypesBadge;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieTagsInput;
-use Filament\Forms\Components\Split;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Infolists\Components\Actions\Action;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
-use Filament\Support\Enums\ActionSize;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Support\Enums\Size;
 use Filament\Tables\Columns\SpatieTagsColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -41,7 +40,7 @@ class NoteResource extends Resource
 {
     protected static ?string $model = Note::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-pencil-square';
 
     protected static ?int $navigationSort = MenuSortEnum::NOTES->value;
 
@@ -69,7 +68,7 @@ class NoteResource extends Resource
                 ->hiddenLabel()
                 ->url(EditNote::getUrl([$record->id]))
                 ->icon('heroicon-o-pencil')
-                ->size(ActionSize::ExtraSmall)
+                ->size(Size::ExtraSmall)
                 ->tooltip(__('Edit note')),
 
             Action::make('view')
@@ -78,17 +77,17 @@ class NoteResource extends Resource
                 ->modal(true)
                 ->icon(NoteResource::$navigationIcon)
                 ->color(Color::Cyan)
-                ->size(ActionSize::ExtraSmall)
+                ->size(Size::ExtraSmall)
                 ->tooltip(__('View note')),
         ];
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->columns(1)
-            ->schema([
-                Split::make([
+            ->components([
+                Flex::make([
                     Section::make()->schema([
                         TextInput::make('title')
                             ->translateLabel()
@@ -109,7 +108,7 @@ class NoteResource extends Resource
                                             ->placeholder('url')
                                             ->required()
                                             ->prefixAction(
-                                                fn ($state) => Forms\Components\Actions\Action::make('url')
+                                                fn ($state) => Action::make('url')
                                                     ->url($state)
                                                     ->openUrlInNewTab()
                                                     ->icon('heroicon-o-link')
@@ -162,11 +161,10 @@ class NoteResource extends Resource
                                             ])
                                             ->live(),
 
-                                        MonacoEditor::make('content')
-                                            ->language(fn ($get) => ($get('language') ?? 'html'))
-                                            ->disablePreview(true)
-                                            ->hideFullScreenButton()
-                                            ->hiddenLabel(),
+                                        Textarea::make('content')
+                                            ->hiddenLabel()
+                                            ->rows(15)
+                                            ->autosize(),
                                     ]),
 
                                 Block::make('markdown')
@@ -247,11 +245,11 @@ class NoteResource extends Resource
             ->filters([
 
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

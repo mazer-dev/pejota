@@ -19,5 +19,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/.superpowers
 database.sqlite
 /codealike.json

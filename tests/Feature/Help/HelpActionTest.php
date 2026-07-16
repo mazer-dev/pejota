@@ -4,7 +4,6 @@ namespace Tests\Feature\Help;
 
 use App\Support\Help\HelpAction;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Actions\Action as FormAction;
 use Tests\TestCase;
 
 class HelpActionTest extends TestCase
@@ -22,7 +21,7 @@ class HelpActionTest extends TestCase
     {
         $action = HelpAction::form('help-test-topic');
 
-        $this->assertInstanceOf(FormAction::class, $action);
+        $this->assertInstanceOf(Action::class, $action);
         $this->assertTrue($action->isModalSlideOver());
     }
 

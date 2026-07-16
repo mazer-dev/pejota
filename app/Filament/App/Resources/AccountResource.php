@@ -12,14 +12,14 @@ use App\Filament\App\Resources\AccountResource\Pages\ListAccounts;
 use App\Filament\App\Resources\AccountResource\Pages\ViewAccount;
 use App\Helpers\PejotaHelper;
 use App\Models\Account;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -29,7 +29,7 @@ class AccountResource extends Resource
 
     protected static ?string $model = Account::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-library';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-library';
 
     protected static ?int $navigationSort = MenuSortEnum::ACCOUNTS->value;
 
@@ -48,10 +48,10 @@ class AccountResource extends Resource
         return __(MenuGroupsEnum::FINANCE->value);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('name')
                     ->translateLabel()
                     ->required()
@@ -104,11 +104,11 @@ class AccountResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

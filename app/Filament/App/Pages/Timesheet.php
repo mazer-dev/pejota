@@ -16,13 +16,13 @@ use App\Services\Timesheet\TimesheetRequest;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Schema;
 use Livewire\Attributes\Computed;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -30,9 +30,9 @@ class Timesheet extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-chart-bar';
 
-    protected static string $view = 'filament.app.pages.timesheet';
+    protected string $view = 'filament.app.pages.timesheet';
 
     public ?array $data = [];
 
@@ -61,10 +61,10 @@ class Timesheet extends Page implements HasForms
         ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Grid::make(4)
                     ->schema([
                         Select::make('client_id')

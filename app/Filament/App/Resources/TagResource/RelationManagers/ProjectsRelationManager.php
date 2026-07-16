@@ -4,10 +4,10 @@ namespace App\Filament\App\Resources\TagResource\RelationManagers;
 
 use App\Filament\App\Resources\ProjectResource\Pages\ViewProject;
 use App\Models\Project;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -16,10 +16,10 @@ class ProjectsRelationManager extends RelationManager
 {
     protected static string $relationship = 'projects';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('name')
                     ->translateLabel()
                     ->required()
@@ -41,11 +41,11 @@ class ProjectsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([])
-            ->actions([
+            ->recordActions([
                 ViewAction::make()
                     ->url(fn (Project $record) => ViewProject::getUrl([$record])),
             ])
-            ->bulkActions([]);
+            ->toolbarActions([]);
     }
 
     public static function getBadge(Model $ownerRecord, string $pageClass): ?string

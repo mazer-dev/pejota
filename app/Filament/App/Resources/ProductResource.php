@@ -11,16 +11,16 @@ use App\Filament\App\Resources\ProductResource\Pages\EditProduct;
 use App\Filament\App\Resources\ProductResource\Pages\ListProducts;
 use App\Filament\App\Resources\ProductResource\Pages\ViewProduct;
 use App\Models\Product;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -31,7 +31,7 @@ class ProductResource extends Resource
 
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-inbox';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-inbox';
 
     protected static ?int $navigationSort = MenuSortEnum::PRODUCTS->value;
 
@@ -50,10 +50,10 @@ class ProductResource extends Resource
         return __(MenuGroupsEnum::ADMINISTRATION->value);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('name')
                     ->required()
                     ->translateLabel(),
@@ -103,11 +103,11 @@ class ProductResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

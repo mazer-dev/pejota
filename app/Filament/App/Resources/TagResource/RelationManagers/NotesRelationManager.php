@@ -5,9 +5,9 @@ namespace App\Filament\App\Resources\TagResource\RelationManagers;
 use App\Filament\App\Resources\NoteResource;
 use App\Filament\App\Resources\NoteResource\Pages\ViewNote;
 use App\Models\Note;
-use Filament\Infolists\Infolist;
+use Filament\Actions\ViewAction;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,9 +15,9 @@ class NotesRelationManager extends RelationManager
 {
     protected static string $relationship = 'notes';
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
-        return NoteResource::infolist($infolist);
+        return NoteResource::infolist($schema);
     }
 
     public function table(Table $table): Table
@@ -27,7 +27,7 @@ class NotesRelationManager extends RelationManager
         $table->getColumn('title')
             ->url(fn (Note $record) => ViewNote::getUrl([$record]));
 
-        $table->actions([
+        $table->recordActions([
             ViewAction::make()->url(fn (Note $record) => ViewNote::getUrl([$record])),
         ]);
 

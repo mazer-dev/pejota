@@ -4,33 +4,38 @@ namespace App\Filament\App\Pages;
 
 use App\Enums\CompanySettingsEnum;
 use App\Enums\MenuGroupsEnum;
+use App\Filament\App\Pages\Concerns\ManagesModelSettings;
 use App\Helpers\PejotaHelper;
 use App\Models\Currency;
 use App\Support\Help\HelpAction;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Pages\Page;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
-use Quadrubo\FilamentModelSettings\Pages\Contracts\HasModelSettings;
-use Quadrubo\FilamentModelSettings\Pages\ModelSettingsPage;
 
-class CompanySettings extends ModelSettingsPage implements HasModelSettings
+class CompanySettings extends Page implements HasForms
 {
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    use ManagesModelSettings;
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
     protected static ?int $navigationSort = 99;
 
-    public static function getSettingRecord()
+    protected string $view = 'filament.app.pages.model-settings';
+
+    public static function getSettingRecord(): Model
     {
         return PejotaHelper::currentCompany();
     }
@@ -50,17 +55,12 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
         return __(MenuGroupsEnum::SETTINGS->value);
     }
 
-    public function getSaveFormAction(): Action
+    public function form(Schema $schema): Schema
     {
-        return parent::getSaveFormAction()
-            ->translateLabel();
-    }
-
-    public function form(Form $form): Form
-    {
-        return $form
+        return $schema
+            ->statePath('data')
             ->columns(1)
-            ->schema([
+            ->components([
                 Tabs::make('Tabs')->tabs([
                     Tab::make('Clients')
                         ->translateLabel()
@@ -153,7 +153,7 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
                                 ->label('Email subject')
                                 ->translateLabel()
                                 ->hintAction(
-                                    FormAction::make('billing_variables_help')
+                                    Action::make('billing_variables_help')
                                         ->icon('heroicon-o-question-mark-circle')
                                         ->label('')
                                         ->modalHeading(__('Available variables'))

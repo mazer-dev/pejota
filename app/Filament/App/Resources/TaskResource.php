@@ -27,47 +27,47 @@ use App\Models\WorkSession;
 use App\Services\DailyCheckService;
 use App\Services\RecurrenceService;
 use App\Support\Entitlements;
-use Filament\Actions\MountableAction;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Forms\Components\Checkbox;
-use Filament\Forms\Components\Component;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieTagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Filament\Infolists\Components\Actions;
-use Filament\Infolists\Components\Actions\Action;
-use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\SpatieTagsEntry;
-use Filament\Infolists\Components\Split;
-use Filament\Infolists\Components\Tabs;
-use Filament\Infolists\Components\Tabs\Tab;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Filament\Support\Colors\Color;
-use Filament\Support\Enums\ActionSize;
 use Filament\Support\Enums\FontWeight;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Actions\BulkAction;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Support\Enums\Size;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\SpatieTagsColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -76,7 +76,6 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -89,7 +88,7 @@ class TaskResource extends Resource
 {
     protected static ?string $model = Task::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-check';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-check';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -136,7 +135,7 @@ class TaskResource extends Resource
                 ->hiddenLabel()
                 ->url(EditTask::getUrl([$record->id]))
                 ->icon('heroicon-o-pencil')
-                ->size(ActionSize::ExtraSmall)
+                ->size(Size::ExtraSmall)
                 ->tooltip(__('Edit Task')),
 
             Action::make('session')
@@ -148,7 +147,7 @@ class TaskResource extends Resource
                 )
                 ->icon('heroicon-o-play')
                 ->color(Color::Amber)
-                ->size(ActionSize::ExtraSmall)
+                ->size(Size::ExtraSmall)
                 ->tooltip(__('Start a session for task')),
         ];
     }
@@ -158,11 +157,11 @@ class TaskResource extends Resource
         return ViewTask::getUrl([$record->id]);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Grid::make(3)->schema([
+        return $schema
+            ->components([
+                Grid::make(3)->schema([
                     Select::make('client')
                         ->hiddenLabel()
                         ->placeholder(__('Select the client'))
@@ -231,7 +230,7 @@ class TaskResource extends Resource
                     ->columnSpanFull()
                     ->required(),
 
-                Forms\Components\Section::make(__('Details'))
+                Section::make(__('Details'))
                     ->collapsible()
                     ->compact()
                     ->schema([
@@ -252,13 +251,18 @@ class TaskResource extends Resource
 
                     ]),
 
-                Forms\Components\Section::make('checklist')
+                Section::make('checklist')
                     ->label('Checklist')
                     ->collapsible()
                     ->collapsed()
                     ->schema([
-                        TableRepeater::make('checklist')
+                        Repeater::make('checklist')
                             ->hiddenLabel()
+                            ->table([
+                                TableColumn::make('Item')
+                                    ->width('90%'),
+                                TableColumn::make(__('Completed')),
+                            ])
                             ->addActionLabel(__('Add item'))
                             ->cloneable()
                             ->schema([
@@ -267,14 +271,11 @@ class TaskResource extends Resource
                                 Checkbox::make('completed')
                                     ->translateLabel(),
                             ])
-                            ->defaultItems(0)
-                            ->colStyles([
-                                'item' => 'width:90%',
-                            ]),
+                            ->defaultItems(0),
 
                     ]),
 
-                Forms\Components\Grid::make([
+                Grid::make([
                     'default' => 2,
                     'md' => 5,
                 ])->schema([
@@ -311,7 +312,7 @@ class TaskResource extends Resource
 
                 ]),
 
-                Forms\Components\Grid::make([
+                Grid::make([
                     'default' => 2,
                     'md' => 6,
                 ])->schema([
@@ -365,7 +366,7 @@ class TaskResource extends Resource
         $columns = self::getTableColumns();
         if (PejotaHelper::isMobile()) {
             $columns = [
-                Tables\Columns\Layout\Split::make($columns)
+                Split::make($columns)
                     ->from('sm'),
             ];
         }
@@ -420,7 +421,7 @@ class TaskResource extends Resource
                     ->toggle()
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('recurrence_id')),
                 Filter::make('due_date_not_empty')
-                    ->form([
+                    ->schema([
                         ToggleButtons::make('due_date')
                             ->translateLabel()
                             ->inline()
@@ -450,7 +451,7 @@ class TaskResource extends Resource
                     }),
                 Filter::make('due_date')
                     ->columnSpan(2)
-                    ->form([
+                    ->schema([
                         DatePicker::make('from_due_date')
                             ->translateLabel()
                             ->inlineLabel(),
@@ -486,7 +487,7 @@ class TaskResource extends Resource
                     }),
 
                 Filter::make('planned_end_not_empty')
-                    ->form([
+                    ->schema([
                         ToggleButtons::make('planned_end')
                             ->translateLabel()
                             ->inline()
@@ -517,7 +518,7 @@ class TaskResource extends Resource
 
                 Filter::make('planned_end')
                     ->columnSpan(2)
-                    ->form([
+                    ->schema([
                         DatePicker::make('from_planned_end')
                             ->translateLabel()
                             ->inlineLabel(),
@@ -552,11 +553,11 @@ class TaskResource extends Resource
                         return null;
                     }),
             ], layout: FiltersLayout::AboveContentCollapsible)
-            ->actions([
+            ->recordActions([
                 ActionGroup::make([
                     ViewAction::make(),
                     CommentsAction::make(),
-                    Tables\Actions\Action::make(__('Start Session'))
+                    Action::make(__('Start Session'))
                         ->tooltip(__('Start a new session for this task'))
                         ->icon('heroicon-o-play')
                         ->color(Color::Amber)
@@ -567,7 +568,7 @@ class TaskResource extends Resource
                         ->url(fn ($record) => CreateWorkSession::getUrl([
                             'task' => $record->id,
                         ])),
-                    Tables\Actions\Action::make('markDoneToday')
+                    Action::make('markDoneToday')
                         ->label(__('Done today'))
                         ->tooltip(__('Mark this daily task as done today'))
                         ->icon('heroicon-o-check-circle')
@@ -575,7 +576,7 @@ class TaskResource extends Resource
                         ->visible(fn (Task $record): bool => $record->isDailyCheck() && ! $record->isDoneToday())
                         ->action(fn (Task $record) => DailyCheckService::toggle($record)),
                     EditAction::make(),
-                    Tables\Actions\Action::make(__('Clone'))
+                    Action::make(__('Clone'))
                         ->tooltip(
                             __(
                                 'Clone this record with same details but the dates, then open the form to you fill dates'
@@ -586,8 +587,8 @@ class TaskResource extends Resource
                         ->visible(fn (): bool => Entitlements::withinQuota(QuotaEnum::TasksPerMonth, Task::createdThisMonthCount()))
                         ->action(fn (Task $record) => self::clone($record)),
 
-                    self::configureMakeRecurringAction(Tables\Actions\Action::make('makeRecurring')),
-                    Tables\Actions\Action::make('stopSeries')
+                    self::configureMakeRecurringAction(Action::make('makeRecurring')),
+                    Action::make('stopSeries')
                         ->label(__('Stop series'))
                         ->icon('heroicon-o-no-symbol')
                         ->color(Color::Red)
@@ -604,7 +605,7 @@ class TaskResource extends Resource
 
                 ]),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
 
@@ -645,12 +646,12 @@ class TaskResource extends Resource
             ->persistColumnSearchesInSession();
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
+        return $schema
             ->name('Task')
-            ->schema([
-                Split::make([
+            ->components([
+                Flex::make([
                     Grid::make(1)->schema([
                         Section::make([
                             SpatieTagsEntry::make('tags')
@@ -772,7 +773,7 @@ class TaskResource extends Resource
                                                     ->hiddenLabel(fn ($record) => $record->sort != 0)
                                                     ->badge()
                                                     ->color(
-                                                        fn (Model $record): array => Color::hex($record->status->color)
+                                                        fn (Model $record): array => Color::generateV3Palette($record->status->color)
                                                     ),
                                                 TextEntry::make('title')
                                                     ->hiddenLabel(fn ($record) => $record->sort != 0)
@@ -780,10 +781,10 @@ class TaskResource extends Resource
                                                     ->columnSpan(8)
                                                     ->action(
                                                         Action::make('view')
-                                                            ->infolist(fn (Model $record) => self::infolist(
-                                                                (new Infolist)->record($record)
+                                                            ->schema(fn (Model $record) => self::infolist(
+                                                                (new Schema)->record($record)
                                                             ))
-                                                            ->modalWidth(MaxWidth::FitContent)
+                                                            ->modalWidth(Width::FitContent)
                                                             ->modalCancelAction(false)
                                                             ->modalSubmitActionLabel('Close')
                                                     ),
@@ -969,18 +970,18 @@ class TaskResource extends Resource
 
                             TextEntry::make('status.name')
                                 ->badge()
-                                ->color(fn (Model $record): array => Color::hex($record->status->color))
+                                ->color(fn (Model $record): array => Color::generateV3Palette($record->status->color))
                                 ->hintActions([
                                     Action::make('change_status')
                                         ->hiddenLabel()
                                         ->icon('heroicon-o-pencil')
-                                        ->color(Color::hex('#ACA'))
+                                        ->color(Color::generateV3Palette('#ACA'))
                                         ->button()
                                         ->tooltip(__('Change status'))
                                         ->action(function (Model $record, array $data): void {
                                             $record->update($data);
                                         })
-                                        ->form([
+                                        ->schema([
                                             Select::make('status_id')
                                                 ->label('Status')
                                                 ->options(fn (): array => Status::all()->pluck('name', 'id')->toArray()),
@@ -1170,7 +1171,7 @@ class TaskResource extends Resource
                 ->extraHeaderAttributes(['class' => 'column-header-no-label'])
                 ->boolean()
                 ->getStateUsing(fn ($record) => $record->workSessions()->where('is_running', true)->count())
-                ->falseColor(Color::hex('#ddd'))
+                ->falseColor(Color::generateV3Palette('#ddd'))
                 ->toggleable(
                     isToggledHiddenByDefault: ! in_array('work_session', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
@@ -1317,14 +1318,14 @@ class TaskResource extends Resource
             ->send();
     }
 
-    public static function configureMakeRecurringAction(MountableAction $action): MountableAction
+    public static function configureMakeRecurringAction(Action $action): Action
     {
         return $action
             ->label(__('Make recurring'))
             ->icon('heroicon-o-arrow-path')
             ->color(Color::Indigo)
             ->visible(fn (Task $record): bool => $record->recurrence_id === null && Entitlements::allows(FeatureEnum::RecurringTasks))
-            ->form(self::makeRecurringFormSchema())
+            ->schema(self::makeRecurringFormSchema())
             ->action(fn (Task $record, array $data) => self::enableRecurrenceFromForm($record, $data));
     }
 

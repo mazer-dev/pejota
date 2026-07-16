@@ -11,6 +11,7 @@ use App\Models\Unit;
 use App\Services\Invoicing\SessionInvoiceRequest;
 use App\Services\Invoicing\SessionInvoiceService;
 use Carbon\CarbonImmutable;
+use DomainException;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
@@ -40,7 +41,7 @@ class EditInvoice extends EditRecord
                     'product_id' => PejotaHelper::currentCompany()->settings()->get(CompanySettingsEnum::INVOICE_SESSION_PRODUCT->value),
                     'unit_id' => PejotaHelper::currentCompany()->settings()->get(CompanySettingsEnum::INVOICE_SESSION_UNIT->value),
                 ])
-                ->form([
+                ->schema([
                     DatePicker::make('from')->label(__('From'))->required(),
                     DatePicker::make('to')->label(__('To'))->required()->afterOrEqual('from'),
                     Select::make('grouping')
@@ -79,7 +80,7 @@ class EditInvoice extends EditRecord
 
                     try {
                         $count = app(SessionInvoiceService::class)->appendToInvoice($this->record, $request);
-                    } catch (\DomainException $e) {
+                    } catch (DomainException $e) {
                         Notification::make()->danger()->title($e->getMessage())->send();
 
                         return null;

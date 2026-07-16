@@ -6,8 +6,8 @@ use App\Filament\App\Resources\NoteResource;
 use Filament\Actions\EditAction;
 use Filament\Infolists\Components\SpatieTagsEntry;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Schema;
 
 class ViewNote extends ViewRecord
 {
@@ -20,7 +20,7 @@ class ViewNote extends ViewRecord
         ];
     }
 
-    public function infolist(Infolist $infolist): Infolist
+    public function infolist(Schema $schema): Schema
     {
         return $infolist;
 

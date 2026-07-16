@@ -7,14 +7,14 @@ use App\Filament\App\Resources\UnitResource\Pages\EditUnit;
 use App\Filament\App\Resources\UnitResource\Pages\ListUnits;
 use App\Filament\App\Resources\UnitResource\Pages\ViewUnit;
 use App\Models\Unit;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -22,7 +22,7 @@ class UnitResource extends Resource
 {
     protected static ?string $model = Unit::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrows-pointing-out';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-arrows-pointing-out';
 
     public static function getModelLabel(): string
     {
@@ -34,10 +34,10 @@ class UnitResource extends Resource
         return __('Settings');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('name')
                     ->translateLabel()
                     ->required(),
@@ -72,11 +72,11 @@ class UnitResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
