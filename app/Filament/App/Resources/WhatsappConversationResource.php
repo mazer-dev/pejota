@@ -20,6 +20,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -67,12 +68,18 @@ class WhatsappConversationResource extends Resource
         return $form
             ->columns(2)
             ->schema([
+                Toggle::make('is_group')
+                    ->label(__('Is a group?'))
+                    ->live()
+                    ->default(false)
+                    ->columnSpanFull(),
                 Select::make('client_id')
                     ->label(__('Client'))
                     ->relationship('client', 'name')
                     ->searchable()
                     ->preload()
                     ->live()
+                    ->required(fn (Get $get): bool => (bool) $get('is_group'))
                     ->afterStateUpdated(function (Get $get, Set $set, ?int $state): void {
                         $set('project_id', null);
 
@@ -89,6 +96,10 @@ class WhatsappConversationResource extends Resource
                             $set('name', $client->name ?: $client->tradename);
                         }
 
+                        if ($get('is_group')) {
+                            return;
+                        }
+
                         $set('phone_number', $client->phone);
                         $set('remote_jid', self::remoteJidFromPhone($client->phone));
                     }),
@@ -102,10 +113,31 @@ class WhatsappConversationResource extends Resource
                     ->label(__('Name'))
                     ->required()
                     ->maxLength(255),
+                Select::make('remote_jid')
+                    ->label(__('Group'))
+                    ->searchable()
+                    ->options(fn (Get $get): array => app(EvolutionApiClient::class)->groupOptions($get('evolution_instance') ?: config('services.evolution.instance')))
+                    ->live()
+                    ->required(fn (Get $get): bool => (bool) $get('is_group'))
+                    ->visible(fn (Get $get): bool => (bool) $get('is_group'))
+                    ->afterStateUpdated(function (Get $get, Set $set, ?string $state): void {
+                        if (! $state) {
+                            return;
+                        }
+
+                        $options = app(EvolutionApiClient::class)
+                            ->groupOptions($get('evolution_instance') ?: config('services.evolution.instance'));
+                        $subject = $options[$state] ?? null;
+
+                        if (is_string($subject) && trim($subject) !== '') {
+                            $set('name', $subject);
+                        }
+                    }),
                 TextInput::make('phone_number')
                     ->label(__('Phone'))
                     ->tel()
-                    ->required()
+                    ->required(fn (Get $get): bool => ! $get('is_group'))
+                    ->visible(fn (Get $get): bool => ! $get('is_group'))
                     ->live(onBlur: true)
                     ->afterStateUpdated(function (Set $set, ?string $state): void {
                         $set('remote_jid', self::remoteJidFromPhone($state));
@@ -118,6 +150,7 @@ class WhatsappConversationResource extends Resource
                     ->required()
                     ->default(config('services.evolution.instance')),
                 Hidden::make('remote_jid')
+                    ->visible(fn (Get $get): bool => ! $get('is_group'))
                     ->dehydrateStateUsing(fn (?string $state, Get $get): ?string => $state ?: self::remoteJidFromPhone($get('phone_number'))),
                 Select::make('status')
                     ->label(__('Status'))
@@ -267,6 +300,8 @@ class WhatsappConversationResource extends Resource
      */
     public static function prepareConversationData(array $data): array
     {
+        $isGroup = ! empty($data['is_group']);
+
         $client = null;
         if (! empty($data['client_id'])) {
             $client = Client::find($data['client_id']);
@@ -274,12 +309,17 @@ class WhatsappConversationResource extends Resource
 
         if ($client) {
             $data['name'] = ($data['name'] ?? null) ?: ($client->name ?: $client->tradename);
-            $data['phone_number'] = $data['phone_number'] ?: $client->phone;
+
+            if (! $isGroup) {
+                $data['phone_number'] = ($data['phone_number'] ?? null) ?: $client->phone;
+            }
         }
 
         $data['name'] = trim((string) ($data['name'] ?? ''));
 
-        $data['remote_jid'] = $data['remote_jid'] ?: self::remoteJidFromPhone($data['phone_number'] ?? null);
+        if (! $isGroup) {
+            $data['remote_jid'] = ($data['remote_jid'] ?? null) ?: self::remoteJidFromPhone($data['phone_number'] ?? null);
+        }
 
         return $data;
     }

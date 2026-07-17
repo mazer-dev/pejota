@@ -85,6 +85,7 @@ class WhatsappConversation extends Model
     protected function casts(): array
     {
         return [
+            'is_group' => 'boolean',
             'last_message_at' => 'datetime',
             'context_updated_at' => 'datetime',
             'unread_count' => 'integer',

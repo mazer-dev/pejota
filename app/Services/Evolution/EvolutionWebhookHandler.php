@@ -274,7 +274,7 @@ class EvolutionWebhookHandler
     private function conversationForMessage(int $companyId, string $instance, array $identityJids, ?string $phoneNumber): ?WhatsappConversation
     {
         $incomingJids = collect($identityJids)
-            ->filter(fn ($jid): bool => is_string($jid) && trim($jid) !== '' && ! str_contains($jid, '@g.us'))
+            ->filter(fn ($jid): bool => is_string($jid) && trim($jid) !== '')
             ->unique()
             ->values();
 
@@ -296,7 +296,7 @@ class EvolutionWebhookHandler
         }
 
         $incomingNumbers = $incomingJids
-            ->reject(fn (string $jid): bool => str_contains($jid, '@lid'))
+            ->reject(fn (string $jid): bool => str_contains($jid, '@lid') || str_contains($jid, '@g.us'))
             ->flatMap(fn (string $jid): array => $this->normalizer->candidates($jid))
             ->merge($phoneNumber ? $this->normalizer->candidates($phoneNumber) : [])
             ->unique()

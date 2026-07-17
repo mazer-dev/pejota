@@ -9,6 +9,7 @@
 
     $messages = $messages->reverse()->values();
     $timezone = PejotaHelper::getUserTimeZoneOrDefault(config('app.timezone', 'UTC'));
+    $isGroupConversation = (bool) $this->getOwnerRecord()->is_group;
 @endphp
 
 @php
@@ -123,8 +124,16 @@
                                 'text-primary-100' => $isSent,
                                 'text-gray-300' => ! $isSent,
                             ])>
+                                @php
+                                    $authorLabel = $isSent
+                                        ? 'Você'
+                                        : ($isGroupConversation
+                                            ? (trim((string) $message->sender_name) ?: (trim((string) $message->sender_jid) ?: 'Participante'))
+                                            : 'Cliente');
+                                @endphp
+
                                 <span class="font-medium">
-                                    {{ $isSent ? 'Você' : 'Cliente' }}
+                                    {{ $authorLabel }}
                                 </span>
 
                                 @if ($sentAt)

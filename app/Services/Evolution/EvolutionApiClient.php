@@ -13,12 +13,11 @@ class EvolutionApiClient
 {
     public function sendText(WhatsappConversation $conversation, string $text): array
     {
-        $number = $conversation->phone_number ?: $this->numberFromJid($conversation->remote_jid);
-        if ($number === null) {
-            throw new RuntimeException('Não foi possível identificar o número do WhatsApp desta conversa.');
-        }
-
-        return $this->sendTextToNumber($this->instance($conversation->evolution_instance), $number, $text);
+        return $this->sendTextToNumber(
+            $this->instance($conversation->evolution_instance),
+            $this->destinationNumber($conversation),
+            $text,
+        );
     }
 
     public function sendTextToNumber(string $instance, string $number, string $text): array
@@ -50,10 +49,7 @@ class EvolutionApiClient
         string $fileName,
         ?string $caption = null,
     ): array {
-        $number = $conversation->phone_number ?: $this->numberFromJid($conversation->remote_jid);
-        if ($number === null) {
-            throw new RuntimeException('Não foi possível identificar o número do WhatsApp desta conversa.');
-        }
+        $number = $this->destinationNumber($conversation);
 
         try {
             $response = Http::timeout($this->timeout())
@@ -80,10 +76,7 @@ class EvolutionApiClient
 
     public function updateMessage(WhatsappConversation $conversation, WhatsappMessage $message, string $text): array
     {
-        $number = $conversation->phone_number ?: $this->numberFromJid($conversation->remote_jid);
-        if ($number === null) {
-            throw new RuntimeException('Não foi possível identificar o número do WhatsApp desta conversa.');
-        }
+        $number = $this->destinationNumber($conversation);
 
         try {
             $response = Http::timeout($this->timeout())
@@ -186,6 +179,49 @@ class EvolutionApiClient
         $configured = config('services.evolution.instance');
         if (is_string($configured) && trim($configured) !== '' && ! array_key_exists($configured, $options)) {
             $options[$configured] = $configured;
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function fetchAllGroups(string $instance): array
+    {
+        try {
+            $response = Http::timeout($this->timeout())
+                ->withHeaders(['apikey' => $this->apiKey()])
+                ->get($this->endpoint('/group/fetchAllGroups/'.$this->instance($instance)), [
+                    'getParticipants' => 'false',
+                ]);
+
+            $response->throw();
+
+            $groups = $response->json();
+
+            return is_array($groups) ? array_filter($groups, 'is_array') : [];
+        } catch (RequestException) {
+            return [];
+        }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function groupOptions(string $instance): array
+    {
+        $options = [];
+
+        foreach ($this->fetchAllGroups($instance) as $group) {
+            $jid = data_get($group, 'id');
+            $subject = data_get($group, 'subject');
+
+            if (! is_string($jid) || trim($jid) === '' || ! is_string($subject) || trim($subject) === '') {
+                continue;
+            }
+
+            $options[$jid] = $subject;
         }
 
         return $options;
@@ -404,6 +440,27 @@ class EvolutionApiClient
             str_starts_with($mimeType, 'audio/') => 'audio',
             default => 'document',
         };
+    }
+
+    /**
+     * Groups are addressed by their raw @g.us JID; the Evolution API accepts it
+     * directly in the `number` field. Direct chats keep the phone-number lookup.
+     */
+    private function destinationNumber(WhatsappConversation $conversation): string
+    {
+        if ($conversation->is_group || str_ends_with((string) $conversation->remote_jid, '@g.us')) {
+            $jid = trim((string) $conversation->remote_jid);
+            if ($jid !== '') {
+                return $jid;
+            }
+        }
+
+        $number = $conversation->phone_number ?: $this->numberFromJid($conversation->remote_jid);
+        if ($number === null) {
+            throw new RuntimeException('Não foi possível identificar o número do WhatsApp desta conversa.');
+        }
+
+        return $number;
     }
 
     private function numberFromJid(?string $jid): ?string
