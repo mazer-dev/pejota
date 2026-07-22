@@ -22,9 +22,7 @@ class ViewNote extends ViewRecord
 
     public function infolist(Schema $schema): Schema
     {
-        return $infolist;
-
-        return $infolist->schema([
+        return $schema->components([
             TextEntry::make('title'),
             SpatieTagsEntry::make('tags'),
             TextEntry::make('client.name'),
