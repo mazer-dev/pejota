@@ -355,18 +355,6 @@ class WorkSessionResource extends Resource
                     ->default(0)
                     ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced()),
 
-                Toggle::make('billable')
-                    ->translateLabel()
-                    ->inline(false)
-                    ->default(true)
-                    ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced()),
-
-                TextInput::make('currency')
-                    ->translateLabel()
-                    ->disabled()
-                    ->dehydrated()
-                    ->default(fn (): string => PejotaHelper::getUserCurrency()),
-
                 Toggle::make('is_running')
                     ->label(fn (bool $state) => $state ? 'Running' : 'Finished')
                     ->onIcon('heroicon-o-stop')
@@ -393,6 +381,18 @@ class WorkSessionResource extends Resource
                     ->translateLabel()
                     ->label('Session time')
                     ->disabled(),
+
+                Toggle::make('billable')
+                    ->translateLabel()
+                    ->inline(false)
+                    ->default(true)
+                    ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced()),
+
+                TextInput::make('currency')
+                    ->translateLabel()
+                    ->disabled()
+                    ->dehydrated()
+                    ->default(fn (): string => PejotaHelper::getUserCurrency()),
             ]),
 
             Grid::make(3)->schema([
