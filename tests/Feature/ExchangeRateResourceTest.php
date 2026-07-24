@@ -56,7 +56,7 @@ class ExchangeRateResourceTest extends TestCase
         $this->assertFalse(ExchangeRateResource::canDelete($rate));
         $this->assertFalse(ExchangeRateResource::canDeleteAny());
         $this->assertEqualsCanonicalizing(
-            ['index', 'view'],
+            ['index'],
             array_keys(ExchangeRateResource::getPages()),
         );
     }
