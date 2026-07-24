@@ -1109,6 +1109,11 @@ class TaskResource extends Resource
                         ->default('today')
                         ->required()
                         ->live(),
+                    TextEntry::make('resulting_date')
+                        ->label(__('New date'))
+                        ->state(fn (Get $get): string => Task::postponeTargetDate($get('interval'))
+                            ->format(PejotaHelper::getUserDateFormat()))
+                        ->visible(fn (Get $get): bool => $get('interval') !== 'custom'),
                     DatePicker::make('date')
                         ->label(__('Date'))
                         ->required()

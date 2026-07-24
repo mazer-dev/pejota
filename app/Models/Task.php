@@ -312,6 +312,21 @@ class Task extends Model
     }
 
     /**
+     * Resolves the date a postpone interval lands on, always relative to today.
+     *
+     * @param  string  $interval  'today' or a relative interval such as '1 day', '1 week'.
+     */
+    public static function postponeTargetDate(string $interval): Carbon
+    {
+        $timezone = PejotaHelper::getUserTimeZone();
+        $today = ($timezone ? now()->tz($timezone) : now())->startOfDay();
+
+        return $interval === 'today'
+            ? $today
+            : $today->copy()->add($interval);
+    }
+
+    /**
      * Postpones the specified field, always relative to today's date.
      *
      * @param  string  $field  The name of the field to be postponed.
@@ -323,12 +338,7 @@ class Task extends Model
             return;
         }
 
-        $timezone = PejotaHelper::getUserTimeZone();
-        $now = $timezone ? now()->tz($timezone) : now();
-
-        $this->{$field} = $interval === 'today'
-            ? $now->format('Y-m-d')
-            : $now->copy()->add($interval);
+        $this->{$field} = static::postponeTargetDate($interval);
 
         $this->save();
     }
