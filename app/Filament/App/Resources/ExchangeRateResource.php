@@ -8,7 +8,6 @@ use App\Enums\MenuSortEnum;
 use App\Exceptions\MissingExchangeRateException;
 use App\Filament\App\Concerns\GatesAccessByFeature;
 use App\Filament\App\Resources\ExchangeRateResource\Pages\ListExchangeRates;
-use App\Filament\App\Resources\ExchangeRateResource\Pages\ViewExchangeRate;
 use App\Helpers\PejotaHelper;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
@@ -137,6 +136,7 @@ class ExchangeRateResource extends Resource
                             ->when($data['until'] ?? null, fn (Builder $q, $date): Builder => $q->whereDate('date', '<=', $date));
                     }),
             ])
+            ->recordAction('view')
             ->recordActions([
                 ViewAction::make(),
             ]);
@@ -159,7 +159,6 @@ class ExchangeRateResource extends Resource
     {
         return [
             'index' => ListExchangeRates::route('/'),
-            'view' => ViewExchangeRate::route('/{record}'),
         ];
     }
 }
