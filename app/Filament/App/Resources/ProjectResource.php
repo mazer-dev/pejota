@@ -187,6 +187,7 @@ class ProjectResource extends Resource
 
                 Section::make('Tasks')
                     ->translateLabel()
+                    ->columnSpanFull()
                     ->schema([
                         Livewire::make(
                             ListTasks::class,
