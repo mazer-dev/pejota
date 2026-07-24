@@ -23,6 +23,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Actions;
@@ -209,26 +211,95 @@ class ClientResource extends Resource
                 Flex::make([
                     Grid::make(1)
                         ->schema([
-                            Section::make([
-                                TextEntry::make('name')
-                                    ->size(TextSize::Large)
-                                    ->weight(FontWeight::Bold)
-                                    ->hiddenLabel(),
+                            Tabs::make('client')
+                                ->columnSpanFull()
+                                ->tabs([
+                                    Tab::make('General data')
+                                        ->translateLabel()
+                                        ->schema([
+                                            TextEntry::make('name')
+                                                ->hiddenLabel()
+                                                ->size(TextSize::Large)
+                                                ->weight(FontWeight::Bold),
+                                            Grid::make(2)->schema([
+                                                TextEntry::make('tradename')
+                                                    ->label(__('Tradename'))
+                                                    ->icon('heroicon-o-bookmark-square')
+                                                    ->placeholder('—'),
+                                                TextEntry::make('email')
+                                                    ->label(__('Email'))
+                                                    ->icon('heroicon-o-at-symbol')
+                                                    ->placeholder('—'),
+                                                TextEntry::make('phone')
+                                                    ->label(__('Phone'))
+                                                    ->icon('heroicon-o-phone')
+                                                    ->placeholder('—'),
+                                            ]),
+                                            RepeatableEntry::make('contacts')
+                                                ->translateLabel()
+                                                ->columnSpanFull()
+                                                ->schema([
+                                                    Grid::make(4)->schema([
+                                                        TextEntry::make('name')
+                                                            ->label(__('Name')),
+                                                        TextEntry::make('email')
+                                                            ->label(__('Email'))
+                                                            ->placeholder('—'),
+                                                        TextEntry::make('whatsapp')
+                                                            ->label(__('WhatsApp'))
+                                                            ->placeholder('—'),
+                                                        IconEntry::make('receives_billing')
+                                                            ->label(__('Receives billing'))
+                                                            ->boolean(),
+                                                    ]),
+                                                ]),
+                                        ]),
 
-                                TextEntry::make('tradename')
-                                    ->size(TextSize::Large)
-                                    ->hiddenLabel()
-                                    ->icon('heroicon-o-bookmark-square'),
+                                    Tab::make('Billing')
+                                        ->translateLabel()
+                                        ->schema([
+                                            Grid::make([
+                                                'default' => 1,
+                                                'sm' => 2,
+                                                'md' => 5,
+                                            ])->schema([
+                                                TextEntry::make('currency')
+                                                    ->translateLabel()
+                                                    ->placeholder('—'),
+                                                TextEntry::make('default_hourly_rate')
+                                                    ->translateLabel()
+                                                    ->placeholder('—'),
+                                                IconEntry::make('billable_default')
+                                                    ->translateLabel()
+                                                    ->boolean(),
+                                                IconEntry::make('bill_by_email')
+                                                    ->label(__('Send invoices by email'))
+                                                    ->boolean(),
+                                                IconEntry::make('bill_by_whatsapp')
+                                                    ->label(__('Send invoices by WhatsApp'))
+                                                    ->boolean(),
+                                            ]),
+                                        ]),
 
-                                TextEntry::make('email')
-                                    ->hiddenLabel()
-                                    ->icon('heroicon-o-at-symbol'),
-
-                                TextEntry::make('phone')
-                                    ->hiddenLabel()
-                                    ->icon('heroicon-o-phone'),
-
-                            ]),
+                                    Tab::make('Email')
+                                        ->translateLabel()
+                                        ->schema([
+                                            TextEntry::make('billing_email_subject')
+                                                ->label(__('Email subject'))
+                                                ->placeholder('—'),
+                                            TextEntry::make('billing_email_body')
+                                                ->label(__('Email body'))
+                                                ->html()
+                                                ->placeholder('—'),
+                                            TextEntry::make('billing_email_signature')
+                                                ->label(__('Email signature'))
+                                                ->html()
+                                                ->placeholder('—'),
+                                            TextEntry::make('billing_whatsapp_template')
+                                                ->label(__('WhatsApp template'))
+                                                ->placeholder('—'),
+                                        ]),
+                                ]),
 
                             Section::make('Comments')
                                 ->translateLabel()
