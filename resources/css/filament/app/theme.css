@@ -75,9 +75,14 @@
     @apply hover:bg-gray-200! dark:hover:bg-gray-900! dark:hover:text-gray-200!;
 }
 
-/* keep the large brandLogoHeight (used by the sidebar header) from stretching the
- * top bar: constrain the brand logo only inside the topbar. Overrides the inline
- * height set by brandLogoHeight(). */
+/* Slightly taller top bar to fit a larger brand logo. The brand logo uses a large
+ * brandLogoHeight() (for the sidebar header); here we cap it to a size that fits the
+ * top bar, and raise the bar's min-height a touch so the logo has breathing room.
+ * !important on the logo overrides the inline height set by brandLogoHeight(). */
+.fi-topbar {
+    min-height: 5.5rem;
+}
+
 .fi-topbar .fi-logo {
-    height: 2.5rem !important;
+    height: 5rem !important;
 }
