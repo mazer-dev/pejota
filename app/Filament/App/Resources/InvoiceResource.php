@@ -81,7 +81,7 @@ class InvoiceResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
-//            ->columns(4)
+            ->columns(1)
             ->components([
                 Grid::make([
                     'default' => 2,

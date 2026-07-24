@@ -35,6 +35,7 @@ class TagResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Textarea::make('name')
                     ->translateLabel()

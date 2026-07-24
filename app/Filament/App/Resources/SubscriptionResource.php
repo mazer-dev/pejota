@@ -59,6 +59,7 @@ class SubscriptionResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Grid::make([
                     'default' => 2,
