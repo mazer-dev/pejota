@@ -312,34 +312,25 @@ class Task extends Model
     }
 
     /**
-     * Postpones the specified field by the given interval.
+     * Postpones the specified field, always relative to today's date.
      *
      * @param  string  $field  The name of the field to be postponed.
-     * @param  string  $interval  The interval by which the field should be postponed.
-     * @param  bool  $fromNow  Whether to postpone from now or from the current value of the field.
+     * @param  string  $interval  'today' or a relative interval such as '1 day', '1 week'.
      */
-    public function postpone(string $field, string $interval, bool $fromNow = true): void
+    public function postpone(string $field, string $interval): void
     {
-        if ($this->{$field}) {
-            $timezone = PejotaHelper::getUserTimeZone();
-            $now = $timezone ? now()->tz($timezone) : now();
-            if ($interval == 'today') {
-                $this->{$field} = $now->format('Y-m-d');
-            } else {
-                if (in_array($field, ['planned_end', 'due_date'])) {
-                    if (! $this->{$field} || $this->{$field}->startOfDay()->lte($now->startOfDay())) {
-                        $nextDate = $now->copy()->add($interval);
-                    } else {
-                        $nextDate = $this->{$field}->copy()->add($interval);
-                    }
-                } else {
-                    $nextDate = $fromNow ? $now->copy()->add($interval) : $this->{$field}->copy()->add($interval);
-                }
-
-                $this->{$field} = $nextDate;
-            }
-            $this->save();
+        if (! $this->{$field}) {
+            return;
         }
+
+        $timezone = PejotaHelper::getUserTimeZone();
+        $now = $timezone ? now()->tz($timezone) : now();
+
+        $this->{$field} = $interval === 'today'
+            ? $now->format('Y-m-d')
+            : $now->copy()->add($interval);
+
+        $this->save();
     }
 
     protected function casts(): array

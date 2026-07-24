@@ -610,10 +610,7 @@ class TaskResource extends Resource
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
 
-                    self::makePostponeBulkAction('planned_start', 'Postpone planned start'),
-                    self::makePostponeBulkAction('planned_end', 'Postpone planned end'),
-                    // submenu variant (one-click presets) for visual comparison vs the modal ones above
-                    self::makePostponeSubmenu('due_date', 'Postpone due date'),
+                    self::makePostponeBulkAction(),
 
                     BulkAction::make(__('Clone selected'))
                         ->tooltip(__('Clone this session with same time and details, updating to current date'))
@@ -1077,35 +1074,50 @@ class TaskResource extends Resource
         return $data['completed'];
     }
 
-    protected static function makePostponeBulkAction(string $field, string $label): BulkAction
+    protected static function makePostponeBulkAction(): BulkAction
     {
-        return BulkAction::make('postpone_'.$field)
-            ->label($label)
+        return BulkAction::make('postpone')
+            ->label('Postpone')
             ->translateLabel()
-            ->icon('heroicon-o-calendar')
+            ->icon('heroicon-o-forward')
+            ->color('info')
+            ->modalWidth(Width::TwoExtraLarge)
             ->deselectRecordsAfterCompletion()
             ->schema([
-                Select::make('interval')
-                    ->label(__('Postpone to'))
-                    ->options([
-                        'today' => __('Today'),
-                        '1 day' => __('1 day'),
-                        '3 days' => __('3 days'),
-                        '5 days' => __('5 days'),
-                        '1 week' => __('1 week'),
-                        '2 weeks' => __('2 weeks'),
-                        '1 month' => __('1 month'),
-                        'custom' => __('Custom'),
-                    ])
-                    ->default('today')
-                    ->required()
-                    ->live(),
-                DatePicker::make('date')
-                    ->translateLabel()
-                    ->required()
-                    ->visible(fn (Get $get): bool => $get('interval') === 'custom'),
+                Grid::make(3)->schema([
+                    ToggleButtons::make('field')
+                        ->label(__('Date to postpone'))
+                        ->options([
+                            'planned_start' => __('Planned start'),
+                            'planned_end' => __('Planned end'),
+                            'due_date' => __('Due date'),
+                        ])
+                        ->default('due_date')
+                        ->required(),
+                    ToggleButtons::make('interval')
+                        ->label(__('Postpone to'))
+                        ->options([
+                            'today' => __('Today'),
+                            '1 day' => __('1 day'),
+                            '3 days' => __('3 days'),
+                            '5 days' => __('5 days'),
+                            '1 week' => __('1 week'),
+                            '2 weeks' => __('2 weeks'),
+                            '1 month' => __('1 month'),
+                            'custom' => __('Custom'),
+                        ])
+                        ->default('today')
+                        ->required()
+                        ->live(),
+                    DatePicker::make('date')
+                        ->label(__('Date'))
+                        ->required()
+                        ->visible(fn (Get $get): bool => $get('interval') === 'custom'),
+                ]),
             ])
-            ->action(function (array $data, Collection $records) use ($field): void {
+            ->action(function (array $data, Collection $records): void {
+                $field = $data['field'];
+
                 foreach ($records as $record) {
                     if (($data['interval'] ?? null) === 'custom') {
                         $record->{$field} = $data['date'];
@@ -1117,49 +1129,6 @@ class TaskResource extends Resource
                     $record->postpone($field, $data['interval']);
                 }
             });
-    }
-
-    protected static function makePostponeSubmenu(string $field, string $label): BulkActionGroup
-    {
-        $presets = [
-            'today' => __('Today'),
-            '1 day' => __('1 day'),
-            '3 days' => __('3 days'),
-            '5 days' => __('5 days'),
-            '1 week' => __('1 week'),
-            '2 weeks' => __('2 weeks'),
-            '1 month' => __('1 month'),
-        ];
-
-        $actions = [];
-
-        foreach ($presets as $interval => $itemLabel) {
-            $actions[] = BulkAction::make('postpone_'.$field.'_'.str_replace(' ', '_', $interval))
-                ->label($itemLabel)
-                ->deselectRecordsAfterCompletion()
-                ->action(fn (Collection $records) => $records->each->postpone($field, $interval));
-        }
-
-        $actions[] = BulkAction::make('postpone_'.$field.'_custom')
-            ->label(__('Custom'))
-            ->icon('heroicon-o-calendar')
-            ->deselectRecordsAfterCompletion()
-            ->schema([
-                DatePicker::make('date')
-                    ->translateLabel()
-                    ->required(),
-            ])
-            ->action(function (array $data, Collection $records) use ($field): void {
-                foreach ($records as $record) {
-                    $record->{$field} = $data['date'];
-                    $record->save();
-                }
-            });
-
-        return BulkActionGroup::make($actions)
-            ->label($label)
-            ->translateLabel()
-            ->icon('heroicon-o-calendar');
     }
 
     public static function getTableColumns(): array
