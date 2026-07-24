@@ -321,7 +321,8 @@ class Task extends Model
     public function postpone(string $field, string $interval, bool $fromNow = true): void
     {
         if ($this->{$field}) {
-            $now = now()->tz(PejotaHelper::getUserTimeZone());
+            $timezone = PejotaHelper::getUserTimeZone();
+            $now = $timezone ? now()->tz($timezone) : now();
             if ($interval == 'today') {
                 $this->{$field} = $now->format('Y-m-d');
             } else {
