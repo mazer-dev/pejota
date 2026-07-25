@@ -26,6 +26,36 @@ enum CompanySettingsEnum: string
     case DOCS_INVOICE_NUMBER_LAST_PERIOD = 'docs.invoice_number_last_period';
     case INVOICE_SESSION_PRODUCT = 'invoices.session_default_product';
     case INVOICE_SESSION_UNIT = 'invoices.session_default_unit';
+    case PLANNER_DAY_HOURS = 'planner.day_hours';
+    case PLANNER_AUTO_GENERATE = 'planner.auto_generate';
+    case PLANNER_WHATSAPP_DELIVERY = 'planner.whatsapp_delivery';
+
+    /**
+     * Default working hours per ISO weekday (1 = Monday .. 7 = Sunday).
+     * A day with 0 hours is a day off, planned only in "light" mode.
+     *
+     * @return array<int, int>
+     */
+    public static function getDefaultPlannerDayHours(): array
+    {
+        return [1 => 8, 2 => 8, 3 => 8, 4 => 8, 5 => 8, 6 => 4, 7 => 3];
+    }
+
+    /**
+     * @return array<int, string> ISO weekday => translated label
+     */
+    public static function getWeekDays(): array
+    {
+        return [
+            1 => __('Monday'),
+            2 => __('Tuesday'),
+            3 => __('Wednesday'),
+            4 => __('Thursday'),
+            5 => __('Friday'),
+            6 => __('Saturday'),
+            7 => __('Sunday'),
+        ];
+    }
 
     public static function getLocales(): array
     {

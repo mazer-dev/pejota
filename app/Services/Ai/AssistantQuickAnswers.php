@@ -3,6 +3,8 @@
 namespace App\Services\Ai;
 
 use App\Helpers\PejotaHelper;
+use App\Models\DailyPlan;
+use App\Models\DailyPlanItem;
 use App\Models\Invoice;
 use App\Models\Task;
 use App\Models\WorkSession;
@@ -19,6 +21,8 @@ class AssistantQuickAnswers
 {
     public const CHIP_TODAY = 'today';
 
+    public const CHIP_DAILY_PLAN = 'daily_plan';
+
     public const CHIP_OVERDUE_INVOICES = 'overdue_invoices';
 
     public const CHIP_WEEK_SUMMARY = 'week_summary';
@@ -29,6 +33,7 @@ class AssistantQuickAnswers
     public static function chips(): array
     {
         return [
+            self::CHIP_DAILY_PLAN => __('What should I do now?'),
             self::CHIP_TODAY => __('What is on for today?'),
             self::CHIP_OVERDUE_INVOICES => __('Overdue invoices'),
             self::CHIP_WEEK_SUMMARY => __('Week summary'),
@@ -39,10 +44,50 @@ class AssistantQuickAnswers
     {
         return match ($chip) {
             self::CHIP_TODAY => $this->today(),
+            self::CHIP_DAILY_PLAN => $this->dailyPlan(),
             self::CHIP_OVERDUE_INVOICES => $this->overdueInvoices(),
             self::CHIP_WEEK_SUMMARY => $this->weekSummary(),
             default => null,
         };
+    }
+
+    private function dailyPlan(): string
+    {
+        $today = Carbon::today(PejotaHelper::getUserTimeZoneOrDefault());
+
+        $plan = DailyPlan::query()
+            ->forDate($today)
+            ->with('items')
+            ->first();
+
+        if ($plan === null || $plan->isFailed()) {
+            return __('There is no plan for today yet. Open the Plan of the day page to generate it.');
+        }
+
+        if ($plan->isGenerating()) {
+            return __('Your plan of the day is being generated right now. Check back in a few minutes.');
+        }
+
+        $pending = $plan->items->filter(fn (DailyPlanItem $item): bool => $item->isPending())->values();
+
+        if ($pending->isEmpty()) {
+            return $plan->items->isEmpty()
+                ? __('Nothing urgent today. Enjoy your day off!')
+                : __('All plan items are done. Great job!');
+        }
+
+        $next = $pending->take(3)->map(function (DailyPlanItem $item): string {
+            $line = '- '.$item->title.' ('.PejotaHelper::formatDuration((int) $item->estimated_minutes).')';
+
+            if ($item->reason) {
+                $line .= ' - '.$item->reason;
+            }
+
+            return $line;
+        });
+
+        return __('Next up in your plan:')."\n".$next->implode("\n")
+            ."\n\n".__('Remaining planned time: :time', ['time' => PejotaHelper::formatDuration($plan->pendingMinutes())]);
     }
 
     private function today(): string

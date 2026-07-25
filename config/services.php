@@ -93,6 +93,22 @@ return [
         ],
     ],
 
+    'planner' => [
+        'delivery_numbers' => array_filter(array_map('trim', explode(',', (string) env('PLANNER_WHATSAPP_NUMBERS', '')))),
+        'codex_model' => env('PLANNER_CODEX_MODEL'),
+        'codex_reasoning_effort' => env('PLANNER_CODEX_EFFORT', 'xhigh'),
+        'timeout' => (int) env('PLANNER_AI_TIMEOUT', 600),
+        'waiting_client_threshold_hours' => (int) env('PLANNER_WAITING_THRESHOLD_HOURS', 24),
+        'followup_silence_days' => (int) env('PLANNER_FOLLOWUP_SILENCE_DAYS', 2),
+        'max_conversations' => (int) env('PLANNER_MAX_CONVERSATIONS', 15),
+        'max_messages_per_conversation' => (int) env('PLANNER_MAX_MESSAGES', 6),
+        'message_chars' => (int) env('PLANNER_MESSAGE_CHARS', 220),
+        'max_tasks' => (int) env('PLANNER_MAX_TASKS', 60),
+        'context_max_chars' => (int) env('PLANNER_CONTEXT_MAX_CHARS', 40000),
+        'conversation_window_days' => (int) env('PLANNER_CONVERSATION_WINDOW_DAYS', 14),
+        'sync_max_conversations' => (int) env('PLANNER_SYNC_MAX_CONVERSATIONS', 30),
+    ],
+
     'evolution' => [
         'base_url' => env('EVOLUTION_API_URL', 'http://127.0.0.1:8085'),
         'api_key' => env('EVOLUTION_API_KEY'),

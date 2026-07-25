@@ -11,3 +11,6 @@ Artisan::command('inspire', function () {
 
 Schedule::command(GenerateRecurringTasks::class)->dailyAt('00:30');
 Schedule::command('exchange-rate:fetch')->dailyAt('06:00');
+Schedule::command('pj:whatsapp-sync-recent')->dailyAt('06:00');
+Schedule::command('pj:daily-plan')->dailyAt('07:00');
+Schedule::command('pj:daily-plan:send')->dailyAt('08:00');

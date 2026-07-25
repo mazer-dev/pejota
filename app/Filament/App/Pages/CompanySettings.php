@@ -11,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -220,6 +221,43 @@ class CompanySettings extends ModelSettingsPage implements HasModelSettings
 
                                     return CompanySettingsEnum::applyFormat($format, 1);
                                 }),
+                        ]),
+
+                    Tab::make('Planning')
+                        ->translateLabel()
+                        ->schema([
+                            Grid::make(4)
+                                ->schema(
+                                    collect(CompanySettingsEnum::getWeekDays())
+                                        ->map(fn (string $label, int $isoWeekday): TextInput => TextInput::make(
+                                            CompanySettingsEnum::PLANNER_DAY_HOURS->value.'.'.$isoWeekday
+                                        )
+                                            ->label($label)
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->maxValue(16)
+                                            ->default(CompanySettingsEnum::getDefaultPlannerDayHours()[$isoWeekday])
+                                            ->suffix('h')
+                                            ->helperText(__('0 = day off')))
+                                        ->values()
+                                        ->all()
+                                ),
+
+                            Checkbox::make(CompanySettingsEnum::PLANNER_AUTO_GENERATE->value)
+                                ->translateLabel()
+                                ->label('Generate the daily plan automatically every morning')
+                                ->default(true),
+
+                            Checkbox::make(CompanySettingsEnum::PLANNER_WHATSAPP_DELIVERY->value)
+                                ->translateLabel()
+                                ->label('Send the daily plan through the assistant WhatsApp')
+                                ->default(true)
+                                ->disabled(fn (): bool => ! (bool) config('services.assistant.whatsapp.enabled'))
+                                ->helperText(
+                                    (bool) config('services.assistant.whatsapp.enabled')
+                                        ? null
+                                        : __('The assistant WhatsApp integration is disabled on this server.')
+                                ),
                         ]),
 
                 ]),

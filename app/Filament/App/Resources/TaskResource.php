@@ -1073,41 +1073,40 @@ class TaskResource extends Resource
                      * Sidebar infolist with priority and status
                      ******************************/
                     Section::make([
-                        Grid::make([
-                            'default' => 2,
-                        ])->schema([
-                            IconEntry::make('priority')
-                                ->translateLabel()
-                                ->icon(fn ($state) => PriorityEnum::from($state)->getIcon())
-                                ->color(fn ($state) => PriorityEnum::from($state)->getColor())
-                                ->tooltip(fn ($state) => PriorityEnum::from($state)->getLabel()),
+                        Grid::make(1)->schema([
+                            Grid::make(['default' => 1, 'sm' => 2])->schema([
+                                IconEntry::make('priority')
+                                    ->translateLabel()
+                                    ->icon(fn ($state) => PriorityEnum::from($state)->getIcon())
+                                    ->color(fn ($state) => PriorityEnum::from($state)->getColor())
+                                    ->tooltip(fn ($state) => PriorityEnum::from($state)->getLabel()),
 
-                            TextEntry::make('status.name')
-                                ->badge()
-                                ->color(fn (Model $record): array => Color::hex($record->status->color))
-                                ->hintActions([
-                                    Action::make('change_status')
-                                        ->hiddenLabel()
-                                        ->icon('heroicon-o-pencil')
-                                        ->color(Color::hex('#ACA'))
-                                        ->button()
-                                        ->tooltip(__('Change status'))
-                                        ->action(function (Model $record, array $data): void {
-                                            $record->update($data);
-                                        })
-                                        ->form([
-                                            Select::make('status_id')
-                                                ->label('Status')
-                                                ->options(fn (): array => Status::all()->pluck('name', 'id')->toArray()),
-                                        ]),
-                                ]),
+                                TextEntry::make('status.name')
+                                    ->badge()
+                                    ->color(fn (Model $record): array => Color::hex($record->status->color))
+                                    ->hintActions([
+                                        Action::make('change_status')
+                                            ->hiddenLabel()
+                                            ->icon('heroicon-o-pencil')
+                                            ->color(Color::hex('#ACA'))
+                                            ->button()
+                                            ->tooltip(__('Change status'))
+                                            ->action(function (Model $record, array $data): void {
+                                                $record->update($data);
+                                            })
+                                            ->form([
+                                                Select::make('status_id')
+                                                    ->label('Status')
+                                                    ->options(fn (): array => Status::all()->pluck('name', 'id')->toArray()),
+                                            ]),
+                                    ]),
+                            ]),
 
                             TextEntry::make('due_date')
                                 ->translateLabel()
                                 ->inlineLabel()
                                 ->date(PejotaHelper::getUserDateFormat())
-                                ->icon('heroicon-o-exclamation-triangle')
-                                ->columnSpanFull(),
+                                ->icon('heroicon-o-exclamation-triangle'),
 
                             TextEntry::make('effort')
                                 ->translateLabel()
@@ -1282,9 +1281,10 @@ class TaskResource extends Resource
                             ])
                             ->schema([]),
                     ])
-                        ->grow(false), // Section at right
+                        ->grow(false)
+                        ->extraAttributes(['class' => 'w-full lg:max-w-xs']), // Section at right
                 ])
-                    ->from('md')
+                    ->from('lg')
                     ->columnSpanFull(),
 
             ]);

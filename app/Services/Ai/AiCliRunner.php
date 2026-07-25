@@ -9,19 +9,22 @@ class AiCliRunner
 {
     /**
      * @param  array<int, string>  $images
+     * @param  array{codex_model?: string|null, codex_reasoning_effort?: string|null, timeout?: int|null}  $options
+     *                                                                                                               Per-call overrides (currently the daily planner only); when empty the
+     *                                                                                                               globally configured model/effort/timeout apply unchanged.
      */
-    public function complete(string $prompt, array $images = []): string
+    public function complete(string $prompt, array $images = [], array $options = []): string
     {
         $errors = [];
 
         try {
-            return $this->runCodex($prompt, $images);
+            return $this->runCodex($prompt, $images, $options);
         } catch (RuntimeException $exception) {
             $errors[] = 'Codex: '.$exception->getMessage();
         }
 
         try {
-            return $this->runAgy($prompt, $images);
+            return $this->runAgy($prompt, $images, $options);
         } catch (RuntimeException $exception) {
             $errors[] = 'AGY: '.$exception->getMessage();
         }
@@ -45,8 +48,9 @@ class AiCliRunner
 
     /**
      * @param  array<int, string>  $images
+     * @param  array{codex_model?: string|null, codex_reasoning_effort?: string|null, timeout?: int|null}  $options
      */
-    private function runCodex(string $prompt, array $images): string
+    private function runCodex(string $prompt, array $images, array $options = []): string
     {
         /**
          * The output file must NOT be pre-created with tempnam(): it would be
@@ -74,10 +78,16 @@ class AiCliRunner
             $outputFile,
         ];
 
-        $model = config('services.ai_cli.codex_model');
+        $model = $options['codex_model'] ?? config('services.ai_cli.codex_model');
         if (is_string($model) && trim($model) !== '') {
             $command[] = '--model';
             $command[] = trim($model);
+        }
+
+        $effort = $options['codex_reasoning_effort'] ?? null;
+        if (is_string($effort) && trim($effort) !== '') {
+            $command[] = '-c';
+            $command[] = 'model_reasoning_effort="'.trim($effort).'"';
         }
 
         foreach ($images as $image) {
@@ -88,7 +98,7 @@ class AiCliRunner
         $command[] = '-';
 
         try {
-            $this->runProcess($command, $prompt);
+            $this->runProcess($command, $prompt, $options['timeout'] ?? null);
 
             $output = is_file($outputFile) ? trim((string) file_get_contents($outputFile)) : '';
             if ($output === '') {
@@ -103,8 +113,9 @@ class AiCliRunner
 
     /**
      * @param  array<int, string>  $images
+     * @param  array{codex_model?: string|null, codex_reasoning_effort?: string|null, timeout?: int|null}  $options
      */
-    private function runAgy(string $prompt, array $images): string
+    private function runAgy(string $prompt, array $images, array $options = []): string
     {
         if ($images !== []) {
             $prompt .= "\n\nArquivos locais de imagem para analisar:\n".collect($images)
@@ -130,13 +141,13 @@ class AiCliRunner
         $command[] = '--print';
         $command[] = $prompt;
 
-        return $this->runProcess($command);
+        return $this->runProcess($command, timeout: $options['timeout'] ?? null);
     }
 
     /**
      * @param  array<int, string>  $command
      */
-    private function runProcess(array $command, ?string $input = null): string
+    private function runProcess(array $command, ?string $input = null, ?int $timeout = null): string
     {
         $process = new Process(
             command: $command,
@@ -147,7 +158,7 @@ class AiCliRunner
             ],
         );
 
-        $process->setTimeout((int) config('services.ai_cli.timeout', 300));
+        $process->setTimeout($timeout ?? (int) config('services.ai_cli.timeout', 300));
         if ($input !== null) {
             $process->setInput($input);
         }

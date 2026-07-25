@@ -188,6 +188,7 @@ class AssistantChatService
             'Ao responder sobre fatos do banco, não copie horários de respostas anteriores do próprio Assistente. Respostas anteriores podem ter usado UTC; use a consulta atual e os horários locais normalizados.',
             'Unidades: work_sessions.duration está em MINUTOS (nunca segundos) e valores monetários (total, price, discount, rate, value, hourly_rate) estão em CENTAVOS — converta antes de responder.',
             'Os resultados são truncados em '.((int) config('services.assistant.max_rows', 200)).' linhas; use agregações e LIMIT quando fizer sentido.',
+            'As tabelas daily_plans e daily_plan_items guardam o plano do dia gerado pelo planejador de IA (itens com posição, tipo, tempo estimado e status pending/done/skipped). Consulte-as quando o Luiz perguntar o que fazer agora ou como está o plano de hoje.',
             $this->invoiceInstructions($conversation),
             PromptGuard::instruction(),
         ]);
