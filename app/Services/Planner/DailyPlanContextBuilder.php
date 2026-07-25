@@ -106,7 +106,7 @@ class DailyPlanContextBuilder
 
         return new DailyPlanContext(
             text: $text,
-            capacityMinutes: $capacity->dayCapacityMinutes($today),
+            capacityMinutes: max(0, $capacity->remainingTodayMinutes($today)),
             validTaskIds: $tasks->pluck('id')->merge($habits->pluck('id'))->map(fn ($id) => (int) $id)->all(),
             validInvoiceIds: $invoices->pluck('id')->map(fn ($id) => (int) $id)->all(),
             validContractIds: $contracts->pluck('id')->map(fn ($id) => (int) $id)->all(),
@@ -121,6 +121,7 @@ class DailyPlanContextBuilder
         $lines = [
             'Capacidade de trabalho de hoje: '.PejotaHelper::formatDuration($capacity->dayCapacityMinutes($today)).' ('.($capacity->isWorkDay($today) ? 'dia de trabalho' : 'DIA DE FOLGA').').',
             'Já trabalhado hoje: '.PejotaHelper::formatDuration($capacity->workedOnDayMinutes($today)).'.',
+            'Tempo restante hoje para o plano: '.PejotaHelper::formatDuration(max(0, $capacity->remainingTodayMinutes($today))).' (capacidade do dia menos o já trabalhado). Planeje SÓ dentro desse tempo restante.',
             'Já trabalhado nesta semana: '.PejotaHelper::formatDuration($capacity->workedThisWeekMinutes($today)).' de '.PejotaHelper::formatDuration($capacity->weeklyMinutes()).' planejados.',
         ];
 

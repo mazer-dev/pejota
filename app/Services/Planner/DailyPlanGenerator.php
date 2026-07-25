@@ -34,11 +34,23 @@ class DailyPlanGenerator
     public function generate(Company $company, CarbonImmutable $date, DailyPlanModeEnum $mode): DailyPlan
     {
         $capacity = PlannerCapacity::forCompany($company);
+        $remainingMinutes = max(0, $capacity->remainingTodayMinutes($date));
+
+        /**
+         * The plan is budgeted against the time still left in the day (the
+         * day's capacity minus what was already logged today), so a mid-day
+         * regeneration only plans the remaining hours. When nothing is left,
+         * a full-day plan falls back to the light plan (urgencies only)
+         * instead of proposing a whole new day of work.
+         */
+        if ($mode === DailyPlanModeEnum::FULL && $remainingMinutes <= 0) {
+            $mode = DailyPlanModeEnum::LIGHT;
+        }
 
         $attributes = [
             'mode' => $mode,
             'status' => DailyPlanStatusEnum::GENERATING,
-            'capacity_minutes' => $mode === DailyPlanModeEnum::LIGHT ? 0 : $capacity->dayCapacityMinutes($date),
+            'capacity_minutes' => $mode === DailyPlanModeEnum::LIGHT ? 0 : $remainingMinutes,
             'planned_minutes' => 0,
             'summary' => null,
             'warnings' => null,

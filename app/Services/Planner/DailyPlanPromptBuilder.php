@@ -30,7 +30,7 @@ class DailyPlanPromptBuilder
         ];
 
         $rules = [
-            "1. A soma de estimated_minutes NÃO pode passar da capacidade de hoje ({$capacity}); deixe ~15% de folga para imprevistos.",
+            "1. A soma de estimated_minutes NÃO pode passar da capacidade RESTANTE de hoje ({$capacity}), que já desconta o tempo trabalhado até agora; deixe ~15% de folga para imprevistos.",
             '2. Tarefa marcada [BLOQUEADA] ou [POSSIVELMENTE BLOQUEADA] NÃO entra como item type=task: mesmo havendo tarefa aberta, não há trabalho a fazer nela agora. Se o silêncio do cliente for de '.$followupSilenceDays.' dia(s) ou mais, gere no máximo UM item follow_up por cliente com suggested_message.',
             '3. Tarefa marcada [CLIENTE AGUARDANDO SUA RESPOSTA] é prioridade máxima: responder cliente vem antes de tudo.',
             '4. Ordem de prioridade: (1) clientes esperando resposta; (2) faturas vencidas/cobranças; (3) tarefas atrasadas acionáveis; (4) tarefas com vencimento próximo; (5) faturas a emitir e contratos terminando; (6) demais tarefas por prioridade; (7) hábitos.',

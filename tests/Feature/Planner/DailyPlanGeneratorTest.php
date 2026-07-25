@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Planner;
 
+use App\Enums\CompanySettingsEnum;
 use App\Enums\DailyPlanModeEnum;
 use App\Enums\DailyPlanStatusEnum;
 use App\Models\Client;
@@ -9,6 +10,7 @@ use App\Models\DailyPlan;
 use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\WorkSession;
 use App\Services\Ai\AiCliRunner;
 use App\Services\Planner\DailyPlanGenerator;
 use Carbon\CarbonImmutable;
@@ -162,6 +164,67 @@ class DailyPlanGeneratorTest extends TestCase
         );
 
         $this->assertSame(DailyPlanStatusEnum::READY, $plan->status);
+    }
+
+    public function test_regeneration_budgets_only_the_remaining_time_of_the_day(): void
+    {
+        $this->user->company->settings()->set(
+            CompanySettingsEnum::PLANNER_DAY_HOURS->value,
+            [1 => 6, 2 => 6, 3 => 6, 4 => 6, 5 => 6, 6 => 6, 7 => 6],
+        );
+
+        $today = CarbonImmutable::now()->startOfDay();
+
+        WorkSession::create([
+            'company_id' => $this->user->company->id,
+            'start' => $today->setTime(8, 0),
+            'end' => $today->setTime(13, 0),
+            'is_running' => false,
+        ]);
+
+        $capturedPrompt = null;
+        $runner = Mockery::mock(AiCliRunner::class);
+        $runner->shouldReceive('complete')
+            ->once()
+            ->andReturnUsing(function (string $prompt) use (&$capturedPrompt): string {
+                $capturedPrompt = $prompt;
+
+                return json_encode(['summary' => 'ok', 'items' => []]);
+            });
+        $this->instance(AiCliRunner::class, $runner);
+
+        $plan = app(DailyPlanGenerator::class)->generate($this->user->company, $today, DailyPlanModeEnum::FULL);
+
+        // Day capacity 6h, 5h already worked today, so only 1h is planned.
+        $this->assertSame(60, $plan->capacity_minutes);
+        $this->assertStringContainsString('01h00', (string) $capturedPrompt);
+        $this->assertStringContainsString('RESTANTE', (string) $capturedPrompt);
+    }
+
+    public function test_full_plan_falls_back_to_light_when_no_time_is_left_today(): void
+    {
+        $this->user->company->settings()->set(
+            CompanySettingsEnum::PLANNER_DAY_HOURS->value,
+            [1 => 4, 2 => 4, 3 => 4, 4 => 4, 5 => 4, 6 => 4, 7 => 4],
+        );
+
+        $today = CarbonImmutable::now()->startOfDay();
+
+        WorkSession::create([
+            'company_id' => $this->user->company->id,
+            'start' => $today->setTime(8, 0),
+            'end' => $today->setTime(13, 0),
+            'is_running' => false,
+        ]);
+
+        $runner = Mockery::mock(AiCliRunner::class);
+        $runner->shouldReceive('complete')->once()->andReturn(json_encode(['summary' => 'ok', 'items' => []]));
+        $this->instance(AiCliRunner::class, $runner);
+
+        $plan = app(DailyPlanGenerator::class)->generate($this->user->company, $today, DailyPlanModeEnum::FULL);
+
+        $this->assertSame(DailyPlanModeEnum::LIGHT, $plan->mode);
+        $this->assertSame(0, $plan->capacity_minutes);
     }
 
     public function test_effort_falls_back_to_high_when_the_first_attempt_fails(): void
