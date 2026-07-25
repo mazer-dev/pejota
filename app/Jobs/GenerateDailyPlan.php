@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\DailyPlanModeEnum;
 use App\Enums\DailyPlanStatusEnum;
+use App\Helpers\PejotaHelper;
 use App\Models\Company;
 use App\Models\DailyPlan;
 use App\Services\Planner\DailyPlanGenerator;
@@ -46,9 +47,14 @@ class GenerateDailyPlan implements ShouldBeUnique, ShouldQueue
             Auth::onceUsingId($this->company->user_id);
         }
 
+        /**
+         * The date string must be parsed in the user's timezone: parsed as
+         * UTC midnight, converting to a negative-offset timezone later
+         * shifts the plan back one calendar day (wrong weekday capacity).
+         */
         $generator->generate(
             $this->company,
-            CarbonImmutable::parse($this->date),
+            CarbonImmutable::parse($this->date, PejotaHelper::getUserTimeZoneOrDefault())->startOfDay(),
             DailyPlanModeEnum::from($this->mode),
         );
     }
