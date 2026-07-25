@@ -104,6 +104,7 @@ class DailyPlanContextBuilderTest extends TestCase
         $context = $this->build();
 
         $this->assertStringContainsString('POSSIVELMENTE BLOQUEADA', $context->text);
+        $this->assertStringContainsString('Sua última mensagem: "Conseguiu o acesso?"', $context->text);
         $this->assertStringContainsString('Configurar e-mails da Vivianne', $context->text);
         $this->assertContains($task->id, $context->validTaskIds);
         $this->assertContains($conversation->id, $context->validConversationIds);
@@ -139,6 +140,25 @@ class DailyPlanContextBuilderTest extends TestCase
         $context = $this->build();
 
         $this->assertStringContainsString('CLIENTE AGUARDANDO SUA RESPOSTA', $context->text);
+        $this->assertStringContainsString('Última mensagem do cliente: "Alguma novidade?"', $context->text);
+    }
+
+    public function test_attachment_only_last_message_is_cited_by_its_type(): void
+    {
+        Task::create([
+            'title' => 'Configurar servidor',
+            'status_id' => $this->status->id,
+            'company_id' => $this->user->company->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $conversation = $this->makeConversation();
+        $this->makeMessage($conversation, fromMe: false, text: '', sentAt: now()->subHours(5));
+        $conversation->latestMessage()->first()->update(['message_type' => 'image']);
+
+        $context = $this->build();
+
+        $this->assertStringContainsString('Última mensagem do cliente: "[image sem texto]"', $context->text);
     }
 
     public function test_effort_is_normalized_to_minutes_and_habits_are_listed_separately(): void

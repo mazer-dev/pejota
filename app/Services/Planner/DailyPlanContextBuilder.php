@@ -174,9 +174,10 @@ class DailyPlanContextBuilder
     /**
      * Latest exchanged message per client, from the newest WhatsApp
      * conversation linked to that client (groups excluded: a silent group
-     * is not a blocked client).
+     * is not a blocked client). The excerpt lets the AI cite the actual
+     * message in the item's reason instead of a generic "reply the client".
      *
-     * @return array<int, array{from_me: bool, sent_at: CarbonImmutable, conversation_id: int}>
+     * @return array<int, array{from_me: bool, sent_at: CarbonImmutable, conversation_id: int, excerpt: string}>
      */
     private function clientConversationSignals(Company $company): array
     {
@@ -198,10 +199,15 @@ class DailyPlanContextBuilder
                 continue;
             }
 
+            $text = trim((string) $latest->text);
+
             $signals[$clientId] = [
                 'from_me' => (bool) $latest->from_me,
                 'sent_at' => CarbonImmutable::parse($latest->sent_at),
                 'conversation_id' => (int) $conversation->id,
+                'excerpt' => $text !== ''
+                    ? Str::limit($text, 120)
+                    : '['.($latest->message_type ?: 'mensagem').' sem texto]',
             ];
         }
 
@@ -278,11 +284,11 @@ class DailyPlanContextBuilder
         $hours = (int) $signal['sent_at']->diffInHours($now);
 
         if ($signal['from_me'] && $hours >= $thresholdHours) {
-            $markers[] = "[POSSIVELMENTE BLOQUEADA: sua última mensagem para este cliente foi há {$hours}h e ele não respondeu (conversa #{$signal['conversation_id']})]";
+            $markers[] = "[POSSIVELMENTE BLOQUEADA: sua última mensagem para este cliente foi há {$hours}h e ele não respondeu (conversa #{$signal['conversation_id']}). Sua última mensagem: \"{$signal['excerpt']}\"]";
         }
 
         if (! $signal['from_me']) {
-            $markers[] = "[CLIENTE AGUARDANDO SUA RESPOSTA há {$hours}h (conversa #{$signal['conversation_id']})]";
+            $markers[] = "[CLIENTE AGUARDANDO SUA RESPOSTA há {$hours}h (conversa #{$signal['conversation_id']}). Última mensagem do cliente: \"{$signal['excerpt']}\"]";
         }
 
         return $markers;

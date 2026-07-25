@@ -37,6 +37,7 @@ class DailyPlanPromptBuilder
             '5. Use a estimativa da tarefa quando existir; sem estimativa, use bom senso (mínimo 15 min). Itens administrativos (follow_up, cobrança): 10 a 15 min.',
             '6. Hábitos ainda pendentes hoje sempre entram (itens type=habit, curtos), especialmente os com sequência ativa.',
             '7. Cada reason cita o dado concreto que justifica o item (ex.: "fatura vence amanhã", "cliente sem resposta há 2 dias"). Não invente nada fora do contexto.',
+            '7b. Em itens de responder cliente ou follow_up, o reason DEVE citar entre aspas um trecho curto da última mensagem relevante da conversa (ela aparece nos marcadores das tarefas e no resumo das conversas), para o Luiz saber exatamente do que se trata sem abrir a conversa. Se a última mensagem for um anexo sem texto (ex.: [image sem texto]), diga isso: "a cliente enviou uma imagem que aguarda retorno".',
             '8. Se a capacidade não comportar tudo que é urgente, priorize e explique o que ficou de fora em warnings.',
         ];
 
