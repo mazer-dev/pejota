@@ -18,13 +18,16 @@
         </span>
     </button>
 
+    {{-- Pinned to the top-right of the viewport (not anchored to the button)
+         so a wide panel never overflows the left edge and clips its fields at
+         narrow widths. Width and height are clamped to the viewport. --}}
     <div
         x-show="open"
         x-cloak
         @click.outside="open = false"
         x-transition
-        class="absolute end-0 z-50 mt-2 rounded-lg bg-white p-3 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
-        style="width: min(calc(100vw - 2rem), 28rem);"
+        class="z-50 rounded-lg bg-white p-3 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+        style="position: fixed; top: 4rem; right: 1rem; width: min(calc(100vw - 2rem), 28rem); max-height: calc(100vh - 5rem); overflow-y: auto;"
     >
         <h3 class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             @lang('Running')
