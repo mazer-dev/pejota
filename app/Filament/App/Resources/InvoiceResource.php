@@ -18,6 +18,7 @@ use App\Jobs\SendInvoiceDelivery;
 use App\Models\Client;
 use App\Models\Currency;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Product;
 use App\Services\ExchangeRateService;
 use App\Services\InvoiceService;
@@ -44,6 +45,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Component;
@@ -240,6 +243,70 @@ class InvoiceResource extends Resource
                         }),
                 ]),
             ]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->columns(1)
+            ->components([
+                Grid::make(['default' => 2, 'md' => 4])->schema([
+                    TextEntry::make('number')->translateLabel(),
+                    TextEntry::make('status')->translateLabel()->badge(),
+                    TextEntry::make('client.name')->label('Client')->translateLabel(),
+                    TextEntry::make('currency')->translateLabel(),
+                    TextEntry::make('due_date')->translateLabel()->date(PejotaHelper::getUserDateFormat())->placeholder('—'),
+                    TextEntry::make('payment_date')->translateLabel()->date(PejotaHelper::getUserDateFormat())->placeholder('—'),
+                    TextEntry::make('project.name')->label('Project')->translateLabel()->placeholder('—'),
+                    TextEntry::make('contract.title')->label('Contract')->translateLabel()->placeholder('—'),
+                    TextEntry::make('title')->translateLabel()->columnSpanFull(),
+                ]),
+                RepeatableEntry::make('items')
+                    ->label('Items')
+                    ->translateLabel()
+                    ->columnSpanFull()
+                    ->columns(['default' => 2, 'md' => 5])
+                    ->getStateUsing(fn (Invoice $record) => $record->items()->with('unit')->get()->each(
+                        fn (InvoiceItem $item) => $item->setRelation('invoice', $record)
+                    ))
+                    ->schema([
+                        TextEntry::make('name')->label('Description at invoice')->translateLabel()->columnSpan(2),
+                        TextEntry::make('unit.name')->label('Unit')->translateLabel(),
+                        TextEntry::make('quantity')->translateLabel(),
+                        TextEntry::make('price')->translateLabel()->money(fn (InvoiceItem $record): string => self::itemCurrency($record)),
+                        TextEntry::make('discount')->translateLabel()->money(fn (InvoiceItem $record): string => self::itemCurrency($record))->placeholder('—'),
+                        TextEntry::make('total')->translateLabel()->money(fn (InvoiceItem $record): string => self::itemCurrency($record)),
+                        TextEntry::make('obs')->translateLabel()->columnSpanFull()->placeholder('—'),
+                    ]),
+                Grid::make(['default' => 2, 'md' => 4])->schema([
+                    TextEntry::make('discount')
+                        ->translateLabel()
+                        ->money(fn (Invoice $record): string => $record->currency ?? PejotaHelper::getUserCurrency())
+                        ->placeholder('—'),
+                    TextEntry::make('total')
+                        ->translateLabel()
+                        ->weight(FontWeight::Bold)
+                        ->money(fn (Invoice $record): string => $record->currency ?? PejotaHelper::getUserCurrency()),
+                    TextEntry::make('base_total')
+                        ->label(__('Base value'))
+                        ->getStateUsing(function (Invoice $record): ?float {
+                            try {
+                                return $record->baseTotal;
+                            } catch (MissingExchangeRateException) {
+                                return null;
+                            }
+                        })
+                        ->money(PejotaHelper::getUserCurrency())
+                        ->placeholder('—'),
+                ]),
+                TextEntry::make('extra_info')->translateLabel()->columnSpanFull()->placeholder('—'),
+                TextEntry::make('obs_internal')->label('Internal observations')->translateLabel()->columnSpanFull()->placeholder('—'),
+            ]);
+    }
+
+    private static function itemCurrency(InvoiceItem $item): string
+    {
+        return $item->invoice?->currency ?? PejotaHelper::getUserCurrency();
     }
 
     public static function table(Table $table): Table
