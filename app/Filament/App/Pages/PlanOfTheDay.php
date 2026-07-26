@@ -17,6 +17,7 @@ use App\Models\DailyPlanItem;
 use App\Services\Planner\PlannerCapacity;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Livewire\Attributes\Computed;
@@ -114,6 +115,46 @@ class PlanOfTheDay extends Page
         unset($this->plan);
     }
 
+    public function generateExtra(int $minutes): void
+    {
+        if ($minutes <= 0) {
+            Notification::make()
+                ->title(__('Enter how much extra time you want to work.'))
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $company = auth()->user()->company;
+        $today = $this->today();
+
+        $plan = DailyPlan::query()
+            ->where('company_id', $company->id)
+            ->forDate($today)
+            ->first();
+
+        if ($plan) {
+            $plan->update(['mode' => DailyPlanModeEnum::FULL, 'status' => DailyPlanStatusEnum::GENERATING, 'failure_reason' => null]);
+        } else {
+            DailyPlan::query()->create([
+                'company_id' => $company->id,
+                'plan_date' => $today->toDateString(),
+                'mode' => DailyPlanModeEnum::FULL,
+                'status' => DailyPlanStatusEnum::GENERATING,
+            ]);
+        }
+
+        GenerateDailyPlan::dispatch($company, $today->toDateString(), DailyPlanModeEnum::FULL->value, $minutes);
+
+        Notification::make()
+            ->title(__('Planning :time of extra work...', ['time' => PejotaHelper::formatDuration($minutes)]))
+            ->info()
+            ->send();
+
+        unset($this->plan);
+    }
+
     public function itemUrl(DailyPlanItem $item): ?string
     {
         return match (true) {
@@ -141,6 +182,33 @@ class PlanOfTheDay extends Page
                 ->modalHeading(__('Regenerate plan'))
                 ->modalDescription(__('The current plan and its progress will be replaced. Continue?'))
                 ->action('generatePlan'),
+
+            Action::make('extraTime')
+                ->label(__('Work extra time'))
+                ->icon('heroicon-o-plus-circle')
+                ->color('gray')
+                ->disabled(fn (): bool => (bool) $this->plan?->isGenerating())
+                ->modalHeading(__('Work extra time'))
+                ->modalDescription(__('Plan the next best work for the extra time you want to put in now, beyond the day plan.'))
+                ->form([
+                    TextInput::make('hours')
+                        ->label(__('Hours'))
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(12)
+                        ->default(0),
+                    TextInput::make('minutes')
+                        ->label(__('Minutes'))
+                        ->numeric()
+                        ->minValue(0)
+                        ->maxValue(59)
+                        ->default(30),
+                ])
+                ->action(function (array $data): void {
+                    $minutes = ((int) ($data['hours'] ?? 0)) * 60 + ((int) ($data['minutes'] ?? 0));
+
+                    $this->generateExtra($minutes);
+                }),
         ];
     }
 

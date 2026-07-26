@@ -106,6 +106,21 @@ class PlanOfTheDayPageTest extends TestCase
         $this->assertSame(DailyPlanStatusEnum::GENERATING, $plan->status);
     }
 
+    public function test_work_extra_time_action_dispatches_job_with_the_override(): void
+    {
+        Bus::fake();
+
+        $this->makeReadyPlan();
+
+        Livewire::test(PlanOfTheDay::class)
+            ->callAction('extraTime', data: ['hours' => 1, 'minutes' => 30]);
+
+        Bus::assertDispatched(GenerateDailyPlan::class, function (GenerateDailyPlan $job): bool {
+            return $job->capacityOverrideMinutes === 90
+                && $job->mode === DailyPlanModeEnum::FULL->value;
+        });
+    }
+
     public function test_does_not_show_or_touch_plans_from_another_company(): void
     {
         $otherUser = User::factory()->create();

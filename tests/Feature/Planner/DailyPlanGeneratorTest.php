@@ -198,7 +198,48 @@ class DailyPlanGeneratorTest extends TestCase
         // Day capacity 6h, 5h already worked today, so only 1h is planned.
         $this->assertSame(60, $plan->capacity_minutes);
         $this->assertStringContainsString('01h00', (string) $capturedPrompt);
-        $this->assertStringContainsString('RESTANTE', (string) $capturedPrompt);
+        $this->assertStringContainsString('Tempo restante hoje', (string) $capturedPrompt);
+    }
+
+    public function test_extra_time_override_budgets_the_requested_time_and_forces_a_full_plan(): void
+    {
+        $this->user->company->settings()->set(
+            CompanySettingsEnum::PLANNER_DAY_HOURS->value,
+            [1 => 4, 2 => 4, 3 => 4, 4 => 4, 5 => 4, 6 => 4, 7 => 4],
+        );
+
+        $today = CarbonImmutable::now()->startOfDay();
+
+        // Already worked past the day's hours: a normal regen would go light.
+        WorkSession::create([
+            'company_id' => $this->user->company->id,
+            'start' => $today->setTime(8, 0),
+            'end' => $today->setTime(13, 0),
+            'is_running' => false,
+        ]);
+
+        $capturedPrompt = null;
+        $runner = Mockery::mock(AiCliRunner::class);
+        $runner->shouldReceive('complete')
+            ->once()
+            ->andReturnUsing(function (string $prompt) use (&$capturedPrompt): string {
+                $capturedPrompt = $prompt;
+
+                return json_encode(['summary' => 'ok', 'items' => []]);
+            });
+        $this->instance(AiCliRunner::class, $runner);
+
+        $plan = app(DailyPlanGenerator::class)->generate(
+            $this->user->company,
+            $today,
+            DailyPlanModeEnum::FULL,
+            120,
+        );
+
+        $this->assertSame(DailyPlanModeEnum::FULL, $plan->mode);
+        $this->assertSame(120, $plan->capacity_minutes);
+        $this->assertStringContainsString('02h00', (string) $capturedPrompt);
+        $this->assertStringContainsString('EXTRA', (string) $capturedPrompt);
     }
 
     public function test_full_plan_falls_back_to_light_when_no_time_is_left_today(): void

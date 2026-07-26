@@ -32,7 +32,7 @@ use Illuminate\Support\Str;
  */
 class DailyPlanContextBuilder
 {
-    public function build(Company $company, CarbonImmutable $date, PlannerCapacity $capacity): DailyPlanContext
+    public function build(Company $company, CarbonImmutable $date, PlannerCapacity $capacity, ?int $capacityOverrideMinutes = null): DailyPlanContext
     {
         $maxChars = max(1000, (int) config('services.planner.context_max_chars', 40000));
 
@@ -45,7 +45,7 @@ class DailyPlanContextBuilder
         $context = null;
 
         foreach ($degradations as $index => $degradation) {
-            $context = $this->buildOnce($company, $date, $capacity, $degradation, truncated: $index > 0);
+            $context = $this->buildOnce($company, $date, $capacity, $degradation, truncated: $index > 0, capacityOverrideMinutes: $capacityOverrideMinutes);
 
             if (mb_strlen($context->text) <= $maxChars) {
                 return $context;
@@ -64,6 +64,7 @@ class DailyPlanContextBuilder
         PlannerCapacity $capacity,
         array $degradation,
         bool $truncated,
+        ?int $capacityOverrideMinutes = null,
     ): DailyPlanContext {
         $timezone = PejotaHelper::getUserTimeZoneOrDefault();
         $dateFormat = PejotaHelper::getUserDateFormatOrDefault();
@@ -81,7 +82,7 @@ class DailyPlanContextBuilder
         );
 
         $sections = array_filter([
-            $this->capacitySection($company, $today, $capacity),
+            $this->capacitySection($company, $today, $capacity, $capacityOverrideMinutes),
             $this->tasksSection($tasks, $clientSignals, $today, $dateFormat),
             $this->habitsSection($habits),
             $this->conversationsSection(
@@ -106,7 +107,7 @@ class DailyPlanContextBuilder
 
         return new DailyPlanContext(
             text: $text,
-            capacityMinutes: max(0, $capacity->remainingTodayMinutes($today)),
+            capacityMinutes: $capacityOverrideMinutes ?? max(0, $capacity->remainingTodayMinutes($today)),
             validTaskIds: $tasks->pluck('id')->merge($habits->pluck('id'))->map(fn ($id) => (int) $id)->all(),
             validInvoiceIds: $invoices->pluck('id')->map(fn ($id) => (int) $id)->all(),
             validContractIds: $contracts->pluck('id')->map(fn ($id) => (int) $id)->all(),
@@ -116,12 +117,16 @@ class DailyPlanContextBuilder
         );
     }
 
-    private function capacitySection(Company $company, CarbonImmutable $today, PlannerCapacity $capacity): string
+    private function capacitySection(Company $company, CarbonImmutable $today, PlannerCapacity $capacity, ?int $capacityOverrideMinutes = null): string
     {
+        $budgetLine = $capacityOverrideMinutes !== null && $capacityOverrideMinutes > 0
+            ? 'Você pediu para trabalhar '.PejotaHelper::formatDuration($capacityOverrideMinutes).' de tempo EXTRA agora, além do horário já planejado do dia. Planeje SÓ dentro desse tempo extra.'
+            : 'Tempo restante hoje para o plano: '.PejotaHelper::formatDuration(max(0, $capacity->remainingTodayMinutes($today))).' (capacidade do dia menos o já trabalhado). Planeje SÓ dentro desse tempo restante.';
+
         $lines = [
             'Capacidade de trabalho de hoje: '.PejotaHelper::formatDuration($capacity->dayCapacityMinutes($today)).' ('.($capacity->isWorkDay($today) ? 'dia de trabalho' : 'DIA DE FOLGA').').',
             'Já trabalhado hoje: '.PejotaHelper::formatDuration($capacity->workedOnDayMinutes($today)).'.',
-            'Tempo restante hoje para o plano: '.PejotaHelper::formatDuration(max(0, $capacity->remainingTodayMinutes($today))).' (capacidade do dia menos o já trabalhado). Planeje SÓ dentro desse tempo restante.',
+            $budgetLine,
             'Já trabalhado nesta semana: '.PejotaHelper::formatDuration($capacity->workedThisWeekMinutes($today)).' de '.PejotaHelper::formatDuration($capacity->weeklyMinutes()).' planejados.',
         ];
 

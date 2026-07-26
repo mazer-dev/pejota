@@ -31,26 +31,40 @@ class DailyPlanGenerator
         private readonly AiCliRunner $cliRunner,
     ) {}
 
-    public function generate(Company $company, CarbonImmutable $date, DailyPlanModeEnum $mode): DailyPlan
+    public function generate(Company $company, CarbonImmutable $date, DailyPlanModeEnum $mode, ?int $capacityOverrideMinutes = null): DailyPlan
     {
         $capacity = PlannerCapacity::forCompany($company);
-        $remainingMinutes = max(0, $capacity->remainingTodayMinutes($date));
+        $isExtraTime = $capacityOverrideMinutes !== null && $capacityOverrideMinutes > 0;
 
-        /**
-         * The plan is budgeted against the time still left in the day (the
-         * day's capacity minus what was already logged today), so a mid-day
-         * regeneration only plans the remaining hours. When nothing is left,
-         * a full-day plan falls back to the light plan (urgencies only)
-         * instead of proposing a whole new day of work.
-         */
-        if ($mode === DailyPlanModeEnum::FULL && $remainingMinutes <= 0) {
-            $mode = DailyPlanModeEnum::LIGHT;
+        if ($isExtraTime) {
+            /**
+             * Explicit "work X more" request: budget exactly the time the user
+             * asked for and always produce a full plan, even when the day's
+             * configured hours are already spent.
+             */
+            $mode = DailyPlanModeEnum::FULL;
+            $budgetMinutes = $capacityOverrideMinutes;
+        } else {
+            $remainingMinutes = max(0, $capacity->remainingTodayMinutes($date));
+
+            /**
+             * The plan is budgeted against the time still left in the day (the
+             * day's capacity minus what was already logged today), so a mid-day
+             * regeneration only plans the remaining hours. When nothing is
+             * left, a full-day plan falls back to the light plan (urgencies
+             * only) instead of proposing a whole new day of work.
+             */
+            if ($mode === DailyPlanModeEnum::FULL && $remainingMinutes <= 0) {
+                $mode = DailyPlanModeEnum::LIGHT;
+            }
+
+            $budgetMinutes = $mode === DailyPlanModeEnum::LIGHT ? 0 : $remainingMinutes;
         }
 
         $attributes = [
             'mode' => $mode,
             'status' => DailyPlanStatusEnum::GENERATING,
-            'capacity_minutes' => $mode === DailyPlanModeEnum::LIGHT ? 0 : $remainingMinutes,
+            'capacity_minutes' => $budgetMinutes,
             'planned_minutes' => 0,
             'summary' => null,
             'warnings' => null,
@@ -82,7 +96,7 @@ class DailyPlanGenerator
         $plan->items()->delete();
 
         try {
-            $context = $this->contextBuilder->build($company, $date, $capacity);
+            $context = $this->contextBuilder->build($company, $date, $capacity, $isExtraTime ? $capacityOverrideMinutes : null);
 
             if ($mode === DailyPlanModeEnum::LIGHT) {
                 $context = new DailyPlanContext(

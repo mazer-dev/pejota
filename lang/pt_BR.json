@@ -435,5 +435,11 @@
     "Remaining planned time: :time": "Tempo planejado restante: :time",
     "Unexpected error while generating the plan.": "Erro inesperado ao gerar o plano.",
     "The plan generation job failed.": "O job de geração do plano falhou.",
-    ":count item(s) sugeridos pela IA não couberam na capacidade de hoje e foram removidos.": ":count item(s) sugeridos pela IA não couberam na capacidade de hoje e foram removidos."
+    ":count item(s) sugeridos pela IA não couberam na capacidade de hoje e foram removidos.": ":count item(s) sugeridos pela IA não couberam na capacidade de hoje e foram removidos.",
+    "Work extra time": "Trabalhar tempo extra",
+    "Hours": "Horas",
+    "Minutes": "Minutos",
+    "Enter how much extra time you want to work.": "Informe quanto tempo extra você quer trabalhar.",
+    "Planning :time of extra work...": "Planejando :time de trabalho extra...",
+    "Plan the next best work for the extra time you want to put in now, beyond the day plan.": "Planeja o melhor trabalho para o tempo extra que você quer investir agora, além do plano do dia."
 }

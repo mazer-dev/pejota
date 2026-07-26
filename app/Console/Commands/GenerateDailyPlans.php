@@ -25,6 +25,7 @@ class GenerateDailyPlans extends Command
         {--company= : Restrict to a single company ID}
         {--date= : Plan date (Y-m-d, defaults to today in the company timezone)}
         {--force : Regenerate even when a ready plan already exists}
+        {--minutes= : Plan for this many minutes of EXTRA work now, ignoring the day being over}
         {--sync : Generate inline instead of dispatching the queue job}';
 
     /**
@@ -71,24 +72,28 @@ class GenerateDailyPlans extends Command
             ? CarbonImmutable::parse((string) $this->option('date'), PejotaHelper::getUserTimeZoneOrDefault())->startOfDay()
             : CarbonImmutable::now(PejotaHelper::getUserTimeZoneOrDefault())->startOfDay();
 
+        $override = filled($this->option('minutes')) ? max(1, (int) $this->option('minutes')) : null;
+
         $existing = DailyPlan::allTenants()
             ->where('company_id', $company->id)
             ->forDate($date)
             ->first();
 
-        if ($existing?->isReady() && ! $this->option('force')) {
+        if ($existing?->isReady() && ! $this->option('force') && $override === null) {
             $this->line("{$company->name}: plano de {$date->toDateString()} já gerado, pulando (use --force para regerar).");
 
             return;
         }
 
         $capacity = PlannerCapacity::forCompany($company);
-        $mode = $capacity->isWorkDay($date) ? DailyPlanModeEnum::FULL : DailyPlanModeEnum::LIGHT;
+        $mode = ($override !== null || $capacity->isWorkDay($date))
+            ? DailyPlanModeEnum::FULL
+            : DailyPlanModeEnum::LIGHT;
 
         if ($this->option('sync')) {
-            $plan = app(DailyPlanGenerator::class)->generate($company, $date, $mode);
+            $plan = app(DailyPlanGenerator::class)->generate($company, $date, $mode, $override);
 
-            $this->line("{$company->name}: plano {$plan->status->value} ({$mode->value}) com ".$plan->items()->count().' item(ns).');
+            $this->line("{$company->name}: plano {$plan->status->value} ({$plan->mode->value}) com ".$plan->items()->count().' item(ns).');
 
             if ($plan->isFailed()) {
                 $this->error($plan->failure_reason ?? 'Falha desconhecida.');
@@ -97,7 +102,7 @@ class GenerateDailyPlans extends Command
             return;
         }
 
-        GenerateDailyPlan::dispatch($company, $date->toDateString(), $mode->value);
+        GenerateDailyPlan::dispatch($company, $date->toDateString(), $mode->value, $override);
 
         $this->line("{$company->name}: geração do plano de {$date->toDateString()} ({$mode->value}) enviada para a fila.");
     }

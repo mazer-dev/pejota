@@ -34,6 +34,7 @@ class GenerateDailyPlan implements ShouldBeUnique, ShouldQueue
         public readonly Company $company,
         public readonly string $date,
         public readonly string $mode = DailyPlanModeEnum::FULL->value,
+        public readonly ?int $capacityOverrideMinutes = null,
     ) {}
 
     public function uniqueId(): string
@@ -56,6 +57,7 @@ class GenerateDailyPlan implements ShouldBeUnique, ShouldQueue
             $this->company,
             CarbonImmutable::parse($this->date, PejotaHelper::getUserTimeZoneOrDefault())->startOfDay(),
             DailyPlanModeEnum::from($this->mode),
+            $this->capacityOverrideMinutes,
         );
     }
 
