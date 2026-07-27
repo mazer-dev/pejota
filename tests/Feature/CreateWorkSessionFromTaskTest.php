@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
+use App\Filament\App\Resources\WorkSessionResource\Pages\ViewWorkSession;
 use App\Helpers\PejotaHelper;
 use App\Livewire\WorkSessionsTopNav;
 use App\Models\Client;
@@ -137,6 +138,26 @@ class CreateWorkSessionFromTaskTest extends TestCase
         $this->assertEquals($started->rate, $prefill['rate']);
         $this->assertSame($started->currency, $prefill['currency']);
         $this->assertSame((bool) $started->billable, $prefill['billable']);
+    }
+
+    public function test_creating_redirects_to_the_new_session_view_even_when_started_from_a_task(): void
+    {
+        Livewire::withQueryParams(['task' => $this->task->id])
+            ->test(CreateWorkSession::class)
+            ->call('create')
+            ->assertHasNoFormErrors()
+            ->assertRedirect(ViewWorkSession::getUrl([
+                'record' => WorkSession::query()->firstOrFail()->id,
+            ]));
+    }
+
+    public function test_creating_another_stays_on_the_create_page(): void
+    {
+        Livewire::withQueryParams(['task' => $this->task->id])
+            ->test(CreateWorkSession::class)
+            ->call('create', another: true)
+            ->assertHasNoFormErrors()
+            ->assertNoRedirect();
     }
 
     public function test_session_is_created_from_a_task_without_touching_any_field(): void

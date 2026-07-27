@@ -42,21 +42,9 @@
                         </a>
                         <p class="truncate text-xs text-gray-500">
                             {{ $session->client?->labelName }}
-                            <span
-                                x-data="{
-                                    start: {{ $session->start->timestamp }},
-                                    text: '00:00',
-                                    tick() {
-                                        const s = Math.max(0, Math.floor(Date.now() / 1000) - this.start);
-                                        const h = String(Math.floor(s / 3600)).padStart(2, '0');
-                                        const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-                                        this.text = h + ':' + m;
-                                    },
-                                }"
-                                x-init="tick(); setInterval(() => tick(), 30000)"
-                                x-text="text"
-                                class="font-mono"
-                            ></span>
+                            {{-- Elapsed time is rendered server-side; wire:poll on the root
+                                 refreshes it on the same 30s cadence the old JS timer used. --}}
+                            <span class="font-mono">{{ \App\Helpers\PejotaHelper::formatDuration((int) $session->start->diffInMinutes(now()), true) }}</span>
                         </p>
                     </div>
                     <button

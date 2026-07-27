@@ -6,13 +6,10 @@ use App\Filament\App\Resources\WorkSessionResource;
 use App\Models\Task;
 use App\Models\WorkSession;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Facades\URL;
 
 class CreateWorkSession extends CreateRecord
 {
     protected static string $resource = WorkSessionResource::class;
-
-    public $redirectUrl = null;
 
     /**
      * Merges the task prefill over the state the form defaults just produced.
@@ -34,13 +31,6 @@ class CreateWorkSession extends CreateRecord
 
             $this->form->fillPartially($prefill, array_keys($prefill));
         }
-
-        $this->redirectUrl = URL::previous();
-    }
-
-    protected function getRedirectUrl(): string
-    {
-        return $this->redirectUrl ?? parent::getRedirectUrl();
     }
 
     public static function getFillFormArray(Task $task): array

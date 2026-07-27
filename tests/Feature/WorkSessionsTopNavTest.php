@@ -30,6 +30,47 @@ class WorkSessionsTopNavTest extends TestCase
         $this->company = $this->actingInCompany($this->user);
     }
 
+    /**
+     * The elapsed time used to be produced by an inline Alpine timer that never
+     * advanced past its initial 00:00 in the browser. Rendering it server-side
+     * makes it both work and be assertable.
+     */
+    public function test_shows_elapsed_time_of_a_running_session(): void
+    {
+        $this->travelTo(now()->setTime(10, 0));
+
+        WorkSession::create([
+            'title' => 'Long runner',
+            'company_id' => $this->company->id,
+            'start' => now()->subMinutes(95),
+            'is_running' => true,
+            'rate' => 0,
+        ]);
+
+        Livewire::test(WorkSessionsTopNav::class)
+            ->assertSee('01:35')
+            ->assertDontSee('00:00');
+    }
+
+    public function test_elapsed_time_advances_as_the_session_runs(): void
+    {
+        $this->travelTo(now()->setTime(10, 0));
+
+        WorkSession::create([
+            'title' => 'Ticking',
+            'company_id' => $this->company->id,
+            'start' => now(),
+            'is_running' => true,
+            'rate' => 0,
+        ]);
+
+        $component = Livewire::test(WorkSessionsTopNav::class)->assertSee('00:00');
+
+        $this->travelTo(now()->addMinutes(20));
+
+        $component->call('$refresh')->assertSee('00:20');
+    }
+
     public function test_lists_running_sessions(): void
     {
         WorkSession::create([
