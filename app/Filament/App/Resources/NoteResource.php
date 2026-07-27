@@ -74,7 +74,6 @@ class NoteResource extends Resource
             Action::make('view')
                 ->hiddenLabel()
                 ->url(ViewNote::getUrl([$record->id]))
-                ->modal(true)
                 ->icon(NoteResource::$navigationIcon)
                 ->color(Color::Cyan)
                 ->size(Size::ExtraSmall)

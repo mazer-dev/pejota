@@ -1021,7 +1021,6 @@ class TaskResource extends Resource
                                 ->hiddenLabel(PejotaHelper::isMobile())
                                 ->icon(TaskResource::getNavigationIcon())
                                 ->color(Color::Green)
-                                ->modal(true)
                                 ->url(fn ($record) => CreateTask::getUrl([
                                     'parent' => $record->id,
                                 ])),
@@ -1031,7 +1030,6 @@ class TaskResource extends Resource
                                 ->hiddenLabel(PejotaHelper::isMobile())
                                 ->icon(WorkSessionResource::getNavigationIcon())
                                 ->color(Color::Amber)
-                                ->modal(true)
                                 ->url(fn ($record) => CreateWorkSession::getUrl([
                                     'task' => $record->id,
                                 ])),
