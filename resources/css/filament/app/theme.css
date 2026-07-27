@@ -3,6 +3,7 @@
 @source '../../../../app/Filament/App/**/*.php';
 @source '../../../../resources/views/filament/app/**/*.blade.php';
 @source '../../../../resources/views/help/**/*.blade.php';
+@source '../../../../resources/views/livewire/**/*.blade.php';
 @source '../../../../vendor/filament/**/*.blade.php';
 
 @plugin '@tailwindcss/forms';
