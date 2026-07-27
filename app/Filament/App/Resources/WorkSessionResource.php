@@ -653,15 +653,15 @@ class WorkSessionResource extends Resource
 
     public static function applyCascade(Get $get, Set $set): void
     {
-        $session = new WorkSession([
-            'client_id' => $get('client'),
-            'project_id' => $get('project'),
-            'task_id' => $get('task'),
-        ]);
+        $billing = WorkSession::resolveBillingFor(
+            clientId: $get('client'),
+            projectId: $get('project'),
+            taskId: $get('task'),
+        );
 
-        $set('rate', $session->resolveRate());
-        $set('currency', $session->resolveCurrency());
-        $set('billable', $session->resolveBillable());
+        foreach ($billing as $field => $value) {
+            $set($field, $value);
+        }
     }
 
     public static function formSetTimers(bool $fromDuration, Get $get, Set $set): void

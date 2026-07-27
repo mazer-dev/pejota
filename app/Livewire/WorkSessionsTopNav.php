@@ -39,9 +39,7 @@ class WorkSessionsTopNav extends Component
             'task_id' => $this->newTask,
         ]);
 
-        $session->rate = $session->resolveRate();
-        $session->currency = $session->resolveCurrency();
-        $session->billable = $session->resolveBillable();
+        $session->fill($session->resolveBilling());
         $session->save();
 
         $this->reset([

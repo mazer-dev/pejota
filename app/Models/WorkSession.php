@@ -85,6 +85,39 @@ class WorkSession extends Model
         return $this->client?->billable_default ?? true;
     }
 
+    /**
+     * The billing a session inherits from its client/project/task.
+     *
+     * @return array{rate: float, currency: string, billable: bool}
+     */
+    public function resolveBilling(): array
+    {
+        return [
+            'rate' => $this->resolveRate(),
+            'currency' => $this->resolveCurrency(),
+            'billable' => $this->resolveBillable(),
+        ];
+    }
+
+    /**
+     * Same as resolveBilling(), for callers holding only the parent ids and no
+     * session yet: form state being cascaded, or a task about to become one.
+     * Ids may arrive as strings from form state.
+     *
+     * @return array{rate: float, currency: string, billable: bool}
+     */
+    public static function resolveBillingFor(
+        int|string|null $clientId,
+        int|string|null $projectId,
+        int|string|null $taskId,
+    ): array {
+        return (new self([
+            'client_id' => $clientId,
+            'project_id' => $projectId,
+            'task_id' => $taskId,
+        ]))->resolveBilling();
+    }
+
     public function isInvoiced(): bool
     {
         return $this->invoice_item_id !== null;

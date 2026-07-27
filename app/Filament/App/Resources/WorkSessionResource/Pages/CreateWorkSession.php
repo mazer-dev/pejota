@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources\WorkSessionResource\Pages;
 
 use App\Filament\App\Resources\WorkSessionResource;
 use App\Models\Task;
+use App\Models\WorkSession;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\URL;
 
@@ -46,8 +47,12 @@ class CreateWorkSession extends CreateRecord
         $fill = [
             'title' => $task->title,
             'start' => now(),
-            'rate' => 0,
             'is_running' => true,
+            ...WorkSession::resolveBillingFor(
+                clientId: $task->client_id,
+                projectId: $task->project_id,
+                taskId: $task->id,
+            ),
         ];
 
         if ($task->client_id) {

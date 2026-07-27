@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Helpers\PejotaHelper;
+use App\Livewire\WorkSessionsTopNav;
+use App\Models\Client;
 use App\Models\Company;
 use App\Models\Status;
 use App\Models\Task;
@@ -55,6 +57,60 @@ class CreateWorkSessionFromTaskTest extends TestCase
             ->test(CreateWorkSession::class)
             ->assertSet('data.currency', PejotaHelper::getUserCurrency())
             ->assertSet('data.billable', true);
+    }
+
+    public function test_billing_fields_resolve_from_the_task_like_the_top_nav_does(): void
+    {
+        $client = Client::create([
+            'name' => 'Rated Client',
+            'company_id' => $this->company->id,
+            'currency' => 'BRL',
+            'default_hourly_rate' => 75.00,
+            'billable_default' => false,
+        ]);
+
+        $this->task->update([
+            'client_id' => $client->id,
+            'hourly_rate' => 120.00,
+        ]);
+
+        Livewire::withQueryParams(['task' => $this->task->id])
+            ->test(CreateWorkSession::class)
+            ->assertSet('data.rate', 120.00)
+            ->assertSet('data.currency', 'BRL')
+            ->assertSet('data.billable', false);
+    }
+
+    public function test_prefilled_billing_matches_a_session_started_from_the_top_nav(): void
+    {
+        $client = Client::create([
+            'name' => 'Rated Client',
+            'company_id' => $this->company->id,
+            'currency' => 'BRL',
+            'default_hourly_rate' => 75.00,
+            'billable_default' => false,
+        ]);
+
+        $this->task->update([
+            'client_id' => $client->id,
+            'hourly_rate' => 120.00,
+        ]);
+
+        Livewire::test(WorkSessionsTopNav::class)
+            ->set('newTitle', 'Started from top nav')
+            ->set('newClient', $client->id)
+            ->set('newTask', $this->task->id)
+            ->call('startSession');
+
+        $started = WorkSession::where('title', 'Started from top nav')->firstOrFail();
+
+        $prefill = CreateWorkSession::getFillFormArray($this->task->fresh());
+
+        $this->assertEquals(120.00, $started->rate, 'guards the comparison below from passing on empty values');
+
+        $this->assertEquals($started->rate, $prefill['rate']);
+        $this->assertSame($started->currency, $prefill['currency']);
+        $this->assertSame((bool) $started->billable, $prefill['billable']);
     }
 
     public function test_session_is_created_from_a_task_without_touching_any_field(): void
