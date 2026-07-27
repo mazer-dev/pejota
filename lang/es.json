@@ -66,6 +66,7 @@
     "Effort unit": "Unidad de esfuerzo",
     "End": "Fin",
     "End at": "Fin en",
+    "End must be greater than or equal to start.": "El fin debe ser mayor o igual que el inicio.",
     "Estimated": "Estimado",
     "Extra info": "Información adicional",
     "Fill actual end date when closed": "Llenar la fecha de fin real cuando esté cerrado",

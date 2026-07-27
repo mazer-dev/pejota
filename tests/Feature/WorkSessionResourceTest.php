@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\InvoiceStatusEnum;
+use App\Enums\UserSettingsEnum;
 use App\Filament\App\Resources\WorkSessionResource;
 use App\Filament\App\Resources\WorkSessionResource\Pages\CreateWorkSession;
 use App\Models\Client;
@@ -40,6 +41,59 @@ class WorkSessionResourceTest extends TestCase
     {
         $this->get(WorkSessionResource::getUrl('index'))
             ->assertOk();
+    }
+
+    /**
+     * The start/end comparison must happen in one timezone. Comparing the raw
+     * field state (user timezone) against a cast value (app timezone) rejected
+     * every session shorter than the user's UTC offset.
+     */
+    public function test_finished_session_is_accepted_when_the_user_timezone_differs_from_the_app(): void
+    {
+        $this->user->settings()->set(UserSettingsEnum::LOCALIZATION_TIMEZONE->value, 'America/Sao_Paulo');
+
+        Livewire::test(CreateWorkSession::class)
+            ->set('data.title', 'Short session')
+            ->set('data.duration', 30)
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(30, WorkSession::query()->firstOrFail()->duration);
+    }
+
+    public function test_end_before_start_is_still_rejected(): void
+    {
+        $this->user->settings()->set(UserSettingsEnum::LOCALIZATION_TIMEZONE->value, 'America/Sao_Paulo');
+
+        Livewire::test(CreateWorkSession::class)
+            ->set('data.title', 'Backwards session')
+            ->set('data.is_running', false)
+            ->set('data.start', '2026-07-27 18:00')
+            ->set('data.end', '2026-07-27 17:00')
+            ->call('create')
+            ->assertHasFormErrors(['end']);
+    }
+
+    public function test_end_before_start_message_is_translated(): void
+    {
+        $this->user->settings()->set(UserSettingsEnum::LOCALIZATION_TIMEZONE->value, 'America/Sao_Paulo');
+
+        app()->setLocale('pt_BR');
+
+        $errors = Livewire::test(CreateWorkSession::class)
+            ->set('data.title', 'Backwards session')
+            ->set('data.is_running', false)
+            ->set('data.start', '2026-07-27 18:00')
+            ->set('data.end', '2026-07-27 17:00')
+            ->call('create')
+            ->errors()
+            ->toArray();
+
+        $this->assertSame(
+            [__('End must be greater than or equal to start.')],
+            $errors['data.end'],
+        );
+        $this->assertStringNotContainsString('must be greater', $errors['data.end'][0]);
     }
 
     public function test_selecting_client_cascades_rate_and_currency_into_the_form(): void

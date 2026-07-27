@@ -17,7 +17,6 @@ use App\Models\Task;
 use App\Models\WorkSession;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
-use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
@@ -309,12 +308,9 @@ class WorkSessionResource extends Resource
                     ->seconds(false)
                     ->required(fn (Get $get): bool => ! $get('is_running'))
                     ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced())
-                    ->rules([
-                        fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get): void {
-                            if ($value && $get('start') && Carbon::parse($value)->lessThan(Carbon::parse($get('start')))) {
-                                $fail(__('End must be greater than or equal to start.'));
-                            }
-                        },
+                    ->afterOrEqual('start')
+                    ->validationMessages([
+                        'after_or_equal' => __('End must be greater than or equal to start.'),
                     ])
                     ->live()
                     ->afterStateUpdated(
