@@ -30,12 +30,16 @@ class CreateTask extends CreateRecord
         if (request()->get('parent')) {
             $task = Task::find(request()->get('parent'));
 
-            $this->data['title'] = '['.__('Subtask').'] '.$task->title;
-            $this->data['client'] = $task->client_id;
-            $this->data['project'] = $task->project_id;
-            $this->data['parent_task'] = $task->id;
-            $this->data['due_date'] = $task->due_date;
-            $this->data['planned_end'] = $task->planned_end;
+            $prefill = [
+                'title' => '['.__('Subtask').'] '.$task->title,
+                'client' => $task->client_id,
+                'project' => $task->project_id,
+                'parent_task' => $task->id,
+                'due_date' => $task->due_date,
+                'planned_end' => $task->planned_end,
+            ];
+
+            $this->form->fillPartially($prefill, array_keys($prefill));
 
             $this->redirectUrl = URL::previous();
         }

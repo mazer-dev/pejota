@@ -16,8 +16,10 @@ class CreateWorkSession extends CreateRecord
 
     /**
      * Merges the task prefill over the state the form defaults just produced.
-     * Assigning to `$this->data` rather than calling `fill()` again is what
-     * keeps those defaults: `fill()` with an argument replaces the whole state.
+     * `fillPartially()` is what makes both halves work: unlike `fill($state)`,
+     * which replaces the whole state and drops every default, it writes only
+     * the given paths, and it runs each field's state casts — without which a
+     * Carbon would reach `$data` raw and the datetime input would reject it.
      */
     protected function afterFill(): void
     {
@@ -28,10 +30,9 @@ class CreateWorkSession extends CreateRecord
         $task = Task::find(request()->get('task'));
 
         if ($task) {
-            $this->data = [
-                ...$this->data,
-                ...self::getFillFormArray($task),
-            ];
+            $prefill = self::getFillFormArray($task);
+
+            $this->form->fillPartially($prefill, array_keys($prefill));
         }
 
         $this->redirectUrl = URL::previous();

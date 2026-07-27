@@ -59,6 +59,32 @@ class CreateWorkSessionFromTaskTest extends TestCase
             ->assertSet('data.billable', true);
     }
 
+    /**
+     * The datetime-local input only accepts a plain "Y-m-d H:i"-shaped string.
+     * A raw Carbon reaching $data is silently rejected by the browser, which
+     * then syncs the emptied field back and wipes it on every edit.
+     */
+    public function test_start_is_prefilled_as_a_string_the_datetime_input_accepts(): void
+    {
+        $fromTask = Livewire::withQueryParams(['task' => $this->task->id])
+            ->test(CreateWorkSession::class)
+            ->get('data');
+
+        $this->assertIsString($fromTask['start']);
+        $this->assertSame(now()->format('Y-m-d H:i'), $fromTask['start']);
+    }
+
+    public function test_start_prefill_has_the_same_shape_as_the_plain_create_page(): void
+    {
+        $plain = Livewire::test(CreateWorkSession::class)->get('data');
+
+        $fromTask = Livewire::withQueryParams(['task' => $this->task->id])
+            ->test(CreateWorkSession::class)
+            ->get('data');
+
+        $this->assertSame(get_debug_type($plain['start']), get_debug_type($fromTask['start']));
+    }
+
     public function test_billing_fields_resolve_from_the_task_like_the_top_nav_does(): void
     {
         $client = Client::create([

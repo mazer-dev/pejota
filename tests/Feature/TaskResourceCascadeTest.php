@@ -70,8 +70,8 @@ class TaskResourceCascadeTest extends TestCase
 
         Livewire::withQueryParams(['parent' => $parent->id])
             ->test(CreateTask::class)
-            ->assertSet('data.due_date', $parent->due_date)
-            ->assertSet('data.planned_end', $parent->planned_end);
+            ->assertSet('data.due_date', $parent->due_date->format('Y-m-d'))
+            ->assertSet('data.planned_end', $parent->planned_end->format('Y-m-d'));
     }
 
     public function test_selecting_parent_task_fills_project_and_client(): void
