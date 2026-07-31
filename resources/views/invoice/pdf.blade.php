@@ -211,6 +211,7 @@
             </table>
         </div>
     </div>
+    @includeIf('invoice.partials.schedule', ['invoice' => $invoice])
     @if ($invoice->footnote)
         <br/><br/>
         <div class="well">

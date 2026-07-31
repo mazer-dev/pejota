@@ -163,7 +163,15 @@ class InvoiceListTest extends TestCase
         $today = CarbonImmutable::now()->startOfDay();
 
         $a = $this->makeInvoice('M1', InvoiceStatusEnum::SENT, $today->toDateString());
-        $b = $this->makeInvoice('M2', InvoiceStatusEnum::SENT, $today->subMonth()->toDateString());
+
+        /**
+         * `subMonthNoOverflow`, não `subMonth`. Rodando num dia 31, `subMonth` transborda para
+         * o mês corrente — 31/07 menos um mês cai em 01/07, porque junho não tem dia 31 — e as
+         * duas faturas passam a viver no mesmo mês calendário, derrubando a asserção de guarda
+         * logo abaixo. A versão `NoOverflow` grampeia no último dia do mês alvo (30/06), então
+         * o teste vale nos 31 dias do mês em vez de nos 30 primeiros.
+         */
+        $b = $this->makeInvoice('M2', InvoiceStatusEnum::SENT, $today->subMonthNoOverflow()->toDateString());
 
         $titleA = $a->due_date->translatedFormat('F Y');
         $titleB = $b->due_date->translatedFormat('F Y');
