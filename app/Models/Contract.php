@@ -6,10 +6,12 @@ use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use NunoMazer\Samehouse\BelongsToTenants;
 
 class Contract extends Model
 {
-    use HasFactory;
+    use BelongsToTenants,
+        HasFactory;
 
     protected $fillable = [
         'title',

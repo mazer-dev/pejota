@@ -24,6 +24,14 @@ class WorkSession extends Model
 
         static::creating(function (WorkSession $model): void {
             $model->user_id ??= auth()->id();
+
+            // A moeda é RESOLVIDA aqui, e não deixada para o default `'USD'` do
+            // schema. Até 2026-08-07 a resolução existia só em três pontos de UI
+            // (CreateWorkSession, WorkSessionResource e WorkSessionsTopNav), e
+            // qualquer outro caminho de criação gravava `'USD'` numa empresa que
+            // pode ser de qualquer moeda — sem ninguém ter escolhido isso.
+            // Resolver no model é o único lugar que cobre TODOS os caminhos.
+            $model->currency ??= $model->resolveCurrency();
         });
 
         static::saving(function (WorkSession $model): void {
