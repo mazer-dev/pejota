@@ -115,6 +115,32 @@ class InvoiceBaseTotalTest extends TestCase
         $this->assertEqualsWithDelta(5.42, (float) $invoice->exchange_rate, 0.0000001);
     }
 
+    /**
+     * `baseTotal()` calcula `$currency = $this->currency ?? $base` e depois
+     * IGNORA esse valor: o ramo do `exchange_rate` vem antes do teste de
+     * mesma-moeda. Uma fatura denominada na moeda base que carregue taxa
+     * congelada sai multiplicada por ela.
+     *
+     * O estado é alcançável em dois passos, e nenhum deles é exótico: fatura
+     * estrangeira paga congela a taxa realizada (`InvoiceResource::saveChangeStatus`),
+     * e corrigir a moeda depois não a limpa — o hook `saving` só zera a taxa
+     * FORA de `PAID`, e o status continua `PAID`.
+     */
+    public function test_base_total_is_not_rescaled_when_a_paid_invoice_returns_to_the_base_currency(): void
+    {
+        $user = $this->actingUserWithBase('BRL');
+        $invoice = $this->makeInvoice($user, [
+            'currency' => 'USD',
+            'status' => InvoiceStatusEnum::PAID,
+            'payment_date' => now()->toDateString(),
+            'exchange_rate' => 5.42,
+        ]);
+
+        $invoice->update(['currency' => 'BRL']);
+
+        $this->assertEqualsWithDelta(100.00, $invoice->fresh()->baseTotal, 0.001);
+    }
+
     public function test_saving_hook_clears_rate_when_leaving_paid(): void
     {
         $user = $this->actingUserWithBase('BRL');

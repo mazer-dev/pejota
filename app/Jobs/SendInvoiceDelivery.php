@@ -32,28 +32,36 @@ class SendInvoiceDelivery implements ShouldQueue
             return;
         }
 
+        $previousTenantId = Landlord::hasTenant('company_id')
+            ? Landlord::getTenantId('company_id')
+            : null;
+
         Landlord::addTenant('company_id', $delivery->company_id);
 
-        $service->send($delivery);
+        try {
+            $service->send($delivery);
 
-        $delivery->update([
-            'status' => DeliveryStatusEnum::Sent,
-            'sent_at' => now(),
-        ]);
+            $delivery->update([
+                'status' => DeliveryStatusEnum::Sent,
+                'sent_at' => now(),
+            ]);
 
-        $invoice = $delivery->invoice;
-        if ($invoice->status === InvoiceStatusEnum::DRAFT) {
-            $invoice->update(['status' => InvoiceStatusEnum::SENT]);
-        }
+            $invoice = $delivery->invoice;
+            if ($invoice->status === InvoiceStatusEnum::DRAFT) {
+                $invoice->update(['status' => InvoiceStatusEnum::SENT]);
+            }
 
-        $this->cleanupUpload($delivery);
+            $this->cleanupUpload($delivery);
 
-        if ($delivery->creator) {
-            Notification::make()
-                ->title(__('Invoice sent'))
-                ->body(__('Invoice :number was sent.', ['number' => $invoice->number]))
-                ->success()
-                ->sendToDatabase($delivery->creator);
+            if ($delivery->creator) {
+                Notification::make()
+                    ->title(__('Invoice sent'))
+                    ->body(__('Invoice :number was sent.', ['number' => $invoice->number]))
+                    ->success()
+                    ->sendToDatabase($delivery->creator);
+            }
+        } finally {
+            $this->restoreTenant($previousTenantId);
         }
     }
 
@@ -78,6 +86,29 @@ class SendInvoiceDelivery implements ShouldQueue
                 ->danger()
                 ->sendToDatabase($delivery->creator);
         }
+    }
+
+    /**
+     * `Landlord` é singleton e sobrevive ao job num worker de fila persistente,
+     * então o tenant que este job define tem de ser desfeito — senão o job
+     * seguinte, de outra empresa, o herda.
+     *
+     * RESTAURA o valor anterior em vez de simplesmente remover, e a diferença é
+     * load-bearing: `applyTenantScopes()` grava na CLASSE do model um global
+     * scope cujo closure chama `getTenantId()` a cada query, e esse método
+     * LANÇA quando o tenant não está mais lá. Remover às cegas quebraria todo
+     * chamador que já tivesse models escopados — que é o caso do painel, onde o
+     * job roda dentro da própria request em `QUEUE_CONNECTION=sync`.
+     */
+    private function restoreTenant(mixed $previousTenantId): void
+    {
+        if ($previousTenantId === null) {
+            Landlord::removeTenant('company_id');
+
+            return;
+        }
+
+        Landlord::addTenant('company_id', $previousTenantId);
     }
 
     private function cleanupUpload(InvoiceDelivery $delivery): void

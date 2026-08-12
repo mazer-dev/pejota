@@ -14,9 +14,12 @@ use App\Models\User;
 use App\Models\WorkSession;
 use App\Services\Invoicing\InvoiceDeliveryComposer;
 use App\Services\Invoicing\SendInvoiceService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Mockery;
+use NunoMazer\Samehouse\Facades\Landlord;
 use RuntimeException;
 use Tests\Concerns\ActsInCompany;
 use Tests\TestCase;
@@ -117,6 +120,68 @@ class SendInvoiceDeliveryJobTest extends TestCase
         (new SendInvoiceDelivery($delivery->id))->handle(app(SendInvoiceService::class));
 
         Mail::assertNothingSent();
+    }
+
+    /**
+     * `Landlord` é SINGLETON e o job escreve nele. Num worker de fila
+     * persistente o processo sobrevive entre jobs, então um tenant deixado
+     * para trás é herdado pelo job seguinte — de outra empresa. Afeta qualquer
+     * model com `BelongsToTenants`, não só fatura.
+     *
+     * O worker não tem tenant nenhum entre um job e o seguinte. Reproduzir isso
+     * exige DUAS coisas, e a segunda foi medida: tirar o tenant do singleton E
+     * limpar os models bootados. `actingInCompany()` chamou
+     * `applyTenantScopesToDeferredModels()`, que grava o global scope na CLASSE
+     * do model; sem limpar, o scope sobrevive e a query seguinte estoura
+     * `TenantColumnUnknownException` — estado que um worker nunca tem, porque lá
+     * os models bootam com o Landlord vazio e ficam deferidos, sem scope.
+     */
+    public function test_the_job_leaves_no_tenant_behind_when_it_found_none(): void
+    {
+        Mail::fake();
+        $delivery = $this->makeDelivery('draft');
+        Landlord::removeTenant('company_id');
+        Model::clearBootedModels();
+
+        (new SendInvoiceDelivery($delivery->id))->handle(app(SendInvoiceService::class));
+
+        $this->assertFalse(
+            Landlord::hasTenant('company_id'),
+            'O job deixou o tenant da própria empresa no singleton do Landlord: o próximo job do mesmo worker herda esse tenant.'
+        );
+    }
+
+    /**
+     * O caminho de exceção é o pior dos dois: `$tries = 3`, então um SMTP fora
+     * do ar deixa o tenant para trás e o worker segue com ele — e `failed()`
+     * também não restaura.
+     *
+     * O fixture é o do worker (sem tenant anterior) POR NECESSIDADE, e não por
+     * simetria com o teste acima: quando existe tenant anterior, ele é sempre
+     * igual ao da própria entrega — `findOrFail()` é escopado, então o job não
+     * alcança entrega de outra empresa. Com os dois iguais, "restaurou" e "não
+     * restaurou" produzem o mesmo estado e a assertion passa nos dois mundos.
+     */
+    public function test_the_job_restores_the_tenant_when_the_send_throws(): void
+    {
+        $delivery = $this->makeDelivery('draft');
+        Landlord::removeTenant('company_id');
+        Model::clearBootedModels();
+
+        $service = Mockery::mock(SendInvoiceService::class);
+        $service->shouldReceive('send')->once()->andThrow(new RuntimeException('smtp down'));
+
+        try {
+            (new SendInvoiceDelivery($delivery->id))->handle($service);
+            $this->fail('O job deveria ter propagado a exceção para a fila poder retentar.');
+        } catch (RuntimeException) {
+            // esperado: o job não engole a falha, quem retenta é a fila
+        }
+
+        $this->assertFalse(
+            Landlord::hasTenant('company_id'),
+            'O job estourou e deixou o tenant para trás: com $tries = 3, uma falha de SMTP contamina o job seguinte do worker.'
+        );
     }
 
     public function test_end_to_end_send_with_timesheet_attachment(): void

@@ -348,6 +348,7 @@ class WorkSessionResource extends Resource
                     ->translateLabel()
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->default(0)
                     ->disabled(fn (?WorkSession $record): bool => (bool) $record?->isInvoiced()),
 

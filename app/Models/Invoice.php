@@ -120,12 +120,19 @@ class Invoice extends Model
                 $base = PejotaHelper::getUserCurrency();
                 $currency = $this->currency ?? $base;
 
-                if ($this->exchange_rate !== null) {
-                    return (float) $this->total * (float) $this->exchange_rate;
-                }
-
+                // A ORDEM DOS DOIS RAMOS É A REGRA, não detalhe. Documento
+                // denominado na moeda base não tem o que converter, e uma taxa
+                // congelada nele é resíduo — de uma fatura que já foi
+                // estrangeira e teve a moeda corrigida depois de paga, por
+                // exemplo, caso em que o hook `saving` não a limpa porque o
+                // status continua PAID. Com o ramo da taxa na frente, o total
+                // saía multiplicado por esse resíduo.
                 if ($currency === $base) {
                     return (float) $this->total;
+                }
+
+                if ($this->exchange_rate !== null) {
+                    return (float) $this->total * (float) $this->exchange_rate;
                 }
 
                 return app(ExchangeRateService::class)->convert(

@@ -384,4 +384,30 @@ class WorkSessionResourceTest extends TestCase
             ->call('create')
             ->assertHasFormErrors(['end']);
     }
+
+    /**
+     * `work_sessions.rate` e `value` são `integer` ASSINADO no schema, e
+     * `recalculate()` faz `value = rate * duration / 60` sem piso — tarifa
+     * negativa grava VALOR negativo.
+     *
+     * O custo não é uma linha estranha na listagem: valor negativo entra nas
+     * somas por moeda da previsão de receita e pode CANCELAR o valor de outra
+     * sessão dentro do mesmo balde, produzindo um total que parece certo.
+     *
+     * Os três degraus da cascata que alimentam este campo — `clients.default_hourly_rate`,
+     * `projects.hourly_rate` e `tasks.hourly_rate` — já têm `->minValue(0)`.
+     * O campo terminal, onde o valor de fato aterrissa, era o único sem.
+     */
+    public function test_negative_rate_is_rejected(): void
+    {
+        Livewire::test(CreateWorkSession::class)
+            ->fillForm([
+                'title' => 'Negative rate',
+                'duration' => 60,
+                'is_running' => false,
+                'rate' => -1,
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['rate']);
+    }
 }
