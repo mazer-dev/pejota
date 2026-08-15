@@ -412,7 +412,7 @@ class TaskResource extends Resource
             ->columns(
                 $columns
             )
-            ->filtersFormColumns(4)
+            ->filtersFormColumns(['default' => 1, 'sm' => 2, 'lg' => 4])
             ->filters([
                 SelectFilter::make('status')
                     ->relationship('status', 'name')

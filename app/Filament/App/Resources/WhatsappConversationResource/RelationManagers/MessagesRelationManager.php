@@ -45,6 +45,8 @@ class MessagesRelationManager extends RelationManager
 
     public string $composerMessage = '';
 
+    public int $messagesShown = 50;
+
     public ?string $aiSuggestion = null;
 
     public string $aiInstruction = '';
@@ -94,7 +96,7 @@ class MessagesRelationManager extends RelationManager
             ->recordTitleAttribute('text')
             ->defaultSort(fn ($query) => $query->reorder()->orderByDesc('sent_at')->orderByDesc('id'))
             ->paginated(false)
-            ->modifyQueryUsing(fn ($query) => $query->with('attachments'))
+            ->modifyQueryUsing(fn ($query) => $query->with('attachments')->limit($this->messagesShown))
             ->content(fn (): View => view('filament.app.resources.whatsapp-conversation-resource.messages-chat'))
             ->headerActions([
                 Action::make('syncMessages')
@@ -444,6 +446,11 @@ class MessagesRelationManager extends RelationManager
     private function hasLocalOnlyRemoteId(WhatsappMessage $message): bool
     {
         return blank($message->remote_message_id) || str_starts_with((string) $message->remote_message_id, 'local-');
+    }
+
+    public function showMoreMessages(): void
+    {
+        $this->messagesShown += 50;
     }
 
     public function generateAiSuggestion(): void

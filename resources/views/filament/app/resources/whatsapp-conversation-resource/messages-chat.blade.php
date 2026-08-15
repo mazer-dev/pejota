@@ -8,6 +8,12 @@
         : collect($records);
 
     $messages = $messages->reverse()->values();
+
+    $totalMessages = \App\Models\WhatsappMessage::query()
+        ->where('whatsapp_conversation_id', $this->getOwnerRecord()->id)
+        ->count();
+    $hasMoreMessages = $totalMessages > $messages->count();
+
     $timezone = PejotaHelper::getUserTimeZoneOrDefault(config('app.timezone', 'UTC'));
     $isGroupConversation = (bool) $this->getOwnerRecord()->is_group;
 @endphp
@@ -95,6 +101,20 @@
             </div>
         @else
             <div class="flex flex-col gap-3">
+                @if ($hasMoreMessages)
+                    <div class="flex justify-center pb-1">
+                        <button
+                            type="button"
+                            wire:click="showMoreMessages"
+                            wire:loading.attr="disabled"
+                            wire:target="showMoreMessages"
+                            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5"
+                        >
+                            <span wire:loading.remove wire:target="showMoreMessages">Ver mensagens anteriores</span>
+                            <span wire:loading wire:target="showMoreMessages">Carregando...</span>
+                        </button>
+                    </div>
+                @endif
                 @foreach ($messages as $message)
                     @php
                         $isSent = (bool) $message->from_me;

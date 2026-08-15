@@ -15,6 +15,10 @@ class AiCliRunner
      */
     public function complete(string $prompt, array $images = [], array $options = []): string
     {
+        // Codex/AGY reject invalid UTF-8 on stdin/args, and the resulting error
+        // (which echoes the prompt) then breaks Livewire's JSON response. Scrub
+        // any invalid byte sequences before the prompt reaches the CLIs.
+        $prompt = mb_scrub($prompt, 'UTF-8');
         $errors = [];
 
         try {
@@ -43,7 +47,7 @@ class AiCliRunner
      */
     public function completeAgyOnly(string $prompt, array $filePaths = []): string
     {
-        return $this->runAgy($prompt, $filePaths);
+        return $this->runAgy(mb_scrub($prompt, 'UTF-8'), $filePaths);
     }
 
     /**
@@ -158,7 +162,15 @@ class AiCliRunner
             ],
         );
 
-        $process->setTimeout($timeout ?? (int) config('services.ai_cli.timeout', 300));
+        $processTimeout = $timeout ?? (int) config('services.ai_cli.timeout', 300);
+        $process->setTimeout($processTimeout);
+
+        // The web request itself must not be killed by PHP's max_execution_time
+        // while the CLI runs; give it the process timeout plus a small margin.
+        if (function_exists('set_time_limit')) {
+            @set_time_limit($processTimeout + 30);
+        }
+
         if ($input !== null) {
             $process->setInput($input);
         }
