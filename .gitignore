@@ -21,3 +21,7 @@ yarn-error.log
 /.vscode
 database.sqlite
 /codealike.json
+
+# Local MCP test environment (not for commit)
+.env.mcplocal
+/database/mcp-local.sqlite

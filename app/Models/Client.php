@@ -45,6 +45,11 @@ class Client extends Model
         return $this->hasMany(ClientAiAnalysis::class);
     }
 
+    public function mcpTokens(): HasMany
+    {
+        return $this->hasMany(ClientMcpToken::class);
+    }
+
     public function latestAnalysis(): HasOne
     {
         return $this->hasOne(ClientAiAnalysis::class)->latestOfMany();

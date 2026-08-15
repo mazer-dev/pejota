@@ -34,8 +34,10 @@ use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
@@ -73,6 +75,9 @@ class ClientResource extends Resource
         return $table
             ->striped(true)
             ->defaultSort('name', 'asc')
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withCount([
+                'mcpTokens as active_mcp_tokens_count' => fn (Builder $tokens) => $tokens->whereNull('revoked_at'),
+            ]))
             ->columns([
                 TextColumn::make('name')
                     ->label(__('Name'))
@@ -87,6 +92,16 @@ class ClientResource extends Resource
                 TextColumn::make('phone')
                     ->label(__('Phone'))
                     ->searchable(),
+                IconColumn::make('active_mcp_tokens_count')
+                    ->label(__('MCP'))
+                    ->state(fn (Client $record): int => $record->active_mcp_tokens_count
+                        ?? $record->mcpTokens()->whereNull('revoked_at')->count())
+                    ->tooltip(fn (Client $record): string => $record->active_mcp_tokens_count > 0
+                        ? __('Available read-only via MCP')
+                        : __('Not exposed via MCP'))
+                    ->boolean()
+                    ->falseIcon('heroicon-o-minus-small')
+                    ->falseColor('gray'),
                 TextColumn::make('currency')
                     ->translateLabel()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -113,6 +128,12 @@ class ClientResource extends Resource
                     ->label(__('Link WhatsApp'))
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->action(fn (Client $record) => WhatsappConversationResource::linkClientFromClientRecord($record)),
+                TableAction::make('mcpAccess')
+                    ->label(__('MCP access'))
+                    ->icon('heroicon-o-signal')
+                    ->url(fn (Client $record): string => ClientMcpTokenResource::getUrl('create', [
+                        'client_id' => $record->id,
+                    ])),
                 CommentsAction::make()
                     ->iconButton(),
                 EditAction::make(),

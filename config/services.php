@@ -62,6 +62,15 @@ return [
 
     'ai_whatsapp_suggestions' => filter_var(env('AI_WHATSAPP_SUGGESTIONS', true), FILTER_VALIDATE_BOOLEAN),
 
+    /*
+     * The client MCP server reads through this connection. By default it is the
+     * same read-only mirror the AI assistant uses, opened with
+     * SQLITE_OPEN_READONLY, so a write cannot happen even by accident.
+     */
+    'mcp' => [
+        'db_connection' => env('MCP_DB_CONNECTION', 'sqlite_readonly'),
+    ],
+
     'assistant' => [
         'db_connection' => env('ASSISTANT_DB_CONNECTION', 'sqlite_readonly'),
         'max_iterations' => (int) env('ASSISTANT_MAX_ITERATIONS', 5),

@@ -15,6 +15,7 @@ enum MenuSortEnum: int
     case EXCHANGE_RATES = 57;
     case SUBSCRIPTIONS = 60;
     case SETTINGS = 70;
+    case MCP_ACCESS = 75;
     case PRODUCTS = 80;
     case MY_COMPANY = 90;
 }
