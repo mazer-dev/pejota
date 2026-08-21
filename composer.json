@@ -62,7 +62,18 @@
             "@php artisan migrate --graceful --ansi"
         ],
         "rector": "rector process",
-        "rector:dry": "rector process --dry-run"
+        "rector:dry": "rector process --dry-run",
+        "test": "@php artisan test",
+        "test:mariadb": [
+            "Composer\\Config::disableProcessTimeout",
+            "@putenv DB_CONNECTION=mysql",
+            "@putenv DB_HOST=127.0.0.2",
+            "@putenv DB_PORT=3306",
+            "@putenv DB_DATABASE=pejota_test",
+            "@putenv DB_USERNAME=root",
+            "@putenv DB_PASSWORD=root",
+            "@php artisan test"
+        ]
     },
     "extra": {
         "laravel": {

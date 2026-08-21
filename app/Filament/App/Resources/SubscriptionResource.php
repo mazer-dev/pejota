@@ -12,6 +12,7 @@ use App\Filament\App\Resources\SubscriptionResource\Pages\EditSubscription;
 use App\Filament\App\Resources\SubscriptionResource\Pages\ListSubscriptions;
 use App\Filament\App\Resources\SubscriptionResource\Pages\ViewSubscription;
 use App\Helpers\PejotaHelper;
+use App\Models\Currency;
 use App\Models\Subscription;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -19,19 +20,19 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder;
 
 class SubscriptionResource extends Resource
 {
@@ -68,13 +69,20 @@ class SubscriptionResource extends Resource
                         ->columnSpan(2)
                         ->translateLabel()
                         ->required(),
+                    Select::make('vendor_id')
+                        ->translateLabel()
+                        ->relationship('vendor', 'name')
+                        ->searchable()
+                        ->preload(),
                     TextInput::make('price')
                         ->translateLabel()
                         ->required()
                         ->numeric()
                         ->prefix('$'),
-                    TextInput::make('currency')
+                    Select::make('currency')
                         ->translateLabel()
+                        ->options(fn (?Subscription $record): array => Currency::selectOptions($record?->currency))
+                        ->searchable()
                         ->required(),
                     TextInput::make('payment_method')
                         ->translateLabel()
@@ -82,20 +90,22 @@ class SubscriptionResource extends Resource
                     TextInput::make('payment_info')
                         ->label('Payment extra-info')
                         ->translateLabel(),
-                    Select::make('status')
-                        ->options(SubscriptionStatusEnum::class)
-                        ->translateLabel()
-                        ->required(),
                     Select::make('billing_period')
                         ->options(SubscriptionBillingPeriodEnum::class)
                         ->translateLabel()
                         ->required(),
+                    DatePicker::make('started_on')
+                        ->translateLabel()
+                        ->required(),
                     DatePicker::make('trial_ends_at')
-                        ->translateLabel()
-                        ->required(fn (Get $get) => $get('status') == SubscriptionStatusEnum::TRIAL->value),
+                        ->translateLabel(),
                     DatePicker::make('canceled_at')
+                        ->translateLabel(),
+                    Placeholder::make('status')
                         ->translateLabel()
-                        ->required(fn (Get $get) => $get('status') == SubscriptionStatusEnum::CANCELED->value),
+                        ->content(fn (?Subscription $record): string => (string) (
+                            $record?->status ?? SubscriptionStatusEnum::ACTIVE
+                        )->getLabel()),
                     Textarea::make('obs')
                         ->translateLabel()
                         ->columnSpanFull()
@@ -114,19 +124,14 @@ class SubscriptionResource extends Resource
                     ->searchable(),
                 TextColumn::make('status')
                     ->translateLabel()
-                    ->searchable()
-                    ->icon(fn ($state) => SubscriptionStatusEnum::from($state)->getIcon())
-                    ->color(fn ($state) => SubscriptionStatusEnum::from($state)->getColor())
-                    ->tooltip(fn ($state) => SubscriptionStatusEnum::from($state)->getLabel()),
+                    ->badge()
+                    ->icon(fn (SubscriptionStatusEnum $state): ?string => $state->getIcon())
+                    ->color(fn (SubscriptionStatusEnum $state): ?array => $state->getColor())
+                    ->formatStateUsing(fn (SubscriptionStatusEnum $state): string => (string) $state->getLabel()),
                 TextColumn::make('price')
                     ->translateLabel()
                     ->money()
-                    ->sortable()
-                    ->summarize([
-                        Summarizer::make()
-                            ->using(fn (Builder $query) => $query->sum('price') / 100)
-                            ->money(),
-                    ]),
+                    ->sortable(),
                 TextColumn::make('currency')
                     ->translateLabel()
                     ->searchable(),
@@ -166,7 +171,24 @@ class SubscriptionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                /**
+                 * Os três braços chamam os scopes do model, e não reemitem a condição:
+                 * uma segunda grafia do predicado divergiria da primeira, que é o defeito
+                 * que a derivação do estado veio consertar.
+                 */
+                SelectFilter::make('state')
+                    ->label(__('Status'))
+                    ->options([
+                        SubscriptionStatusEnum::ACTIVE->value => SubscriptionStatusEnum::ACTIVE->getLabel(),
+                        SubscriptionStatusEnum::TRIAL->value => SubscriptionStatusEnum::TRIAL->getLabel(),
+                        SubscriptionStatusEnum::CANCELED->value => SubscriptionStatusEnum::CANCELED->getLabel(),
+                    ])
+                    ->query(fn (Builder $query, array $data): Builder => match ($data['value'] ?? null) {
+                        SubscriptionStatusEnum::CANCELED->value => $query->canceled(),
+                        SubscriptionStatusEnum::TRIAL->value => $query->inTrial(),
+                        SubscriptionStatusEnum::ACTIVE->value => $query->active(),
+                        default => $query,
+                    }),
             ])
             ->defaultGroup(
                 Group::make('billing_period')
