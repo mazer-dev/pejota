@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Billing\NullBilling;
 use App\Billing\NullFeatureGate;
 use App\Contracts\FeatureGate;
+use App\Contracts\InvoiceOverviewReporter;
 use App\Contracts\SubscriptionGate;
 use App\PejotaCloud\Providers\PejotaCloudServiceProvider;
 use App\Sentry\ConfigureUserScope;
+use App\Services\NullInvoiceOverviewReporter;
 use App\Services\Timesheet\Layouts\ClientTimesheetLayout;
 use App\Services\Timesheet\Layouts\InternalTimesheetLayout;
 use App\Services\Timesheet\TimesheetLayoutRegistry;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(SubscriptionGate::class, NullBilling::class);
+        $this->app->bind(InvoiceOverviewReporter::class, NullInvoiceOverviewReporter::class);
         $this->app->bind(FeatureGate::class, NullFeatureGate::class);
 
         if (class_exists(PejotaCloudServiceProvider::class)) {

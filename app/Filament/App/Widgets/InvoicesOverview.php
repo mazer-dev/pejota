@@ -2,9 +2,8 @@
 
 namespace App\Filament\App\Widgets;
 
+use App\Contracts\InvoiceOverviewReporter;
 use App\Helpers\PejotaHelper;
-use App\Models\Invoice;
-use App\Services\InvoiceService;
 use Carbon\CarbonImmutable;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -15,35 +14,44 @@ class InvoicesOverview extends BaseWidget
 {
     protected function getStats(): array
     {
-        $today = CarbonImmutable::now(PejotaHelper::getUserTimeZone())->startOfDay();
-        $service = new InvoiceService;
+        $company = PejotaHelper::currentCompany();
 
-        $pending = $service->sumBaseCurrency(Invoice::pending()->get());
-        $overdue = $service->sumBaseCurrency(Invoice::overdue()->get());
-        $dueSoon = $service->sumBaseCurrency(Invoice::dueWithin(30)->get());
-        $received = $service->sumBaseCurrency(Invoice::receivedBetween($today->subDays(30), $today)->get());
+        if ($company === null) {
+            return [];
+        }
 
-        $fmt = NumberFormatter::create(PejotaHelper::getUserLocate(), NumberFormatter::CURRENCY);
+        $timezone = PejotaHelper::getUserTimeZone() ?? config('app.timezone');
         $currency = PejotaHelper::getUserCurrency();
 
+        $summary = app(InvoiceOverviewReporter::class)->summary(
+            $company,
+            $currency,
+            $timezone,
+            CarbonImmutable::now($timezone)->startOfDay(),
+            30,
+            30,
+        );
+
+        $fmt = NumberFormatter::create(PejotaHelper::getUserLocate(), NumberFormatter::CURRENCY);
+
         return [
-            Stat::make(__('Total pending'), $fmt->formatCurrency($pending['total'], $currency))
-                ->description($this->describe(__('Pending invoices (sent + partially paid)'), $pending['unconverted']))
+            Stat::make(__('Total pending'), $fmt->formatCurrency($summary['pending']['total'], $currency))
+                ->description($this->describe(__('Pending invoices (sent + partially paid)'), $summary['pending']['unconverted']))
                 ->icon('heroicon-o-currency-dollar')
                 ->color(Color::generateV3Palette('#dadada')),
 
-            Stat::make(__('Pending overdue'), $fmt->formatCurrency($overdue['total'], $currency))
-                ->description($this->describe(__('Pending and overdue'), $overdue['unconverted']))
+            Stat::make(__('Pending overdue'), $fmt->formatCurrency($summary['overdue']['total'], $currency))
+                ->description($this->describe(__('Pending and overdue'), $summary['overdue']['unconverted']))
                 ->icon('heroicon-o-exclamation-circle')
                 ->color(Color::generateV3Palette('#fadada')),
 
-            Stat::make(__('Due within 30 days'), $fmt->formatCurrency($dueSoon['total'], $currency))
-                ->description($this->describe(__('Pending due in the next 30 days'), $dueSoon['unconverted']))
+            Stat::make(__('Due within 30 days'), $fmt->formatCurrency($summary['due_soon']['total'], $currency))
+                ->description($this->describe(__('Pending due in the next 30 days'), $summary['due_soon']['unconverted']))
                 ->icon('heroicon-o-clock')
                 ->color(Color::generateV3Palette('#fdf6da')),
 
-            Stat::make(__('Received last 30 days'), $fmt->formatCurrency($received['total'], $currency))
-                ->description($this->describe(__('Paid in the last 30 days'), $received['unconverted']))
+            Stat::make(__('Received last 30 days'), $fmt->formatCurrency($summary['received']['total'], $currency))
+                ->description($this->describe(__('Paid in the last 30 days'), $summary['received']['unconverted']))
                 ->icon('heroicon-o-check')
                 ->color(Color::generateV3Palette('#daFada')),
         ];
