@@ -12,6 +12,7 @@ use App\Models\Status;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\WorkSession;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\Concerns\ActsInCompany;
@@ -30,6 +31,12 @@ class CreateWorkSessionFromTaskTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Freeze the clock: test_start_is_prefilled_as_a_string_the_datetime_input_accepts
+        // asserts now()->format('Y-m-d H:i') against a timestamp captured earlier in the
+        // test. Without a frozen clock, a minute rollover between the two calls flips the
+        // assertion — a race, not a real failure.
+        Carbon::setTestNow(Carbon::now());
 
         $this->user = User::factory()->create();
         $this->company = $this->actingInCompany($this->user);
@@ -50,6 +57,13 @@ class CreateWorkSessionFromTaskTest extends TestCase
             'user_id' => $this->user->id,
             'priority' => 'medium',
         ]);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
     }
 
     public function test_form_keeps_defaults_that_the_task_prefill_does_not_provide(): void

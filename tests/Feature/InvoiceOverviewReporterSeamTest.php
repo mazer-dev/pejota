@@ -11,6 +11,8 @@ use App\Models\Client;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
+use App\PejotaCloud\Providers\PejotaCloudServiceProvider;
+use App\Services\InvoiceService;
 use App\Services\NullInvoiceOverviewReporter;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,17 +38,40 @@ class InvoiceOverviewReporterSeamTest extends TestCase
         $this->client = Client::create(['name' => 'ACME', 'company_id' => $this->company->id]);
     }
 
-    public function test_the_open_core_binds_the_null_reporter(): void
+    /**
+     * `AppServiceProvider::register()` binds `NullInvoiceOverviewReporter` by default
+     * and then, using this exact `class_exists(PejotaCloudServiceProvider::class)`
+     * check, lets the cloud overlay register itself and rebind the interface. This
+     * test reuses that same seam instead of inventing its own condition: absent
+     * (this repository, as shipped), the default wiring must hold; present (the
+     * other distribution), the overlay's rebind must actually have taken effect.
+     */
+    public function test_the_reporter_binding_matches_whichever_distribution_is_installed(): void
     {
+        if (class_exists(PejotaCloudServiceProvider::class)) {
+            $this->assertNotInstanceOf(
+                NullInvoiceOverviewReporter::class,
+                app(InvoiceOverviewReporter::class),
+            );
+
+            return;
+        }
+
         $this->assertInstanceOf(
             NullInvoiceOverviewReporter::class,
             app(InvoiceOverviewReporter::class),
         );
     }
 
+    /**
+     * Pins the Null implementation's behaviour specifically, so it constructs
+     * `NullInvoiceOverviewReporter` directly instead of resolving the interface from
+     * the container — a different distribution rebinds `InvoiceOverviewReporter` to
+     * its own implementation, which would make this test describe the wrong class.
+     */
     public function test_the_envelope_has_the_four_keys_even_with_no_invoices(): void
     {
-        $summary = app(InvoiceOverviewReporter::class)->summary(
+        $summary = (new NullInvoiceOverviewReporter(new InvoiceService))->summary(
             $this->company,
             'BRL',
             'America/Sao_Paulo',
@@ -65,6 +90,12 @@ class InvoiceOverviewReporterSeamTest extends TestCase
         }
     }
 
+    /**
+     * Pins the Null implementation's behaviour specifically, so it constructs
+     * `NullInvoiceOverviewReporter` directly instead of resolving the interface from
+     * the container — a different distribution rebinds `InvoiceOverviewReporter` to
+     * its own implementation, which would make this test describe the wrong class.
+     */
     public function test_the_null_reporter_reproduces_the_invoice_total_semantics(): void
     {
         Invoice::create([
@@ -74,7 +105,7 @@ class InvoiceOverviewReporterSeamTest extends TestCase
             'due_date' => CarbonImmutable::now()->addDays(5)->toDateString(),
         ]);
 
-        $summary = app(InvoiceOverviewReporter::class)->summary(
+        $summary = (new NullInvoiceOverviewReporter(new InvoiceService))->summary(
             $this->company,
             'BRL',
             'America/Sao_Paulo',

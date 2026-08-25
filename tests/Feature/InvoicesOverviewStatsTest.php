@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\InvoiceOverviewReporter;
 use App\Enums\CompanySettingsEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Filament\App\Widgets\InvoicesOverview;
@@ -10,6 +11,8 @@ use App\Models\Client;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Services\InvoiceService;
+use App\Services\NullInvoiceOverviewReporter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use NumberFormatter;
@@ -31,6 +34,14 @@ class InvoicesOverviewStatsTest extends TestCase
         $this->company = $this->actingInCompany($user);
         $this->company->settings()->set(CompanySettingsEnum::FINANCE_CURRENCY->value, 'BRL');
         $this->client = Client::create(['name' => 'ACME', 'company_id' => $this->company->id]);
+
+        // These tests characterise the Null implementation's invoice-total semantics
+        // as seen through the widget. `InvoiceOverviewReporter` is bound by the open
+        // core to `NullInvoiceOverviewReporter`, but a different distribution rebinds
+        // it to its own implementation — without this explicit binding, the widget
+        // would silently resolve whatever implementation happens to be installed and
+        // these tests would describe the wrong class.
+        $this->app->instance(InvoiceOverviewReporter::class, new NullInvoiceOverviewReporter(new InvoiceService));
     }
 
     private function invoice(array $attributes): Invoice
