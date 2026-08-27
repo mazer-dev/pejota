@@ -98,4 +98,50 @@ class ExchangeRateServiceTest extends TestCase
             0.0000001,
         );
     }
+
+    public function test_it_returns_the_row_date_alongside_the_rate(): void
+    {
+        ExchangeRate::factory()->forCurrency('BRL')->on('2026-06-15')->create(['rate' => 5.0]);
+
+        $result = $this->service->rateRowOn('BRL', CarbonImmutable::parse('2026-08-27'));
+
+        $this->assertSame(5.0, $result['rate']);
+        $this->assertSame('2026-06-15', $result['date']);
+    }
+
+    /**
+     * O carry-forward é ILIMITADO e é o R11: a data devolvida é a da LINHA,
+     * não a pedida. Sem esta asserção, devolver `$date` passaria.
+     */
+    public function test_the_date_is_the_rows_not_the_requested_one(): void
+    {
+        ExchangeRate::factory()->forCurrency('BRL')->on('2026-01-05')->create(['rate' => 5.0]);
+
+        $result = $this->service->rateRowOn('BRL', CarbonImmutable::parse('2026-08-27'));
+
+        $this->assertSame('2026-01-05', $result['date']);
+    }
+
+    /**
+     * O pivô NÃO tem linha e NÃO tem data — a taxa é definicional. Devolver
+     * a data pedida aqui seria afirmar frescura sobre número que não veio de
+     * cotação alguma.
+     */
+    public function test_the_pivot_has_a_rate_but_no_date(): void
+    {
+        $result = $this->service->rateRowOn('USD', CarbonImmutable::parse('2026-08-27'));
+
+        $this->assertSame(1.0, $result['rate']);
+        $this->assertNull($result['date']);
+    }
+
+    public function test_rate_on_still_answers_the_rate(): void
+    {
+        ExchangeRate::factory()->forCurrency('BRL')->on('2026-06-15')->create(['rate' => 5.0]);
+
+        $this->assertSame(
+            5.0,
+            $this->service->rateOn('BRL', CarbonImmutable::parse('2026-08-27')),
+        );
+    }
 }
