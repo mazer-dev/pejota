@@ -22,7 +22,7 @@ class NormalizeTaskListColumnSettingsTest extends TestCase
         $this->assertSame(1, (new NormalizeTaskListColumnSettings)());
 
         $this->assertSame(
-            ['priority', 'client', 'title'],
+            ['priority', 'client', 'title', 'done_today'],
             $user->fresh()->settings()->get(self::KEY),
         );
     }
@@ -35,19 +35,38 @@ class NormalizeTaskListColumnSettingsTest extends TestCase
         (new NormalizeTaskListColumnSettings)();
 
         $this->assertSame(
-            ['client', 'title'],
+            ['client', 'title', 'done_today'],
             $user->fresh()->settings()->get(self::KEY),
         );
     }
 
-    public function test_leaves_a_setting_without_the_legacy_key_untouched(): void
+    public function test_adds_done_today_to_an_already_stored_preference(): void
     {
         $user = User::factory()->create();
-        $user->settings()->set(self::KEY, ['priority', 'client']);
+        $user->settings()->set(self::KEY, ['title']);
+
+        $this->assertSame(1, (new NormalizeTaskListColumnSettings)());
+
+        $this->assertSame(['title', 'done_today'], $user->fresh()->settings()->get(self::KEY));
+    }
+
+    public function test_does_not_create_a_preference_for_a_user_who_has_none(): void
+    {
+        $user = User::factory()->create();
 
         $this->assertSame(0, (new NormalizeTaskListColumnSettings)());
 
-        $this->assertSame(['priority', 'client'], $user->fresh()->settings()->get(self::KEY));
+        $this->assertNull($user->fresh()->settings()->get(self::KEY));
+    }
+
+    public function test_leaves_an_already_normalized_setting_untouched(): void
+    {
+        $user = User::factory()->create();
+        $user->settings()->set(self::KEY, ['priority', 'client', 'done_today']);
+
+        $this->assertSame(0, (new NormalizeTaskListColumnSettings)());
+
+        $this->assertSame(['priority', 'client', 'done_today'], $user->fresh()->settings()->get(self::KEY));
     }
 
     public function test_is_idempotent(): void
@@ -58,7 +77,7 @@ class NormalizeTaskListColumnSettingsTest extends TestCase
         (new NormalizeTaskListColumnSettings)();
         $this->assertSame(0, (new NormalizeTaskListColumnSettings)());
 
-        $this->assertSame(['client'], $user->fresh()->settings()->get(self::KEY));
+        $this->assertSame(['client', 'done_today'], $user->fresh()->settings()->get(self::KEY));
     }
 
     public function test_preserves_sibling_settings(): void
@@ -71,6 +90,6 @@ class NormalizeTaskListColumnSettingsTest extends TestCase
 
         $fresh = $user->fresh();
         $this->assertSame('pt_BR', $fresh->settings()->get(UserSettingsEnum::LOCALIZATION_LOCALE->value));
-        $this->assertSame(['client'], $fresh->settings()->get(self::KEY));
+        $this->assertSame(['client', 'done_today'], $fresh->settings()->get(self::KEY));
     }
 }

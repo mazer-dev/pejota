@@ -23,9 +23,21 @@ class NormalizeTaskListColumnSettings
     ];
 
     /**
-     * Rewrite the renamed keys in every user's stored task list columns,
-     * preserving position and dropping the duplicate a rename may create.
-     * Idempotent — safe to re-run.
+     * Column option keys that only became controllable after users had stored
+     * their preference, and whose column was unconditionally visible until
+     * then. Adding them keeps those users seeing what they saw before.
+     *
+     * @var array<int, string>
+     */
+    private const NEWLY_CONTROLLABLE_KEYS = [
+        'done_today',
+    ];
+
+    /**
+     * Rewrite the renamed keys in every user's stored task list columns and
+     * append the newly controllable ones, preserving position and dropping the
+     * duplicate a rename may create. Users with no stored preference are left
+     * alone. Idempotent — safe to re-run.
      *
      * @return int number of users updated
      */
@@ -48,6 +60,12 @@ class NormalizeTaskListColumnSettings
                 static fn ($column) => is_string($column) ? (self::RENAMED_KEYS[$column] ?? $column) : $column,
                 $columns,
             )));
+
+            foreach (self::NEWLY_CONTROLLABLE_KEYS as $controllableKey) {
+                if (! in_array($controllableKey, $normalized, true)) {
+                    $normalized[] = $controllableKey;
+                }
+            }
 
             if ($normalized === array_values($columns)) {
                 return;

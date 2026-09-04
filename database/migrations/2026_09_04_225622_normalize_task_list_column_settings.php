@@ -6,10 +6,12 @@ use Illuminate\Database\Migrations\Migration;
 return new class extends Migration
 {
     /**
-     * Reescreve a chave de coluna renomeada em `users.settings ->
-     * tasks.default_list_columns`. A coluna `client.labelName` virou `client`
-     * em 3eda32b sem migrar o dado já gravado, e a chave órfã reprovava na
-     * validação `in` das preferências. Idempotente.
+     * Ajusta `users.settings -> tasks.default_list_columns` a duas mudanças de
+     * coluna que não migraram o dado já gravado: `client.labelName` virou
+     * `client` em 3eda32b, e a chave órfã reprovava na validação `in` das
+     * preferências; `done_today` passou a respeitar a preferência e é
+     * acrescentada para manter visível a coluna que antes era imposta.
+     * Idempotente.
      */
     public function up(): void
     {
