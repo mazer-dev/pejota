@@ -42,6 +42,25 @@ class MyPreferencesPageTest extends TestCase
             ->assertFormFieldExists(UserSettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value);
     }
 
+    public function test_my_preferences_saves_when_a_stored_column_key_no_longer_exists(): void
+    {
+        $user = User::factory()->create();
+        $this->actingInCompany($user);
+        $user->settings()->set(UserSettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value, [
+            'title',
+            'a_column_that_no_longer_exists',
+        ]);
+
+        Livewire::test(MyPreferences::class)
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(
+            ['title'],
+            $user->fresh()->settings()->get(UserSettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value),
+        );
+    }
+
     public function test_company_settings_no_longer_exposes_personal_fields(): void
     {
         $user = User::factory()->create();

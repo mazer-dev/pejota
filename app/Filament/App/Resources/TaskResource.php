@@ -1175,7 +1175,7 @@ class TaskResource extends Resource
                 ->extraHeaderAttributes(['class' => 'column-header-no-label'])
                 ->tooltip(fn (Model $record) => $record->status->name)
                 ->toggleable(
-                    isToggledHiddenByDefault: ! in_array('status_color', PejotaHelper::getUserTaskListDefaultColumns()),
+                    isToggledHiddenByDefault: ! in_array('status.color', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
             TextColumn::make('title')
                 ->translateLabel()
@@ -1222,10 +1222,7 @@ class TaskResource extends Resource
                 ->sortable()
                 ->wrap()
                 ->toggleable(
-                    isToggledHiddenByDefault: ! in_array(
-                        'client.labelName',
-                        PejotaHelper::getUserTaskListDefaultColumns()
-                    ),
+                    isToggledHiddenByDefault: ! in_array('client', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
             TextColumn::make('project.name')
                 ->translateLabel()

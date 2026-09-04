@@ -14,6 +14,7 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\Column;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -49,6 +50,11 @@ class MyPreferences extends Page implements HasForms
 
     public function form(Schema $schema): Schema
     {
+        /** @var array<string, string> $taskListColumns keyed by the column name the task list checks against */
+        $taskListColumns = collect(TaskResource::getTableColumns())
+            ->mapWithKeys(fn (Column $column): array => [$column->getName() => $column->getLabel()])
+            ->all();
+
         return $schema
             ->statePath('data')
             ->columns(1)
@@ -88,13 +94,17 @@ class MyPreferences extends Page implements HasForms
                         ->schema([
                             CheckboxList::make(UserSettingsEnum::TASKS_DEFAULT_LIST_COLUMNS->value)
                                 ->translateLabel()
-                                ->options(
-                                    collect(TaskResource::getTableColumns())
-                                        ->mapWithKeys(function ($column) {
-                                            return [
-                                                $column->getName() => $column->getLabel(),
-                                            ];
-                                        })->toArray()
+                                ->options($taskListColumns)
+                                /**
+                                 * A stored key that matches no current column would survive in the
+                                 * state with no checkbox able to clear it, failing the `in` rule
+                                 * Filament derives from the options and blocking every save.
+                                 */
+                                ->afterStateHydrated(
+                                    fn (CheckboxList $component) => $component->state(array_values(array_intersect(
+                                        (array) $component->getState(),
+                                        array_keys($taskListColumns),
+                                    )))
                                 )
                                 ->columns(2),
                         ]),
