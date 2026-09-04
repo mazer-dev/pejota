@@ -19,6 +19,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Http\RedirectResponse;
 use Livewire\Features\SupportRedirects\Redirector;
 
 class EditInvoice extends EditRecord
@@ -65,7 +66,7 @@ class EditInvoice extends EditRecord
                         ->searchable()
                         ->required(),
                 ])
-                ->action(function (array $data): ?Redirector {
+                ->action(function (array $data): Redirector|RedirectResponse|null {
                     $tz = PejotaHelper::getUserTimeZone() ?? 'UTC';
 
                     $request = new SessionInvoiceRequest(

@@ -152,13 +152,18 @@ class InvoiceInfolistTest extends TestCase
     /**
      * `unit.name` is rendered for every line item, so unless the `unit` relation is
      * eager-loaded alongside `items`, each row fires its own `units` query. The count
-     * must stay flat (a single batched query per render) as the item count grows.
+     * must stay flat as the item count grows.
      *
-     * The pinned value is 2, not 1: `RepeatableEntry::getItems()` — and therefore our
-     * `getStateUsing()` closure — is invoked twice per render (once via
-     * `getDefaultChildSchemas()`, once via `toEmbeddedHtml()`), a pre-existing Filament
-     * quirk unrelated to this fix. What must not happen is that number scaling with the
-     * item count.
+     * The pinned value is 1, and it is now INDEPENDENT OF HOW MANY TIMES FILAMENT CALLS
+     * `getStateUsing()`. It used to be 2, pinned to the framework calling the closure
+     * twice per render (`getDefaultChildSchemas()` and `toEmbeddedHtml()`). Pinning a
+     * framework internal was fragile and it broke: Filament 5.7.8 raised that to ~17
+     * invocations, and the closure — which ran `items()->with('unit')->get()`, a fresh
+     * query each time — issued 17 queries for a ONE-item invoice.
+     *
+     * The resource now uses `loadMissing('items.unit')`, so the relation is cached on
+     * the record and every invocation after the first costs nothing. The number no
+     * longer encodes anything about the framework, which is why it is worth pinning.
      */
     public function test_rendering_the_infolist_does_not_query_units_per_line_item(): void
     {
@@ -171,9 +176,9 @@ class InvoiceInfolistTest extends TestCase
         $queriesWithThreeItems = $this->countTableSelectsRendering($this->invoice, 'units');
 
         $this->assertSame(
-            2,
+            1,
             $queriesWithOneItem,
-            "Rendering the infolist for a 1-item invoice issued {$queriesWithOneItem} queries against the units table; expected exactly 2 (one batched eager-load query per getState() call).",
+            "Rendering the infolist for a 1-item invoice issued {$queriesWithOneItem} queries against the units table; expected exactly 1 (the relation is loaded once and cached on the record).",
         );
 
         $this->assertSame(

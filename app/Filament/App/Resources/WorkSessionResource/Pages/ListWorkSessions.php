@@ -31,6 +31,7 @@ use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Support\Colors\Color;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Livewire\Features\SupportRedirects\Redirector;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -165,7 +166,7 @@ class ListWorkSessions extends ListRecords
                         ->required(),
                     TextInput::make('title')->label(__('Title'))->required(),
                 ])
-                ->action(function (array $data): ?Redirector {
+                ->action(function (array $data): Redirector|RedirectResponse|null {
                     $tz = PejotaHelper::getUserTimeZone() ?? 'UTC';
 
                     $request = new SessionInvoiceRequest(

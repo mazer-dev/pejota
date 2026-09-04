@@ -266,9 +266,26 @@ class InvoiceResource extends Resource
                     ->translateLabel()
                     ->columnSpanFull()
                     ->columns(['default' => 2, 'md' => 5])
-                    ->getStateUsing(fn (Invoice $record) => $record->items()->with('unit')->get()->each(
-                        fn (InvoiceItem $item) => $item->setRelation('invoice', $record)
-                    ))
+                    /**
+                     * `loadMissing()` e nao `items()->with()`: o Filament chama
+                     * `getStateUsing` VARIAS VEZES por render, e uma query builder
+                     * refaz a consulta a cada chamada. A relacao carregada fica no
+                     * proprio `$record`, entao a segunda chamada em diante custa zero.
+                     *
+                     * Medido no Filament 5.7.8: a forma anterior emitia 17 consultas a
+                     * `units` numa fatura de UM item. Nao era N+1 por item — era a
+                     * mesma consulta repetida por chamada de estado.
+                     *
+                     * `setRelation('invoice', ...)` continua: e o que impede cada item
+                     * de reconsultar a fatura-pai ao resolver a moeda.
+                     */
+                    ->getStateUsing(function (Invoice $record) {
+                        $record->loadMissing('items.unit');
+
+                        return $record->items->each(
+                            fn (InvoiceItem $item) => $item->setRelation('invoice', $record)
+                        );
+                    })
                     ->schema([
                         TextEntry::make('name')->label('Description at invoice')->translateLabel()->columnSpan(2),
                         TextEntry::make('unit.name')->label('Unit')->translateLabel(),
