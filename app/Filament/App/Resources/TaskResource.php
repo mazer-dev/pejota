@@ -1161,7 +1161,9 @@ class TaskResource extends Resource
                     isToggledHiddenByDefault: ! in_array('work_session', PejotaHelper::getUserTaskListDefaultColumns()),
                 ),
             DailyCheckService::doneTodayColumn()
-                ->toggleable(),
+                ->toggleable(
+                    isToggledHiddenByDefault: ! in_array('done_today', PejotaHelper::getUserTaskListDefaultColumns()),
+                ),
             SelectColumn::make('status_id')
                 ->label('Status')
                 ->options(fn (): array => Status::all()->pluck('name', 'id')->toArray())

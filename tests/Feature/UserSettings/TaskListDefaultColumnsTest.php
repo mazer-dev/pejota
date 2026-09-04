@@ -48,6 +48,22 @@ class TaskListDefaultColumnsTest extends TestCase
         );
     }
 
+    public function test_done_today_column_follows_its_own_option_key(): void
+    {
+        $this->assertFalse(
+            $this->columnNamed('done_today', ['done_today'])->isToggledHiddenByDefault(),
+            'Selecting the done today column in the preferences must show it in the task list.',
+        );
+    }
+
+    public function test_done_today_column_is_hidden_when_it_is_not_selected(): void
+    {
+        $this->assertTrue(
+            $this->columnNamed('done_today', ['title'])->isToggledHiddenByDefault(),
+            'The done today column must obey the preference instead of always showing.',
+        );
+    }
+
     public function test_unselected_column_stays_hidden(): void
     {
         $this->assertTrue(
