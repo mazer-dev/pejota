@@ -15,6 +15,15 @@ return [
     'app_panel_plugins' => [],
 
     /*
+     * Schema components appended to the tabs of the company settings page, keyed
+     * by tab name - the string passed to `Tab::make()`, not the translated label.
+     * Each value is a list of class-strings implementing
+     * `App\Contracts\CompanySettingsComponents`. Empty in open-core; the cloud
+     * overlay injects its own company settings here.
+     */
+    'company_settings_components' => [],
+
+    /*
      * Class-string invokable `fn(Company $tenant, User $user): ?string` used to
      * redirect a blocked tenant instead of the Filament default 404. Null in
      * open-core (no-op); the cloud overlay points this at its billing landing.

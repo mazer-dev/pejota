@@ -17,6 +17,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
@@ -73,6 +74,7 @@ class CompanySettings extends Page implements HasForms
                                     )
                                 )
                                 ->default(false),
+                            ...self::extraComponentsFor('Clients'),
                         ]),
 
                     Tab::make('Vendors')
@@ -86,6 +88,7 @@ class CompanySettings extends Page implements HasForms
                                     )
                                 )
                                 ->default(false),
+                            ...self::extraComponentsFor('Vendors'),
                         ]),
 
                     Tab::make('Tasks')
@@ -111,6 +114,7 @@ class CompanySettings extends Page implements HasForms
                                     )
                                 )
                                 ->default(false),
+                            ...self::extraComponentsFor('Tasks'),
                         ]),
 
                     Tab::make('Finance')
@@ -122,6 +126,7 @@ class CompanySettings extends Page implements HasForms
                                 ->options(fn (): array => $this->baseCurrencyOptions())
                                 ->in(fn (): array => array_keys($this->baseCurrencyOptions()))
                                 ->default(fn (): string => PejotaHelper::getUserCurrency()),
+                            ...self::extraComponentsFor('Finance'),
                         ]),
 
                     Tab::make('Invoices')
@@ -144,6 +149,7 @@ class CompanySettings extends Page implements HasForms
 
                                     return CompanySettingsEnum::applyFormat($format, 1);
                                 }),
+                            ...self::extraComponentsFor('Invoices'),
                         ]),
 
                     Tab::make('Billing')
@@ -169,11 +175,29 @@ class CompanySettings extends Page implements HasForms
                                 ->label('WhatsApp template')
                                 ->translateLabel()
                                 ->rows(4),
+                            ...self::extraComponentsFor('Billing'),
                         ]),
 
                 ]),
 
             ]);
+    }
+
+    /**
+     * Components an overlay registered for a tab, in declaration order.
+     *
+     * A tab with no registration - which is every tab in open-core - keeps the
+     * schema it declares inline.
+     *
+     * @return array<int, Component>
+     */
+    protected static function extraComponentsFor(string $tab): array
+    {
+        $registered = config('pejota.company_settings_components', [])[$tab] ?? [];
+
+        return collect($registered)
+            ->flatMap(fn (string $class): array => $class::components())
+            ->all();
     }
 
     public static function billingVariablesHelp(): string
