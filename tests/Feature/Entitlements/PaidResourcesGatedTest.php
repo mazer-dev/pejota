@@ -5,7 +5,6 @@ namespace Tests\Feature\Entitlements;
 use App\Contracts\FeatureGate;
 use App\Enums\FeatureEnum;
 use App\Enums\QuotaEnum;
-use App\Filament\App\Resources\AccountResource;
 use App\Filament\App\Resources\ContractResource;
 use App\Filament\App\Resources\ProductResource;
 use App\Filament\App\Resources\SubscriptionResource;
@@ -27,7 +26,6 @@ class PaidResourcesGatedTest extends TestCase
         return [
             'contract' => [ContractResource::class, FeatureEnum::Contracts],
             'product' => [ProductResource::class, FeatureEnum::Products],
-            'account' => [AccountResource::class, FeatureEnum::Accounts],
             'subscription' => [SubscriptionResource::class, FeatureEnum::DomainSubscriptions],
             'vendor' => [VendorResource::class, FeatureEnum::Vendors],
         ];

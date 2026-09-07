@@ -6,7 +6,6 @@ enum FeatureEnum: string
 {
     case Contracts = 'contracts';
     case Products = 'products';
-    case Accounts = 'accounts';
     case DomainSubscriptions = 'domain_subscriptions';
     case Vendors = 'vendors';
     case MultiCurrency = 'multi_currency';
