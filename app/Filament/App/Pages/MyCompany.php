@@ -67,6 +67,9 @@ class MyCompany extends Page implements HasForms
                 TextInput::make('name')
                     ->label(__('Name'))
                     ->required(),
+                TextInput::make('document')
+                    ->label(__('Document'))
+                    ->maxLength(255),
                 TextInput::make('email')
                     ->label(__('Email'))
                     ->email(),
