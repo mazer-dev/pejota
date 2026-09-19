@@ -60,13 +60,20 @@ trait AppliesSubscriptionExtensions
     /**
      * PULA a extensão cuja chave não foi capturada, e nunca persiste um default.
      *
-     * A condição NÃO é "extensão inativa": essa nem chega aqui, porque
-     * `SubscriptionResource::activeExtensions()` a filtra antes do laço. O que este guard
-     * protege é uma extensão ATIVA cuja chave nunca chegou a `$data` — uma aba cujos
-     * campos estejam todos ocultos em runtime, ou marcados como não-dehydrated. Nenhuma
-     * extensão existente faz isso, então o ramo é hoje inalcançável e sem cobertura;
-     * medido por mutação em 2026-09-19. Fica porque `updateOrCreate` com estado vazio
-     * criaria a linha que o gate existe para não criar.
+     * NÃO é o caso da extensão inativa: essa nem alcança o corpo do laço, porque
+     * `SubscriptionResource::activeExtensions()` a filtra antes.
+     *
+     * A chave some quando o PRÓPRIO `Tab` da extensão é não-dehydrated — oculto sem
+     * `dehydratedWhenHidden()`, ou com `dehydrated(false)`. `Component::dehydrateState()`
+     * faz `Arr::forget()` sobre o statePath DO COMPONENTE
+     * (`vendor/filament/schemas/src/Components/Concerns/HasState.php:342`), então é o
+     * statePath do container que desaparece. Ocultar apenas os CAMPOS de dentro da aba
+     * NÃO produz esse efeito: o forget cai sobre `<stateKey>.<campo>` e a chave do
+     * container sobrevive como array vazio.
+     *
+     * Medido em 2026-09-19. Nenhuma extensão faz isso hoje, então o ramo é inalcançável
+     * e sem cobertura; fica porque persistir estado vazio criaria a linha que o gate
+     * existe para não criar.
      */
     protected function persistExtensionState(Subscription $record): void
     {
