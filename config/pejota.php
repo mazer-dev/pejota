@@ -24,6 +24,13 @@ return [
     'company_settings_components' => [],
 
     /*
+     * Class-strings implementing `App\Contracts\SubscriptionResourceExtension`, appended
+     * to the subscription resource's form tabs and list table. Empty in open-core; the
+     * cloud overlay registers its payable-generation rule here.
+     */
+    'subscription_resource_extensions' => [],
+
+    /*
      * Class-string invokable `fn(Company $tenant, User $user): ?string` used to
      * redirect a blocked tenant instead of the Filament default 404. Null in
      * open-core (no-op); the cloud overlay points this at its billing landing.
