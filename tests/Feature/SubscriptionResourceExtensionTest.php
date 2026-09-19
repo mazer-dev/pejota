@@ -186,6 +186,39 @@ class SubscriptionResourceExtensionTest extends TestCase
         $this->assertSame('Netflix', $subscription->refresh()->service);
     }
 
+    /**
+     * Gêmeo do teste de rollback da edição, para a página de criação. Sem ele,
+     * `$hasDatabaseTransactions` em `CreateSubscription` é removível sem nada ficar
+     * vermelho, e a spec manda a transação nas duas páginas.
+     */
+    public function test_an_exception_in_persist_rolls_the_creation_back(): void
+    {
+        $this->registerStub();
+        SubscriptionExtensionStub::$throwsOnPersist = true;
+
+        Currency::factory()->create(['code' => 'BRL', 'name' => 'Brazilian Real', 'is_active' => true]);
+
+        try {
+            Livewire::test(CreateSubscription::class)
+                ->fillForm([
+                    'service' => 'Disney+',
+                    'price' => 40,
+                    'currency' => 'BRL',
+                    'payment_method' => 'Cartão de crédito',
+                    'billing_period' => SubscriptionBillingPeriodEnum::MONTHLY->value,
+                    'started_on' => '2026-09-01',
+                    'stub' => ['note' => 'criada junto'],
+                ])
+                ->call('create');
+
+            $this->fail('Expected the stub persist failure to propagate.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('stub persist failure', $exception->getMessage());
+        }
+
+        $this->assertSame(0, Subscription::query()->where('service', 'Disney+')->count());
+    }
+
     public function test_creating_writes_both_in_one_click(): void
     {
         $this->registerStub();

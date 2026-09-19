@@ -58,9 +58,15 @@ trait AppliesSubscriptionExtensions
     }
 
     /**
-     * PULA a extensão cuja chave não foi capturada, e nunca persiste um default. A chave
-     * só falta quando a aba não foi composta — extensão inativa —, e `updateOrCreate` com
-     * estado vazio criaria a linha que o gate existe para não criar.
+     * PULA a extensão cuja chave não foi capturada, e nunca persiste um default.
+     *
+     * A condição NÃO é "extensão inativa": essa nem chega aqui, porque
+     * `SubscriptionResource::activeExtensions()` a filtra antes do laço. O que este guard
+     * protege é uma extensão ATIVA cuja chave nunca chegou a `$data` — uma aba cujos
+     * campos estejam todos ocultos em runtime, ou marcados como não-dehydrated. Nenhuma
+     * extensão existente faz isso, então o ramo é hoje inalcançável e sem cobertura;
+     * medido por mutação em 2026-09-19. Fica porque `updateOrCreate` com estado vazio
+     * criaria a linha que o gate existe para não criar.
      */
     protected function persistExtensionState(Subscription $record): void
     {
