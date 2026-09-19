@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Contracts\SubscriptionResourceExtension;
 use App\Enums\FeatureEnum;
 use App\Enums\MenuGroupsEnum;
 use App\Enums\SubscriptionBillingPeriodEnum;
@@ -26,8 +27,12 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\Column;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\BaseFilter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
@@ -59,59 +64,109 @@ class SubscriptionResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema
-            ->columns(1)
-            ->components([
-                Grid::make([
-                    'default' => 2,
-                ])->schema([
-                    TextInput::make('service')
-                        ->columnSpan(2)
-                        ->translateLabel()
-                        ->required(),
-                    Select::make('vendor_id')
-                        ->translateLabel()
-                        ->relationship('vendor', 'name')
-                        ->searchable()
-                        ->preload(),
-                    TextInput::make('price')
-                        ->translateLabel()
-                        ->required()
-                        ->numeric()
-                        ->prefix('$'),
-                    Select::make('currency')
-                        ->translateLabel()
-                        ->options(fn (?Subscription $record): array => Currency::selectOptions($record?->currency))
-                        ->searchable()
-                        ->required(),
-                    TextInput::make('payment_method')
-                        ->translateLabel()
-                        ->required(),
-                    TextInput::make('payment_info')
-                        ->label('Payment extra-info')
-                        ->translateLabel(),
-                    Select::make('billing_period')
-                        ->options(SubscriptionBillingPeriodEnum::class)
-                        ->translateLabel()
-                        ->required(),
-                    DatePicker::make('started_on')
-                        ->translateLabel()
-                        ->required(),
-                    DatePicker::make('trial_ends_at')
-                        ->translateLabel(),
-                    DatePicker::make('canceled_at')
-                        ->translateLabel(),
-                    Placeholder::make('status')
-                        ->translateLabel()
-                        ->content(fn (?Subscription $record): string => (string) (
-                            $record?->status ?? SubscriptionStatusEnum::ACTIVE
-                        )->getLabel()),
-                    Textarea::make('obs')
-                        ->translateLabel()
-                        ->columnSpanFull()
-                        ->rows(6),
-                ]),
-            ]);
+        $core = Grid::make([
+            'default' => 2,
+        ])->schema([
+            TextInput::make('service')
+                ->columnSpan(2)
+                ->translateLabel()
+                ->required(),
+            Select::make('vendor_id')
+                ->translateLabel()
+                ->relationship('vendor', 'name')
+                ->searchable()
+                ->preload(),
+            TextInput::make('price')
+                ->translateLabel()
+                ->required()
+                ->numeric()
+                ->prefix('$'),
+            Select::make('currency')
+                ->translateLabel()
+                ->options(fn (?Subscription $record): array => Currency::selectOptions($record?->currency))
+                ->searchable()
+                ->required(),
+            TextInput::make('payment_method')
+                ->translateLabel()
+                ->required(),
+            TextInput::make('payment_info')
+                ->label('Payment extra-info')
+                ->translateLabel(),
+            Select::make('billing_period')
+                ->options(SubscriptionBillingPeriodEnum::class)
+                ->translateLabel()
+                ->required(),
+            DatePicker::make('started_on')
+                ->translateLabel()
+                ->required(),
+            DatePicker::make('trial_ends_at')
+                ->translateLabel(),
+            DatePicker::make('canceled_at')
+                ->translateLabel(),
+            Placeholder::make('status')
+                ->translateLabel()
+                ->content(fn (?Subscription $record): string => (string) (
+                    $record?->status ?? SubscriptionStatusEnum::ACTIVE
+                )->getLabel()),
+            Textarea::make('obs')
+                ->translateLabel()
+                ->columnSpanFull()
+                ->rows(6),
+        ]);
+
+        $extensions = self::activeExtensions();
+
+        if ($extensions === []) {
+            return $schema->columns(1)->components([$core]);
+        }
+
+        return $schema->columns(1)->components([
+            Tabs::make('Tabs')->columnSpanFull()->tabs([
+                Tab::make('Subscription data')->translateLabel()->schema([$core]),
+                ...array_map(
+                    fn (string $extension): Tab => $extension::tab(),
+                    $extensions,
+                ),
+            ]),
+        ]);
+    }
+
+    /**
+     * `activeExtensions()` é PÚBLICA porque `AppliesSubscriptionExtensions` a chama de
+     * outra classe. Os três coletores abaixo são internos.
+     *
+     * @return array<int, class-string<SubscriptionResourceExtension>>
+     */
+    public static function activeExtensions(): array
+    {
+        return collect(config('pejota.subscription_resource_extensions', []))
+            ->filter(fn (string $extension): bool => $extension::isActive())
+            ->values()
+            ->all();
+    }
+
+    /** @return array<int, Column> */
+    protected static function extensionColumns(): array
+    {
+        return collect(self::activeExtensions())
+            ->flatMap(fn (string $extension): array => $extension::columns())
+            ->all();
+    }
+
+    /** @return array<int, BaseFilter> */
+    protected static function extensionFilters(): array
+    {
+        return collect(self::activeExtensions())
+            ->flatMap(fn (string $extension): array => $extension::filters())
+            ->all();
+    }
+
+    /** @return array<int, string> */
+    protected static function extensionEagerLoads(): array
+    {
+        return collect(self::activeExtensions())
+            ->flatMap(fn (string $extension): array => $extension::eagerLoads())
+            ->all();
     }
 
     public static function table(Table $table): Table
@@ -169,6 +224,7 @@ class SubscriptionResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                ...self::extensionColumns(),
             ])
             ->filters([
                 /**
@@ -189,6 +245,7 @@ class SubscriptionResource extends Resource
                         SubscriptionStatusEnum::ACTIVE->value => $query->active(),
                         default => $query,
                     }),
+                ...self::extensionFilters(),
             ])
             ->defaultGroup(
                 Group::make('billing_period')
@@ -208,6 +265,16 @@ class SubscriptionResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * `->with([])` é no-op, então o projeto aberto não muda de plano de query. Ele existe
+     * para que uma extensão possa carregar a sua relação sem N+1 — o core não pode nomear
+     * uma relação que um overlay registra em runtime.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(self::extensionEagerLoads());
     }
 
     public static function getRelations(): array
