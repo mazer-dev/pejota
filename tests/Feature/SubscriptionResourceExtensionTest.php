@@ -6,6 +6,7 @@ use App\Enums\SubscriptionBillingPeriodEnum;
 use App\Filament\App\Resources\SubscriptionResource;
 use App\Filament\App\Resources\SubscriptionResource\Pages\CreateSubscription;
 use App\Filament\App\Resources\SubscriptionResource\Pages\EditSubscription;
+use App\Filament\App\Resources\SubscriptionResource\Pages\ListSubscriptions;
 use App\Models\Company;
 use App\Models\Currency;
 use App\Models\Subscription;
@@ -264,5 +265,32 @@ class SubscriptionResourceExtensionTest extends TestCase
 
         $this->assertSame('Spotify', $subscription->service);
         $this->assertSame('preservado', $subscription->obs);
+    }
+
+    public function test_without_an_extension_the_query_adds_no_eager_load(): void
+    {
+        $this->assertSame([], array_keys(SubscriptionResource::getEloquentQuery()->getEagerLoads()));
+    }
+
+    public function test_a_registered_extension_adds_its_eager_load(): void
+    {
+        $this->registerStub();
+
+        $this->assertContains('vendor', array_keys(SubscriptionResource::getEloquentQuery()->getEagerLoads()));
+    }
+
+    public function test_a_registered_extension_adds_its_column_and_filter(): void
+    {
+        $this->registerStub();
+
+        $noted = $this->subscription(['service' => 'Com nota', 'obs' => 'anotada']);
+        $bare = $this->subscription(['service' => 'Sem nota']);
+
+        Livewire::test(ListSubscriptions::class)
+            ->assertCanSeeTableRecords([$noted, $bare])
+            ->assertCanRenderTableColumn('obs')
+            ->filterTable('stub_noted')
+            ->assertCanSeeTableRecords([$noted])
+            ->assertCanNotSeeTableRecords([$bare]);
     }
 }

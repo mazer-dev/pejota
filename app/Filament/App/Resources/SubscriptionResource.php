@@ -224,6 +224,7 @@ class SubscriptionResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                ...self::extensionColumns(),
             ])
             ->filters([
                 /**
@@ -244,6 +245,7 @@ class SubscriptionResource extends Resource
                         SubscriptionStatusEnum::ACTIVE->value => $query->active(),
                         default => $query,
                     }),
+                ...self::extensionFilters(),
             ])
             ->defaultGroup(
                 Group::make('billing_period')
@@ -263,6 +265,16 @@ class SubscriptionResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * `->with([])` é no-op, então o projeto aberto não muda de plano de query. Ele existe
+     * para que uma extensão possa carregar a sua relação sem N+1 — o core não pode nomear
+     * uma relação que um overlay registra em runtime.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(self::extensionEagerLoads());
     }
 
     public static function getRelations(): array
