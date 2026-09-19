@@ -4,12 +4,15 @@ namespace Tests\Feature;
 
 use App\Enums\SubscriptionBillingPeriodEnum;
 use App\Filament\App\Resources\SubscriptionResource;
+use App\Filament\App\Resources\SubscriptionResource\Pages\CreateSubscription;
 use App\Filament\App\Resources\SubscriptionResource\Pages\EditSubscription;
 use App\Models\Company;
+use App\Models\Currency;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use RuntimeException;
 use Tests\Concerns\ActsInCompany;
 use Tests\Support\SubscriptionExtensionStub;
 use Tests\TestCase;
@@ -95,5 +98,138 @@ class SubscriptionResourceExtensionTest extends TestCase
 
         Livewire::test(EditSubscription::class, ['record' => $subscription->getKey()])
             ->assertSchemaComponentExists('stub.note');
+    }
+
+    public function test_one_save_writes_the_record_and_the_extension_state(): void
+    {
+        $this->registerStub();
+
+        $subscription = $this->subscription();
+
+        Livewire::test(EditSubscription::class, ['record' => $subscription->getKey()])
+            ->fillForm([
+                'service' => 'Spotify',
+                'stub' => ['note' => 'vinda da aba'],
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $subscription->refresh();
+
+        $this->assertSame('Spotify', $subscription->service);
+        $this->assertSame('vinda da aba', $subscription->obs);
+    }
+
+    /**
+     * `persist()` roda no `afterSave`, DEPOIS de `handleRecordUpdate`. O stub e o
+     * formulário do core escrevem os dois em `obs`, e o valor da extensão é o que tem de
+     * sobreviver — se a ordem se inverter, o `obs` do core vence e o teste cai.
+     */
+    public function test_the_extension_writes_after_the_record_is_saved(): void
+    {
+        $this->registerStub();
+
+        $subscription = $this->subscription();
+
+        Livewire::test(EditSubscription::class, ['record' => $subscription->getKey()])
+            ->fillForm([
+                'obs' => 'escrito pelo core',
+                'stub' => ['note' => 'escrito pela extensão'],
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('escrito pela extensão', $subscription->refresh()->obs);
+    }
+
+    /**
+     * O `Halt` sai de `refuse()`, que roda ANTES de `handleRecordUpdate`. A assinatura
+     * não pode ter sido tocada.
+     */
+    public function test_a_refusing_extension_leaves_the_subscription_untouched(): void
+    {
+        $this->registerStub();
+        SubscriptionExtensionStub::$refuses = true;
+
+        $subscription = $this->subscription();
+
+        Livewire::test(EditSubscription::class, ['record' => $subscription->getKey()])
+            ->fillForm(['service' => 'Spotify'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('Netflix', $subscription->refresh()->service);
+    }
+
+    /**
+     * Sem `$hasDatabaseTransactions = true` nas páginas, o `UPDATE` da assinatura fica
+     * gravado e só a extensão falha — que é o save pela metade que a fusão existe para
+     * não criar. `Panel::$hasDatabaseTransactions` é `false` por padrão.
+     */
+    public function test_an_exception_in_persist_rolls_the_subscription_back(): void
+    {
+        $this->registerStub();
+        SubscriptionExtensionStub::$throwsOnPersist = true;
+
+        $subscription = $this->subscription();
+
+        try {
+            Livewire::test(EditSubscription::class, ['record' => $subscription->getKey()])
+                ->fillForm(['service' => 'Spotify'])
+                ->call('save');
+
+            $this->fail('Expected the stub persist failure to propagate.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('stub persist failure', $exception->getMessage());
+        }
+
+        $this->assertSame('Netflix', $subscription->refresh()->service);
+    }
+
+    public function test_creating_writes_both_in_one_click(): void
+    {
+        $this->registerStub();
+
+        Currency::factory()->create(['code' => 'BRL', 'name' => 'Brazilian Real', 'is_active' => true]);
+
+        Livewire::test(CreateSubscription::class)
+            ->fillForm([
+                'service' => 'Disney+',
+                'price' => 40,
+                'currency' => 'BRL',
+                'payment_method' => 'Cartão de crédito',
+                'billing_period' => SubscriptionBillingPeriodEnum::MONTHLY->value,
+                'started_on' => '2026-09-01',
+                'stub' => ['note' => 'criada junto'],
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $subscription = Subscription::query()->where('service', 'Disney+')->sole();
+
+        $this->assertSame('criada junto', $subscription->obs);
+    }
+
+    /**
+     * Extensão inativa não compõe aba, então a chave nem existe em `$data` — e
+     * `persistExtensionState()` tem de PULAR, não persistir vazio. Um `?? []` no lugar da
+     * checagem apagaria o `obs` de toda assinatura salva por um tenant sem a feature.
+     */
+    public function test_an_inactive_extension_does_not_persist(): void
+    {
+        $this->registerStub();
+        SubscriptionExtensionStub::$active = false;
+
+        $subscription = $this->subscription(['obs' => 'preservado']);
+
+        Livewire::test(EditSubscription::class, ['record' => $subscription->getKey()])
+            ->fillForm(['service' => 'Spotify'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $subscription->refresh();
+
+        $this->assertSame('Spotify', $subscription->service);
+        $this->assertSame('preservado', $subscription->obs);
     }
 }
