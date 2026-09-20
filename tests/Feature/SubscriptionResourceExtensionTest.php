@@ -26,6 +26,17 @@ class SubscriptionResourceExtensionTest extends TestCase
 
     private Company $company;
 
+    /**
+     * A config das extensões é fixada em `[]` AQUI, e não herdada da aplicação.
+     *
+     * Os testes deste arquivo que provam o comportamento "sem extensão registrada" leem
+     * `SubscriptionResource::activeExtensions()`. Herdar o valor da aplicação faz esses
+     * testes passarem por acidente no projeto aberto, onde o default é `[]`, e falharem
+     * num instalador cujo provider registre uma extensão real — que é exatamente o caso
+     * que o seam existe para servir. Medido em 2026-09-19.
+     *
+     * `registerStub()` é o opt-in explícito para os testes que querem uma extensão ativa.
+     */
     protected function setUp(): void
     {
         parent::setUp();
@@ -34,6 +45,7 @@ class SubscriptionResourceExtensionTest extends TestCase
         $this->company = $this->actingInCompany($this->owner);
 
         SubscriptionExtensionStub::reset();
+        config(['pejota.subscription_resource_extensions' => []]);
     }
 
     protected function tearDown(): void
