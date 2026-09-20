@@ -7,6 +7,7 @@ use App\Filament\App\Resources\SubscriptionResource;
 use App\Filament\App\Resources\SubscriptionResource\Pages\CreateSubscription;
 use App\Filament\App\Resources\SubscriptionResource\Pages\EditSubscription;
 use App\Filament\App\Resources\SubscriptionResource\Pages\ListSubscriptions;
+use App\Filament\App\Resources\SubscriptionResource\Pages\ViewSubscription;
 use App\Models\Company;
 use App\Models\Currency;
 use App\Models\Subscription;
@@ -304,5 +305,99 @@ class SubscriptionResourceExtensionTest extends TestCase
             ->filterTable('stub_noted')
             ->assertCanSeeTableRecords([$noted])
             ->assertCanNotSeeTableRecords([$bare]);
+    }
+
+    /**
+     * `EditAction::make()` NÃO tem `->url()` explícito neste resource — a navegação vem
+     * de `Filament\Resources\Pages\Page::getDefaultActionUrl()`, que já resolve a URL da
+     * página `edit` quando o resource a registra e a página atual não é ela mesma
+     * (`vendor/filament/filament/src/Resources/Pages/Page.php:350-381`). Isso é
+     * comportamento DEFAULT do framework, não escolha desta base de código, e um upgrade
+     * do Filament pode trocá-lo sem aviso — se isso acontecer, a linha volta a abrir o
+     * `form()` num modal fora do ciclo de `AppliesSubscriptionExtensions` (que só
+     * `EditSubscription` roda), e a recusa da extensão volta a ser contornável por ali.
+     * Este teste existe para prender esse comportamento, não para corrigi-lo: `getUrl()`
+     * não vazio desliga `wire:click` (`isLivewireClickHandlerEnabled()`), então a prova é
+     * dupla — a URL bate com a página de edição, e o HTML não carrega
+     * `mountAction`/`mountTableAction` nenhum para ela.
+     */
+    public function test_the_edit_row_action_links_to_the_edit_page_instead_of_opening_a_modal(): void
+    {
+        $this->registerStub();
+
+        $subscription = $this->subscription();
+
+        $test = Livewire::test(ListSubscriptions::class)
+            ->assertTableActionHasUrl('edit', EditSubscription::getUrl([$subscription->id]), record: $subscription);
+
+        $html = $test->html();
+
+        $this->assertStringContainsString('href="'.EditSubscription::getUrl([$subscription->id]).'"', $html);
+        $this->assertStringNotContainsString("mountAction('edit'", $html);
+        $this->assertStringNotContainsString("mountTableAction('edit'", $html);
+    }
+
+    /**
+     * Gêmeo do teste acima para "View": mesmo mecanismo default do framework
+     * (`Page::getDefaultActionUrl()`), mesmo risco de upgrade. Aqui a navegação já
+     * acontecia mesmo sem este teste — o defeito real desta superfície nunca foi a linha
+     * abrir modal, e sim `ViewSubscription` não hidratar o estado da extensão ao chegar
+     * lá (ver `test_the_view_page_hydrates_the_extension_tab_from_the_record`, logo
+     * abaixo).
+     */
+    public function test_the_view_row_action_links_to_the_view_page_instead_of_opening_a_modal(): void
+    {
+        $this->registerStub();
+
+        $subscription = $this->subscription();
+
+        $test = Livewire::test(ListSubscriptions::class)
+            ->assertTableActionHasUrl('view', ViewSubscription::getUrl([$subscription->id]), record: $subscription);
+
+        $html = $test->html();
+
+        $this->assertStringContainsString('href="'.ViewSubscription::getUrl([$subscription->id]).'"', $html);
+        $this->assertStringNotContainsString("mountAction('view'", $html);
+        $this->assertStringNotContainsString("mountTableAction('view'", $html);
+    }
+
+    /**
+     * Gêmeo para o botão "New subscription" do cabeçalho, mesmo mecanismo default do
+     * framework: se um upgrade do Filament parar de resolver a URL padrão de
+     * `CreateAction`, o botão volta a montar o `form()` num modal fora de
+     * `CreateSubscription`, e o estado da aba da extensão volta a ser descartado em
+     * silêncio ao salvar.
+     */
+    public function test_the_create_header_action_links_to_the_create_page_instead_of_opening_a_modal(): void
+    {
+        $this->registerStub();
+
+        $test = Livewire::test(ListSubscriptions::class)
+            ->assertActionHasUrl('create', CreateSubscription::getUrl());
+
+        $html = $test->html();
+
+        $this->assertStringContainsString('href="'.CreateSubscription::getUrl().'"', $html);
+        $this->assertStringNotContainsString("mountAction('create'", $html);
+    }
+
+    /**
+     * O defeito real da superfície de visualização: `ViewRecord::mount()`
+     * (`vendor/filament/filament/src/Resources/Pages/ViewRecord.php:67-75`) cai em
+     * `fillForm()` quando o resource não define `infolist()` — que é o caso aqui —, e
+     * `fillForm()` chama `mutateFormDataBeforeFill()` antes de preencher o schema. Sem
+     * essa página chamar `fillExtensionState()`, a aba do stub hidrata com o estado
+     * default do componente (`null`), não com o `obs` real do record — mesmo a ação já
+     * apontando para a página certa. `assertSchemaComponentStateSet` prova pelo dado, não
+     * pela renderização.
+     */
+    public function test_the_view_page_hydrates_the_extension_tab_from_the_record(): void
+    {
+        $this->registerStub();
+
+        $subscription = $this->subscription(['obs' => 'nota real']);
+
+        Livewire::test(ViewSubscription::class, ['record' => $subscription->getKey()])
+            ->assertSchemaComponentStateSet('stub.note', 'nota real');
     }
 }
