@@ -5,6 +5,7 @@ namespace App\Filament\App\Pages;
 use App\Enums\MailDriverEnum;
 use App\Enums\MailEncryptionEnum;
 use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Helpers\PejotaHelper;
 use App\Mail\TestMail;
 use App\Models\Company;
@@ -39,7 +40,7 @@ class CompanyMailSettings extends Page implements HasForms
 
     protected string $view = 'filament.app.pages.company-mail-settings';
 
-    protected static ?int $navigationSort = 98;
+    protected static ?int $navigationSort = MenuSortEnum::COMPANY_MAIL_SETTINGS->value;
 
     public function getTitle(): string|Htmlable
     {

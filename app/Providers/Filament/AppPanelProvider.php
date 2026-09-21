@@ -104,6 +104,8 @@ class AppPanelProvider extends PanelProvider
                     ->icon('heroicon-o-inbox-stack'),
                 NavigationGroup::make(fn () => __(MenuGroupsEnum::FINANCE->value))
                     ->icon('heroicon-o-currency-dollar'),
+                NavigationGroup::make(fn () => __(MenuGroupsEnum::REPORTS->value))
+                    ->icon('heroicon-o-chart-bar'),
                 NavigationGroup::make(fn () => __(MenuGroupsEnum::ADMINISTRATION->value))
                     ->icon('heroicon-o-briefcase'),
                 NavigationGroup::make(fn () => __(MenuGroupsEnum::SETTINGS->value))

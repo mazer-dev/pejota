@@ -3,6 +3,7 @@
 namespace App\Filament\App\Resources;
 
 use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\TagResource\Pages\ListTags;
 use App\Filament\App\Resources\TagResource\Pages\ViewTag;
 use App\Filament\App\Resources\TagResource\RelationManagers\NotesRelationManager;
@@ -26,6 +27,8 @@ class TagResource extends Resource
     protected static ?string $model = Tag::class;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-tag';
+
+    protected static ?int $navigationSort = MenuSortEnum::TAGS->value;
 
     public static function getNavigationGroup(): ?string
     {

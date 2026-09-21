@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources;
 use App\Contracts\SubscriptionResourceExtension;
 use App\Enums\FeatureEnum;
 use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Enums\SubscriptionBillingPeriodEnum;
 use App\Enums\SubscriptionStatusEnum;
 use App\Filament\App\Concerns\GatesAccessByFeature;
@@ -47,6 +48,8 @@ class SubscriptionResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-tv';
 
+    protected static ?int $navigationSort = MenuSortEnum::SUBSCRIPTIONS->value;
+
     public static function feature(): FeatureEnum
     {
         return FeatureEnum::DomainSubscriptions;
@@ -54,7 +57,7 @@ class SubscriptionResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __(MenuGroupsEnum::FINANCE->value);
+        return __(MenuGroupsEnum::ADMINISTRATION->value);
     }
 
     public static function getModelLabel(): string

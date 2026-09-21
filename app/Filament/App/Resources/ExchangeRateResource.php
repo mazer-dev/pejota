@@ -48,7 +48,7 @@ class ExchangeRateResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __(MenuGroupsEnum::FINANCE->value);
+        return __(MenuGroupsEnum::REPORTS->value);
     }
 
     public static function canCreate(): bool

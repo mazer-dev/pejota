@@ -3,6 +3,7 @@
 namespace App\Filament\App\Pages;
 
 use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Enums\UserSettingsEnum;
 use App\Filament\App\Pages\Concerns\ManagesModelSettings;
 use App\Filament\App\Resources\TaskResource;
@@ -24,7 +25,7 @@ class MyPreferences extends Page implements HasForms
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-circle';
 
-    protected static ?int $navigationSort = 97;
+    protected static ?int $navigationSort = MenuSortEnum::MY_PREFERENCES->value;
 
     protected string $view = 'filament.app.pages.model-settings';
 

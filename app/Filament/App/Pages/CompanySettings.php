@@ -4,6 +4,7 @@ namespace App\Filament\App\Pages;
 
 use App\Enums\CompanySettingsEnum;
 use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Filament\App\Pages\Concerns\ManagesModelSettings;
 use App\Helpers\PejotaHelper;
 use App\Models\Currency;
@@ -32,7 +33,7 @@ class CompanySettings extends Page implements HasForms
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?int $navigationSort = 99;
+    protected static ?int $navigationSort = MenuSortEnum::COMPANY_SETTINGS->value;
 
     protected string $view = 'filament.app.pages.model-settings';
 
