@@ -3,6 +3,7 @@
 namespace App\Filament\App\Pages;
 
 use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Enums\TimesheetDetailLevel;
 use App\Enums\TimesheetGrouping;
 use App\Helpers\PejotaHelper;
@@ -31,6 +32,8 @@ class Timesheet extends Page implements HasForms
     use InteractsWithForms;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-chart-bar';
+
+    protected static ?int $navigationSort = MenuSortEnum::TIMESHEET->value;
 
     protected string $view = 'filament.app.pages.timesheet';
 

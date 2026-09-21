@@ -4,6 +4,7 @@ namespace App\Filament\App\Pages;
 
 use App\Enums\CompanyRoleEnum;
 use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Exceptions\InvitationException;
 use App\Helpers\PejotaHelper;
 use App\Models\Company;
@@ -29,6 +30,8 @@ class Team extends Page implements HasTable
     use InteractsWithFormActions, InteractsWithTable;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
+
+    protected static ?int $navigationSort = MenuSortEnum::TEAM->value;
 
     protected string $view = 'filament.app.pages.team';
 

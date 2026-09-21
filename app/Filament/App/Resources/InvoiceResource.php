@@ -6,6 +6,7 @@ use App\Enums\CompanySettingsEnum;
 use App\Enums\FeatureEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Exceptions\MissingExchangeRateException;
 use App\Filament\App\Resources\InvoiceResource\Pages\CreateInvoice;
 use App\Filament\App\Resources\InvoiceResource\Pages\EditInvoice;
@@ -70,6 +71,8 @@ class InvoiceResource extends Resource
     protected static ?string $model = Invoice::class;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
+
+    protected static ?int $navigationSort = MenuSortEnum::INVOICES->value;
 
     public static function getNavigationGroup(): ?string
     {

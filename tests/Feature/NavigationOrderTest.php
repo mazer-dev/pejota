@@ -105,4 +105,39 @@ class NavigationOrderTest extends TestCase
 
         app()->setLocale('en');
     }
+
+    /**
+     * A ordem COMPLETA do core, grupo a grupo. É a asserção que trava a deriva:
+     * um resource novo sem `navigationSort` empata em `-1` e aparece no começo
+     * do seu grupo, quebrando este `assertSame`.
+     */
+    public function test_every_group_renders_in_the_designed_order(): void
+    {
+        $this->skipWhenTheCloudOverlayIsInstalled();
+
+        $this->assertSame([
+            '' => ['Dashboard'],
+            'Daily work' => ['Tasks', 'Work Sessions', 'Notes'],
+            'Finance' => ['Invoices'],
+            'Reports' => ['Timesheet', 'Exchange Rates'],
+            'Administration' => [
+                'Clients',
+                'Vendors',
+                'Projects',
+                'Contracts',
+                'Products',
+                'Subscriptions',
+                'My company',
+                'Team',
+            ],
+            'Settings' => [
+                'Statuses',
+                'Units',
+                'Tags',
+                'My preferences',
+                'Email settings',
+                'Company settings',
+            ],
+        ], $this->navigationMap());
+    }
 }

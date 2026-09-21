@@ -2,6 +2,8 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Filament\App\Resources\UnitResource\Pages\CreateUnit;
 use App\Filament\App\Resources\UnitResource\Pages\EditUnit;
 use App\Filament\App\Resources\UnitResource\Pages\ListUnits;
@@ -24,6 +26,8 @@ class UnitResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-arrows-pointing-out';
 
+    protected static ?int $navigationSort = MenuSortEnum::UNITS->value;
+
     public static function getModelLabel(): string
     {
         return __('Unit');
@@ -31,7 +35,7 @@ class UnitResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Settings');
+        return __(MenuGroupsEnum::SETTINGS->value);
     }
 
     public static function form(Schema $schema): Schema

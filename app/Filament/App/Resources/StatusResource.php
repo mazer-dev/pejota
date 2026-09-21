@@ -2,6 +2,8 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Enums\MenuGroupsEnum;
+use App\Enums\MenuSortEnum;
 use App\Enums\StatusPhaseEnum;
 use App\Filament\App\Resources\StatusResource\Pages\CreateStatus;
 use App\Filament\App\Resources\StatusResource\Pages\EditStatus;
@@ -29,9 +31,11 @@ class StatusResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-exclamation-triangle';
 
+    protected static ?int $navigationSort = MenuSortEnum::STATUSES->value;
+
     public static function getNavigationGroup(): ?string
     {
-        return __('Settings');
+        return __(MenuGroupsEnum::SETTINGS->value);
     }
 
     public static function form(Schema $schema): Schema
