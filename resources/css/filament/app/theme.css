@@ -35,6 +35,33 @@
 }
 
 /* Table */
+/* O painel de dropdown do cabecalho da tabela (filtros, gerenciador de colunas,
+ * agrupamento) e `position: absolute` e nao e teleportado, entao ele e recortado por
+ * qualquer ancestral com `overflow` diferente de `visible`. No Filament v5 o container
+ * da tabela so recorta quando NAO tem cabecalho
+ * (`.fi-ta-ctn:not(.fi-ta-ctn-with-header){overflow:hidden}`); o caso com cabecalho
+ * depende da AUSENCIA da declaracao.
+ *
+ * `parallax/filament-comments` 3.0.0 registra como asset global do painel
+ * (`Css::make('filament-comments', .../resources/dist/filament-comments.css')`) um build
+ * COMPLETO do tema do Filament v4 - 536 KB, 225 classes `.fi-*`, nenhuma do proprio
+ * plugin - e nele `.fi-ta-ctn{overflow:hidden}` e INCONDICIONAL. Como o v5 conta com a
+ * ausencia da declaracao, nao ha o que sobrepor: a regra do v4 vale, e todo card de
+ * tabela da aplicacao passa a recortar seus dropdowns na propria borda. O sintoma so
+ * aparece quando o painel e mais alto que o card - em Contas a Pagar, 864px de painel
+ * contra 643px de card com 8 linhas.
+ *
+ * A declaracao explicita abaixo restitui o valor computado que o v5 pretende.
+ * Especificidade (0,2,0) contra (0,1,0) do plugin: vence independente da ordem de carga,
+ * que nao resolveria sozinha (o tema da app carrega DEPOIS do asset do plugin e ainda
+ * assim perdia, porque nao havia declaracao concorrente).
+ *
+ * NAO REMOVER enquanto `parallax/filament-comments` publicar esse dist. Remover volta a
+ * cortar o menu de filtros em toda tabela com cabecalho. */
+.fi-ta-ctn.fi-ta-ctn-with-header {
+    overflow: visible;
+}
+
 /* Striped table */
 .fi-ta-row:nth-child(odd) {
     @apply bg-gray-100! dark:bg-gray-500!;
