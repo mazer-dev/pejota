@@ -40,7 +40,7 @@ class Timesheet extends Page implements HasForms
 
     public static function getNavigationGroup(): ?string
     {
-        return __(MenuGroupsEnum::FINANCE->value);
+        return __(MenuGroupsEnum::REPORTS->value);
     }
 
     public static function getNavigationLabel(): string
