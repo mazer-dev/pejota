@@ -7,16 +7,39 @@ use Illuminate\Support\Facades\Storage;
 
 class AttachmentsController extends Controller
 {
+    private const SERVABLE_DISKS = [
+        'tasks',
+        'projects',
+        'work_sessions',
+        'companies',
+        'companies-logo',
+    ];
+
     public function getAttachment(string $module, int $companyId, string $fileName)
     {
-        if ($module == 'companies-logo') {
-            return Storage::disk($module)->response($companyId.'/'.$fileName);
+        if (! in_array($module, self::SERVABLE_DISKS, true)) {
+            abort(404);
         }
 
-        if (Company::whereKey($companyId)->first()?->hasMember(auth()->user())) {
-            return Storage::disk($module)->response($companyId.'/'.$fileName);
+        if ($this->containsPathSeparator($fileName)) {
+            abort(404);
         }
 
-        abort(404);
+        $path = $companyId.'/'.$fileName;
+
+        abort_unless(
+            Company::whereKey($companyId)->first()?->hasMember(auth()->user())
+                && Storage::disk($module)->exists($path),
+            404
+        );
+
+        return Storage::disk($module)->response($path);
+    }
+
+    private function containsPathSeparator(string $fileName): bool
+    {
+        return str_contains($fileName, '/')
+            || str_contains($fileName, '\\')
+            || in_array($fileName, ['.', '..'], true);
     }
 }
