@@ -188,7 +188,7 @@
     "Text": "Testo",
     "This Month": "Questo mese",
     "This Week": "Questa settimana",
-    "This task cannot be deleted because it has work sessions associated with it.": "Impossibile eliminare questa attività perché vi sono sessioni di lavoro associate."
+    "This task cannot be deleted because it has work sessions associated with it.": "Impossibile eliminare questa attività perché vi sono sessioni di lavoro associate.",
     "Time": "Tempo",
     "Timezone": "Fuso orario",
     "Title": "Titolo",
@@ -345,7 +345,7 @@
     "Email template overrides": "Sostituzioni del modello e-mail",
     "Leave blank to use the company default.": "Lascia vuoto per utilizzare il valore predefinito dell'azienda.",
     "Email subject": "Oggetto dell'e-mail",
-    "Email body": "Cuerpo dell'e-mail",
+    "Email body": "Corpo dell'e-mail",
     "Email signature": "Firma dell'e-mail",
     "WhatsApp template": "Modello WhatsApp",
     "Available variables": "Variabili disponibili",
