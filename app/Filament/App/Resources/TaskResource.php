@@ -79,6 +79,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Parallax\FilamentComments\Infolists\Components\CommentsEntry;
@@ -1107,15 +1108,16 @@ class TaskResource extends Resource
                         ->selectablePlaceholder(false)
                         ->required()
                         ->live(),
-                    TextEntry::make('resulting_date')
-                        ->label(__('New date'))
-                        ->state(fn (Get $get): string => Task::postponeTargetDate($get('interval'))
-                            ->translatedFormat('l, '.PejotaHelper::getUserDateFormat()))
-                        ->visible(fn (Get $get): bool => filled($get('interval')) && $get('interval') !== 'custom'),
                     DatePicker::make('date')
                         ->label(__('Date'))
                         ->required()
+                        ->live()
                         ->visible(fn (Get $get): bool => $get('interval') === 'custom'),
+                    TextEntry::make('resulting_date')
+                        ->label(__('New date'))
+                        ->state(fn (Get $get): ?string => self::resolvePostponeTargetDate($get)
+                            ?->translatedFormat('l, '.PejotaHelper::getUserDateFormat()))
+                        ->visible(fn (Get $get): bool => self::resolvePostponeTargetDate($get) !== null),
                 ]),
             ])
             ->action(function (array $data, Collection $records): void {
@@ -1132,6 +1134,21 @@ class TaskResource extends Resource
                     $record->postpone($field, $data['interval']);
                 }
             });
+    }
+
+    protected static function resolvePostponeTargetDate(Get $get): ?Carbon
+    {
+        $interval = $get('interval');
+
+        if (blank($interval)) {
+            return null;
+        }
+
+        if ($interval !== 'custom') {
+            return Task::postponeTargetDate($interval);
+        }
+
+        return filled($get('date')) ? Carbon::parse($get('date')) : null;
     }
 
     public static function getTableColumns(): array

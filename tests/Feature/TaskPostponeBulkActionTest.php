@@ -95,6 +95,30 @@ class TaskPostponeBulkActionTest extends TestCase
             );
     }
 
+    public function test_custom_interval_shows_the_weekday_of_the_chosen_date(): void
+    {
+        app()->setLocale('pt_BR');
+
+        Livewire::test(ListTasks::class)
+            ->mountTableBulkAction('postpone', [$this->makeTask()])
+            ->assertFormFieldExists('date', fn (Field $field): bool => $field->isLive())
+            ->fillForm(['interval' => 'custom', 'date' => '2026-11-03'])
+            ->assertSchemaComponentVisible('resulting_date')
+            ->assertSchemaComponentStateSet(
+                'resulting_date',
+                'terça-feira, '.Carbon::parse('2026-11-03')->format(PejotaHelper::getUserDateFormat()),
+            );
+    }
+
+    public function test_custom_interval_without_a_date_hides_the_resulting_date(): void
+    {
+        Livewire::test(ListTasks::class)
+            ->mountTableBulkAction('postpone', [$this->makeTask()])
+            ->fillForm(['interval' => 'custom'])
+            ->assertSuccessful()
+            ->assertSchemaComponentHidden('resulting_date');
+    }
+
     public function test_cleared_interval_hides_the_resulting_date_instead_of_failing(): void
     {
         Livewire::test(ListTasks::class)
