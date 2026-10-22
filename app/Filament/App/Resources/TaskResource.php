@@ -1083,16 +1083,15 @@ class TaskResource extends Resource
             ->deselectRecordsAfterCompletion()
             ->schema([
                 Grid::make(3)->schema([
-                    ToggleButtons::make('field')
+                    Select::make('field')
                         ->label(__('Date to postpone'))
                         ->options([
                             'planned_start' => __('Planned start'),
                             'planned_end' => __('Planned end'),
                             'due_date' => __('Due date'),
                         ])
-                        ->default('due_date')
                         ->required(),
-                    ToggleButtons::make('interval')
+                    Select::make('interval')
                         ->label(__('Postpone to'))
                         ->options([
                             'today' => __('Today'),
@@ -1105,13 +1104,14 @@ class TaskResource extends Resource
                             'custom' => __('Custom'),
                         ])
                         ->default('today')
+                        ->selectablePlaceholder(false)
                         ->required()
                         ->live(),
                     TextEntry::make('resulting_date')
                         ->label(__('New date'))
                         ->state(fn (Get $get): string => Task::postponeTargetDate($get('interval'))
-                            ->format(PejotaHelper::getUserDateFormat()))
-                        ->visible(fn (Get $get): bool => $get('interval') !== 'custom'),
+                            ->translatedFormat('l, '.PejotaHelper::getUserDateFormat()))
+                        ->visible(fn (Get $get): bool => filled($get('interval')) && $get('interval') !== 'custom'),
                     DatePicker::make('date')
                         ->label(__('Date'))
                         ->required()
