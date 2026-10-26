@@ -18,6 +18,7 @@ enum UserSettingsEnum: string
         return [
             'en' => 'English',
             'es' => 'Español',
+            'it' => 'Italiano',
             'pt_BR' => 'Português (Brasil)',
         ];
     }
